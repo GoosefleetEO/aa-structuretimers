@@ -1,0 +1,18 @@
+{% load i18n %}
+{% load humanize %}
+
+<div class="table-responsive">    
+    <table class="table table-aa table_timers" id="tab_timers_{{ tab_name }}" style="width:100%;">
+        <thead>
+            <tr>
+                <th>{% trans "Time" %}</th>
+                <th>{% trans "Location" %}</th>
+                <th>{% trans "Structure" %} / {% trans "Timer Type" %}</th>
+                <th>{% trans "Objective" %} / {% trans "Tags" %}</th>
+                <th>{% trans "Name" %} / {% trans "Owner" %}</th>
+                <th>{% trans "Creator" %}</th>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
+</div>

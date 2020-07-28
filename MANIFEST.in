@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+recursive-include timerboard2 *.py
+recursive-include timerboard2/static *
+recursive-include timerboard2/templates *
+

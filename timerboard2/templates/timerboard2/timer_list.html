@@ -1,0 +1,103 @@
+{% extends "allianceauth/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block page_title %}{% trans "Structure Timers" %}{% endblock page_title %}
+
+{% block content %}
+    <div class="col-lg-12">
+        
+        <h1 class="page-header text-center">{% trans "Structure Timers" %}</h1>
+
+        <div class="col-lg-12 text-center">            
+            <b>{% trans "Current Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
+        </div>
+
+        <span class="pull-right">
+            {% if perms.auth.timer_management %}
+                <a href="{% url 'timerboard2:add' %}" class="btn btn-success">
+                    {% trans "Add Structure Timer" %}
+                </a>
+            {% endif %}
+        </span>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Next Timers</a></li>
+            <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
+        </ul>
+
+        <div class="tab-content custom_tab">
+            <!-- current timerboard2 tab -->
+            <div role="tabpanel" class="tab-pane active" id="home">
+                {% include 'timerboard2/timer_list_table.html' with tab_name='current' %}
+                <p class="text-muted">
+                    Timers remain on this page for {{ max_hours_expired }} hours after they expired
+                </p>
+            </div>
+
+            <!-- past timerboard2 tab -->
+            <div role="tabpanel" class="tab-pane" id="profile">
+                {% include 'timerboard2/timer_list_table.html' with tab_name='past' %} 
+            </div>
+        </div>
+    </div>
+
+    <!-- modal to show fitting image -->
+    <div class="modal" id="modalFitting" tabindex="-1" role="dialog" aria-labelledby="myModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">Fitting for: </h4>
+                </div>
+                <div class="modal-body">
+                    <label for="timerboardImgFitting">Screenshot</label>
+                    <a href="" target="_blank">
+                        <img id="timerboardImgFitting" class="img-responsive" alt="Fitting screenshot" src=""/>
+                    </a>
+                    <br>
+                    <label for="timerboardNotes">Notes</label>                    
+                    <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- share data with JS part -->
+    <div 
+        id="dataExport" 
+        data-listDataCurrentUrl="{% url 'timerboard2:timer_list_data' 'current' %}" 
+        data-listDataPastUrl="{% url 'timerboard2:timer_list_data' 'past' %}"
+        data-getTimerDataUrl="{% url 'timerboard2:get_timer_data' 'pk_dummy' %}"
+        data-titleSolarSystem="{% trans 'Solar System' %}"
+        data-titleStructureType="{% trans 'Structure Type' %}"
+        data-titleTimerType="{% trans 'Timer Type' %}"
+        data-titleOwner="{% trans 'Owner' %}"
+        data-titleObjective="{% trans 'Objective' %}"
+        data-titleVisibility="{% trans 'Visibility' %}"
+        data-hasPermOPSEC="{{ perms.timerboard2.view_opsec_timer }}"
+    >
+    </div>
+    
+{% endblock content %}
+
+
+{% block extra_javascript %}
+    {% include 'bundles/moment-js.html' with locale=True %}
+    <script src="{% static 'js/timerboard2.js' %}"></script>
+        
+    {% include 'bundles/datatables-js.html' %}        
+    <script type="text/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'timerboard2/timer_list.js' %}"></script>
+{% endblock %}
+
+{% block extra_css %}
+    {% include 'bundles/datatables-css.html' %}
+    <link rel="stylesheet" href="{% static 'timerboard2/timer_list.css' %}" type="text/css" media="screen">    
+{% endblock %}

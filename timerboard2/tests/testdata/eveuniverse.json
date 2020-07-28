@@ -1,0 +1,128 @@
+{
+    "EveCategory": [
+        {
+            "id": 65,
+            "name": "Structure",
+            "published": true
+        }
+    ],
+    "EveConstellation": [
+        {
+            "eve_region_id": 10000064,
+            "id": 20000729,
+            "name": "Jeon",
+            "position_x": -2.0690763482714282e+17,
+            "position_y": 4.82908790696792e+16,
+            "position_z": 7.960999000649318e+16
+        },
+        {
+            "eve_region_id": 10000069,
+            "id": 20000785,
+            "name": "Ishaga",
+            "position_x": -2.2268706803473363e+17,
+            "position_y": 1.0836835134649451e+17,
+            "position_z": 1.3602959608230848e+17
+        }
+    ],
+    "EveGroup": [
+        {
+            "eve_category_id": 65,
+            "id": 1404,
+            "name": "Engineering Complex",
+            "published": true
+        },
+        {
+            "eve_category_id": 65,
+            "id": 1406,
+            "name": "Refinery",
+            "published": true
+        },
+        {
+            "eve_category_id": 65,
+            "id": 1657,
+            "name": "Citadel",
+            "published": true
+        }
+    ],
+    "EveRegion": [
+        {
+            "description": "\"The Federation is not a defined region of space, of planets, of mountains, rivers, or woods. It is a vision.\"",
+            "id": 10000064,
+            "name": "Essence"
+        },
+        {
+            "description": "For centuries, this volume of space remained inexplicably impenetrable to investigation. It possesses no apparent mass or dimension, but the abrupt disappearance of every expedition into the zone made it an effective bulwark against flanking attacks during the first Gallente-Caldari war, and the subsequent uneasy peace.<br><br>Several decades ago, a coalition of like-minded Caldari megacorps discovered ways to traverse Black Rise safely, and began a secret programme of colonization. The start of the Empyrean War forced them to show their hand, and the region soon became a key front in the conflict between Caldari and Gallente forces.<br><br>Today the region remains somewhat underdeveloped, but rich in raw materials. The poorly-understood phenomena that still manifest can make life awkward, but fluid router networks and jump travel permit unrestricted travel and communications. Of the many early expeditions, though, no trace has yet been found.",
+            "id": 10000069,
+            "name": "Black Rise"
+        }
+    ],
+    "EveSolarSystem": [
+        {
+            "eve_constellation_id": 20000729,
+            "eve_star_id": null,
+            "id": 30004984,
+            "name": "Abune",
+            "position_x": -2.1126590104115347e+17,
+            "position_y": 5.580652849031512e+16,
+            "position_z": 8.141639674703722e+16,
+            "security_status": 0.28563404083251953
+        },
+        {
+            "eve_constellation_id": 20000785,
+            "eve_star_id": null,
+            "id": 30045339,
+            "name": "Enaluri",
+            "position_x": -2.2787517331394458e+17,
+            "position_y": 1.0468838569953179e+17,
+            "position_z": 1.2027941769265027e+17,
+            "security_status": 0.3277980387210846
+        }
+    ],
+    "EveType": [
+        {
+            "capacity": 0.0,
+            "eve_graphic_id": null,
+            "eve_group_id": 1404,
+            "eve_market_group_id": null,
+            "icon_id": null,
+            "id": 35825,
+            "mass": 3000000000.0,
+            "name": "Raitaru",
+            "packaged_volume": 8000.0,
+            "portion_size": 1,
+            "published": true,
+            "radius": 45000.0,
+            "volume": 8000.0
+        },
+        {
+            "capacity": 0.0,
+            "eve_graphic_id": null,
+            "eve_group_id": 1657,
+            "eve_market_group_id": null,
+            "icon_id": null,
+            "id": 35832,
+            "mass": 3000000000.0,
+            "name": "Astrahus",
+            "packaged_volume": 8000.0,
+            "portion_size": 1,
+            "published": true,
+            "radius": 45000.0,
+            "volume": 8000.0
+        },
+        {
+            "capacity": 0.0,
+            "eve_graphic_id": null,
+            "eve_group_id": 1406,
+            "eve_market_group_id": null,
+            "icon_id": null,
+            "id": 35835,
+            "mass": 3000000000.0,
+            "name": "Athanor",
+            "packaged_volume": 8000.0,
+            "portion_size": 1,
+            "published": true,
+            "radius": 45000.0,
+            "volume": 8000.0
+        }
+    ]
+}
