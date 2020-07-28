@@ -1,3 +1,6 @@
+# flake8: noqa
+
+
 from django_webtest import WebTest
 from django.utils import timezone
 from django.urls import reverse
