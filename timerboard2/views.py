@@ -1,7 +1,6 @@
 from datetime import timedelta
 import logging
 
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.html import format_html, mark_safe
@@ -16,6 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 
 from allianceauth.eveonline.evelinks import evewho, dotlan
 
+from . import __title__
 from .form import TimerForm
 from .models import Timer
 from .utils import (
@@ -26,6 +26,7 @@ from .utils import (
     create_link_html,
     yesno_str,
     timeuntil_str,
+    messages_plus,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def timer_list(request):
     context = {
         "current_time": now().strftime("%Y-%m-%d %H:%M:%S"),
         "max_hours_expired": MAX_HOURS_PASSED,
+        "title": __title__,
     }
     return render(request, "timerboard2/timer_list.html", context=context)
 
@@ -290,7 +292,7 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
                 timer.system, timer.eve_time, self.request.user
             )
         )
-        messages.success(
+        messages_plus.success(
             self.request,
             _("Added new timer in %(system)s at %(time)s.")
             % {
@@ -307,7 +309,7 @@ class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
     def form_valid(self, form):
         """
         timer = self.object        
-        messages.success(
+        messages_plus.success(
             self.request, _('Saved changes to the timer: {}.').format(timer)
         )
         """

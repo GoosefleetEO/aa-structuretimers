@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
-from eveuniverse.models import EveCategory, EveType
+from eveuniverse.models import EveGroup
 
 from .models import Timer
 
@@ -14,17 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 def generate_structure_choices():
-    return [
-        (
-            c.name,
-            [
-                (x.id, x.name)
-                for x in EveType.objects.filter(eve_group__eve_category=c).order_by(
-                    "name"
-                )
-            ],
+    groups_qs = (
+        EveGroup.objects.filter(
+            eve_category_id__in=[65], published=True, eve_types__published=True
         )
-        for c in EveCategory.objects.all().order_by("name")
+        | EveGroup.objects.filter(id=365, eve_types__published=True)
+        | EveGroup.objects.filter(eve_types__id=2233)
+    )
+    groups_qs = groups_qs.select_related("eve_category").distinct()
+    return [
+        (group.name, [(x.id, x.name) for x in group.eve_types.order_by("name")],)
+        for group in groups_qs.order_by("name")
     ]
 
 
