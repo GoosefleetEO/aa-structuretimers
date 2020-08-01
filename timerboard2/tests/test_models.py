@@ -47,8 +47,8 @@ class TestTimer(TestCase):
         timer = Timer(eve_time=now())
         self.assertEqual(timer.label_type_for_objective(), "default")
 
-        timer.objective_new = Timer.OBJECTIVE_HOSTILE
+        timer.objective = Timer.OBJECTIVE_HOSTILE
         self.assertEqual(timer.label_type_for_objective(), "danger")
 
-        timer.objective_new = Timer.OBJECTIVE_FRIENDLY
+        timer.objective = Timer.OBJECTIVE_FRIENDLY
         self.assertEqual(timer.label_type_for_objective(), "primary")

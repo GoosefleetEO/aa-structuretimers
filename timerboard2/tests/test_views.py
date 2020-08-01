@@ -20,7 +20,7 @@ def get_json_response(response: object):
     return json.loads(response.content.decode("utf-8"))
 
 
-class TestViews(LoadTestDataMixin, TestCase):
+class TestListData(LoadTestDataMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -31,21 +31,21 @@ class TestViews(LoadTestDataMixin, TestCase):
 
         # timers
         self.timer_1 = Timer.objects.create(
-            details="Timer 1",
+            structure_name="Timer 1",
             eve_time=now() + timedelta(hours=4),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
         )
         self.timer_2 = Timer.objects.create(
-            details="Timer 2",
+            structure_name="Timer 2",
             eve_time=now() - timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
         )
         self.timer_3 = Timer.objects.create(
-            details="Timer 3",
+            structure_name="Timer 3",
             eve_time=now() - timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
@@ -84,7 +84,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_show_corp_restricted_to_corp_member(self):
         timer_4 = Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
@@ -97,7 +97,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_dont_show_corp_restricted_to_non_corp_member(self):
         Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -110,7 +110,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_show_alliance_restricted_to_alliance_member(self):
         timer_4 = Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
@@ -124,7 +124,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_dont_show_alliance_restricted_to_non_alliance_member(self):
         Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -141,7 +141,7 @@ class TestViews(LoadTestDataMixin, TestCase):
             "timerboard2.view_opsec_timer", self.user_1
         )
         timer_4 = Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -154,7 +154,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_dont_show_opsec_restricted_to_non_opsec_member(self):
         Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -170,7 +170,7 @@ class TestViews(LoadTestDataMixin, TestCase):
             "timerboard2.view_opsec_timer", self.user_1
         )
         Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -184,7 +184,7 @@ class TestViews(LoadTestDataMixin, TestCase):
 
     def test_always_show_timers_created_by_user(self):
         timer_4 = Timer.objects.create(
-            details="Timer 4",
+            structure_name="Timer 4",
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -194,3 +194,49 @@ class TestViews(LoadTestDataMixin, TestCase):
         timer_ids = self._call_timer_list_data_and_get_timer_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
+
+
+class TestGetTimerData(LoadTestDataMixin, TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # user
+        self.user_1 = create_test_user(self.character_1)
+
+        # timers
+        self.timer_1 = Timer.objects.create(
+            structure_name="Timer 1",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            eve_time=now() + timedelta(hours=4),
+            eve_character=self.character_1,
+            eve_corp=self.corporation_1,
+            user=self.user_1,
+        )
+
+    def test_normal(self):
+        request = self.factory.get(
+            reverse("timerboard2:get_timer_data", args=[self.timer_1.pk])
+        )
+        request.user = self.user_1
+        response = views.get_timer_data(request, self.timer_1.pk)
+        self.assertEqual(response.status_code, 200)
+
+
+class TestSelect2Views(LoadTestDataMixin, TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # user
+        self.user_1 = create_test_user(self.character_1)
+
+    def test_normal(self):
+        request = self.factory.get(
+            reverse("timerboard2:select2_solar_systems"), data={"term": "abu"}
+        )
+        request.user = self.user_1
+        response = views.select2_solar_systems(request)
+        self.assertEqual(response.status_code, 200)
+        data = get_json_response(response)
+        self.assertEqual(data, {"results": [{"id": 30004984, "text": "Abune"}]})
+

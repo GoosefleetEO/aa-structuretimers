@@ -36,7 +36,7 @@ class TimerboardViewsTestCase(WebTest):
         self.timer = Timer.objects.create(
             details='details',
             system='system',
-            planet_moon='planet_moon',
+            location_details='location_details',
             structure='structure',
             objective='objective',
             eve_time=timezone.now() + timedelta(days=30),
@@ -49,7 +49,7 @@ class TimerboardViewsTestCase(WebTest):
         self.corp_timer = Timer.objects.create(
             details='details',
             system='system',
-            planet_moon='planet_moon',
+            location_details='location_details',
             structure='structure',
             objective='objective',
             eve_time=timezone.now() + timedelta(days=30),
@@ -62,7 +62,7 @@ class TimerboardViewsTestCase(WebTest):
         self.other_corp_timer = Timer.objects.create(
             details='details',
             system='system',
-            planet_moon='planet_moon',
+            location_details='location_details',
             structure='structure',
             objective='objective',
             eve_time=timezone.now() + timedelta(days=30),
@@ -75,7 +75,7 @@ class TimerboardViewsTestCase(WebTest):
         self.expired_timer = Timer.objects.create(
             details='details',
             system='system',
-            planet_moon='planet_moon',
+            location_details='location_details',
             structure='structure',
             objective='objective',
             eve_time=timezone.now() - timedelta(days=30),
@@ -169,7 +169,7 @@ class TimerboardViewsTestCase(WebTest):
 
         form['details'] = 'details'
         form['system'] = 'jita'
-        form['planet_moon'] = '4-4'
+        form['location_details'] = '4-4'
         form['structure'] = TimerForm.structure_choices[0][0]
         form['objective'] = TimerForm.objective_choices[0][0]
         form['days_left'] = 1
@@ -208,7 +208,7 @@ class TimerboardViewsTestCase(WebTest):
 
         form['details'] = 'detailsUNIQUE'
         form['system'] = 'jita'
-        form['planet_moon'] = '4-4'
+        form['location_details'] = '4-4'
         form['structure'] = TimerForm.structure_choices[0][0]
         form['objective'] = TimerForm.objective_choices[0][0]
         form['days_left'] = 1

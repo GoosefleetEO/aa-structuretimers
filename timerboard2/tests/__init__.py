@@ -10,6 +10,10 @@ from allianceauth.eveonline.models import (
 )
 from allianceauth.tests.auth_utils import AuthUtils
 
+from eveuniverse.models import EveSolarSystem, EveType
+
+from .testdata.load_eveuniverse import load_eveuniverse
+
 
 def add_main_to_user(user: User, character: EveCharacter):
     CharacterOwnership.objects.create(
@@ -32,6 +36,13 @@ class LoadTestDataMixin:
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        load_eveuniverse()
+        cls.type_astrahus = EveType.objects.get(id=35832)
+        cls.type_raitaru = EveType.objects.get(id=35825)
+        cls.system_abune = EveSolarSystem.objects.get(id=30004984)
+        cls.system_enaluri = EveSolarSystem.objects.get(id=30045339)
+
         EveCharacter.objects.filter(character_id__in=[1001, 1002, 1003]).delete()
         EveCorporationInfo.objects.filter(corporation_id__in=[2001, 2003]).delete()
         EveAllianceInfo.objects.filter(alliance_id__in=[3001, 3003]).delete()

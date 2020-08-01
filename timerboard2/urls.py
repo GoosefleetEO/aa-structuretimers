@@ -13,4 +13,14 @@ urlpatterns = [
         r"^list_data/(?P<tab_name>\w+)$", views.timer_list_data, name="timer_list_data"
     ),
     url(r"^get_timer_data/(?P<pk>\w+)$", views.get_timer_data, name="get_timer_data"),
+    url(
+        r"^select2_solar_systems/$",
+        views.select2_solar_systems,
+        name="select2_solar_systems",
+    ),
+    url(
+        r"^select2_structure_types/$",
+        views.select2_structure_types,
+        name="select2_structure_types",
+    ),
 ]

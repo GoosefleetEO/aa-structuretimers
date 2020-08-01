@@ -1,14 +1,10 @@
-{% extends "allianceauth/base.html" %}
+{% extends "timerboard2/base.html" %}
 {% load static %}
 {% load i18n %}
 
-{% block page_title %}{% trans title %}{% endblock page_title %}
-
-{% block content %}
+{% block details %}
     <div class="col-lg-12">
-        
-        <h1 class="page-header text-center">{% trans title %}</h1>
-
+                
         <div class="col-lg-12 text-center">            
             <b>{% trans "Current Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
         </div>
@@ -44,19 +40,21 @@
     </div>
 
     <!-- modal to show fitting image -->
-    <div class="modal" id="modalFitting" tabindex="-1" role="dialog" aria-labelledby="myModal">
+    <div class="modal" id="modalTimerDetails" tabindex="-1" role="dialog" aria-labelledby="myModal">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
-                    <h4 class="modal-title" id="gridSystemModalLabel">Fitting for: </h4>
+                    <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
                 </div>
                 <div class="modal-body">
-                    <label for="timerboardImgFitting">Screenshot</label>
+                    <label for="timerboardTimer">Timer</label>
+                    <p><span id="timerboardTimer"></span></p>
+                    <label for="timerboardImgScreenshot">Screenshot</label>
                     <a href="" target="_blank">
-                        <img id="timerboardImgFitting" class="img-responsive" alt="Fitting screenshot" src=""/>
+                        <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
                     </a>
                     <br>
                     <label for="timerboardNotes">Notes</label>                    
@@ -76,6 +74,7 @@
         data-listDataPastUrl="{% url 'timerboard2:timer_list_data' 'past' %}"
         data-getTimerDataUrl="{% url 'timerboard2:get_timer_data' 'pk_dummy' %}"
         data-titleSolarSystem="{% trans 'Solar System' %}"
+        data-titleRegion="{% trans 'Region' %}"
         data-titleStructureType="{% trans 'Structure Type' %}"
         data-titleTimerType="{% trans 'Timer Type' %}"
         data-titleOwner="{% trans 'Owner' %}"
@@ -85,12 +84,11 @@
     >
     </div>
     
-{% endblock content %}
-
+{% endblock details %}
 
 {% block extra_javascript %}
     {% include 'bundles/moment-js.html' with locale=True %}
-    <script src="{% static 'js/timerboard2.js' %}"></script>
+    <script src="{% static 'js/timerboard.js' %}"></script>
         
     {% include 'bundles/datatables-js.html' %}        
     <script type="text/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>

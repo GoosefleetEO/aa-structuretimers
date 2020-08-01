@@ -15,8 +15,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 
 from allianceauth.eveonline.evelinks import evewho, dotlan
 
+from eveuniverse.models import EveSolarSystem, EveType
+
 from . import __title__
-from .form import TimerForm
+from .forms import TimerForm
 from .models import Timer
 from .utils import (
     add_no_wrap_html,
@@ -91,6 +93,13 @@ def timer_list_data(request, tab_name):
     else:
         timers_qs = timers_qs.filter(eve_time__lt=now())
 
+    timers_qs = timers_qs.select_related(
+        "eve_solar_system__eve_constellation__eve_region",
+        "structure_type",
+        "eve_character",
+        "eve_corp",
+        "eve_alliance",
+    )
     data = list()
     for timer in timers_qs:
 
@@ -106,9 +115,16 @@ def timer_list_data(request, tab_name):
         time += format_html("<br>{}", countdown_str)
 
         # location
-        location = create_link_html(dotlan.solar_system_url(timer.system), timer.system)
-        if timer.planet_moon:
-            location += format_html("<br>{}", timer.planet_moon)
+        location = create_link_html(
+            dotlan.solar_system_url(timer.eve_solar_system.name),
+            timer.eve_solar_system.name,
+        )
+        if timer.location_details:
+            location += format_html("<br><em>{}</em>", timer.location_details)
+
+        location += format_html(
+            "<br>{}", timer.eve_solar_system.eve_constellation.eve_region.name
+        )
 
         # structure & timer type & fitting image
         timer_type = add_bs_label_html(
@@ -147,7 +163,7 @@ def timer_list_data(request, tab_name):
             "{}<br>{}",
             mark_safe(
                 add_bs_label_html(
-                    timer.get_objective_new_display(), timer.label_type_for_objective()
+                    timer.get_objective_display(), timer.label_type_for_objective()
                 )
             ),
             mark_safe(" ".join(tags)),
@@ -160,7 +176,7 @@ def timer_list_data(request, tab_name):
         else:
             owner = "-"
             owner_name = ""
-        name = format_html("{}<br>{}", timer.details, owner)
+        name = format_html("{}<br>{}", timer.structure_name, owner)
 
         # creator
         if timer.eve_corp:
@@ -185,15 +201,23 @@ def timer_list_data(request, tab_name):
 
         # actions
         actions = ""
-        disabled_html = ' disabled="disabled">' if not timer.fitting_image_url else ""
+
+        if not timer.details_image_url:
+            button_type = "default"
+            disabled_html = ' disabled="disabled"'
+            data_toggle = ""
+        else:
+            disabled_html = ""
+            button_type = "primary"
+            data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
+
         actions += (
             format_html(
-                '<a type="button" id="timerboardBtnDetails" class="btn btn-default" '
-                'data-toggle="modal" data-target="#modalFitting" '
-                'data-timerpk="{}"{}>{}</a>',
-                timer.pk,
-                disabled_html,
-                create_bs_glyph_html("zoom-in"),
+                '<a type="button" id="timerboardBtnDetails" '
+                f'class="btn btn-{button_type}" '
+                f"{data_toggle}"
+                f'data-timerpk="{timer.pk}"{disabled_html}>'
+                f'{create_bs_glyph_html("zoom-in")}</a>'
             )
             + "&nbsp;"
         )
@@ -223,9 +247,10 @@ def timer_list_data(request, tab_name):
                 "creator": creator,
                 "actions": actions,
                 "timer_type_name": timer.get_timer_type_display(),
-                "objective_name": timer.objective,
-                "system_name": timer.system,
-                "structure_name": timer.structure,
+                "objective_name": timer.get_objective_display(),
+                "system_name": timer.eve_solar_system.name,
+                "region_name": timer.eve_solar_system.eve_constellation.eve_region.name,
+                "structure_type_name": timer.structure_type.name,
                 "owner_name": owner_name,
                 "visibility": visibility,
                 "opsec": yesno_str(timer.opsec),
@@ -248,8 +273,11 @@ def get_timer_data(request, pk):
         data = {
             "display_name": str(timer),
             "structure_display_name": timer.structure_display_name,
-            "fitting_image_url": timer.fitting_image_url,
-            "notes": timer.structure_display_name,
+            "eve_time": timer.eve_time.strftime(DATETIME_FORMAT),
+            "details_image_url": timer.details_image_url
+            if timer.details_image_url
+            else "",
+            "notes": timer.details_notes if timer.details_notes else "",
         }
         return JsonResponse(data, safe=False)
     else:
@@ -270,13 +298,18 @@ class TimerManagementView(BaseTimerView):
     def get_timer(self, timer_id):
         return get_object_or_404(self.model, id=timer_id)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Edit Timer"
+        return context
+
 
 class AddUpdateMixin:
     def get_form_kwargs(self):
         """
         Inject the request user into the kwargs passed to the form
         """
-        kwargs = super(AddUpdateMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs.update({"user": self.request.user})
         return kwargs
 
@@ -285,18 +318,18 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
     template_name_suffix = "_create_form"
 
     def form_valid(self, form):
-        result = super(AddTimerView, self).form_valid(form)
+        result = super().form_valid(form)
         timer = self.object
         logger.info(
             "Created new timer in {} at {} by user {}".format(
-                timer.system, timer.eve_time, self.request.user
+                timer.eve_solar_system, timer.eve_time, self.request.user
             )
         )
         messages_plus.success(
             self.request,
             _("Added new timer in %(system)s at %(time)s.")
             % {
-                "system": timer.system,
+                "system": timer.eve_solar_system,
                 "time": timer.eve_time.strftime(DATETIME_FORMAT),
             },
         )
@@ -313,8 +346,50 @@ class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
             self.request, _('Saved changes to the timer: {}.').format(timer)
         )
         """
-        return super(EditTimerView, self).form_valid(form)
+        return super().form_valid(form)
 
 
 class RemoveTimerView(TimerManagementView, DeleteView):
     pass
+
+
+@login_required
+@permission_required("timerboard2.basic_access")
+def select2_solar_systems(request):
+    term = request.GET.get("term")
+    if term:
+        results = [
+            {"id": row["id"], "text": row["name"]}
+            for row in EveSolarSystem.objects.filter(name__istartswith=term).values(
+                "id", "name"
+            )
+        ]
+    else:
+        results = None
+
+    return JsonResponse({"results": results}, safe=False)
+
+
+@login_required
+@permission_required("timerboard2.basic_access")
+def select2_structure_types(request):
+    term = request.GET.get("term")
+    if term:
+        types_qs = (
+            EveType.objects.filter(eve_group__eve_category_id__in=[65], published=True)
+            | EveType.objects.filter(eve_group_id=365, published=True)
+            | EveType.objects.filter(id=2233)
+        )
+        types_qs = (
+            types_qs.select_related("eve_category", "eve_category__eve_group")
+            .distinct()
+            .filter(name__icontains=term)
+        )
+        results = [
+            {"id": row["id"], "text": row["name"]}
+            for row in types_qs.values("id", "name")
+        ]
+    else:
+        results = None
+
+    return JsonResponse({"results": results}, safe=False)

@@ -8,7 +8,7 @@ from allianceauth.eveonline.models import (
     EveCorporationInfo,
 )
 
-from eveuniverse.models import EveType
+from eveuniverse.models import EveSolarSystem, EveType
 
 
 class General(models.Model):
@@ -66,16 +66,13 @@ class Timer(models.Model):
         (VISIBILITY_CORPORATION, _("Corporation only")),
     ]
 
-    details = models.CharField(
-        max_length=254, default="", verbose_name="structure name"
-    )
     timer_type = models.IntegerField(
         choices=TYPE_CHOICES, default=TYPE_NONE, verbose_name="timer type"
     )
-    system = models.CharField(
-        max_length=254, default="", verbose_name="solar system name"
+    eve_solar_system = models.ForeignKey(
+        EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
     )
-    planet_moon = models.CharField(
+    location_details = models.CharField(
         max_length=254,
         default="",
         blank=True,
@@ -85,21 +82,23 @@ class Timer(models.Model):
             "e.g. name of nearby planet / moon / gate"
         ),
     )
-    structure_type = models.ForeignKey(
-        EveType,
-        on_delete=models.SET_DEFAULT,
-        default=None,
-        null=True,
-        verbose_name="structure type",
-    )
-    objective_new = models.SmallIntegerField(
+    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE,)
+    structure_name = models.CharField(max_length=254, default="", blank=True)
+    objective = models.SmallIntegerField(
         choices=OBJECTIVE_CHOICES, default=OBJECTIVE_UNDEFINED, verbose_name="objective"
     )
     eve_time = models.DateTimeField(
         db_index=True, help_text="Eve time when this timer happens",
     )
     important = models.BooleanField(
-        default=False, help_text="Show this timer as important",
+        default=False, help_text="Mark this timer as important",
+    )
+    owner_name = models.CharField(
+        max_length=254,
+        default=None,
+        blank=True,
+        null=True,
+        help_text="Name of the corporation owning the structure",
     )
     opsec = models.BooleanField(
         default=False,
@@ -111,14 +110,16 @@ class Timer(models.Model):
     )
     eve_character = models.ForeignKey(
         EveCharacter,
-        on_delete=models.SET_NULL,
+        on_delete=models.SET_DEFAULT,
+        default=None,
         null=True,
         related_name="Timers",
         help_text="Main character of the user who created this timer",
     )
     eve_corp = models.ForeignKey(
         EveCorporationInfo,
-        on_delete=models.SET_NULL,
+        on_delete=models.SET_DEFAULT,
+        default=None,
         null=True,
         related_name="Timers",
         help_text="Corporation of the user who created this timer",
@@ -128,7 +129,6 @@ class Timer(models.Model):
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
-        blank=True,
         related_name="Timers",
         help_text="Alliance of the user who created this timer",
     )
@@ -144,40 +144,20 @@ class Timer(models.Model):
     user = models.ForeignKey(
         User, null=True, on_delete=models.SET_NULL, related_name="Timers",
     )
-    fitting_image_url = models.CharField(
+    details_image_url = models.CharField(
         max_length=1024,
         default=None,
         blank=True,
         null=True,
         help_text=(
-            "URL to a screenshot of the structure's fitting, "
+            "URL for details like a screenshot of the structure's fitting, "
             "e.g. https://www.example.com/route/image.jpg"
         ),
     )
-    owner_name = models.CharField(
-        max_length=254,
-        default=None,
-        blank=True,
-        null=True,
-        help_text="Name of the corporation owning the structure",
-    )
-
-    # the following fields are no longer used
-    # but stay in the model for backward compatibility
-    structure = models.CharField(
-        max_length=254,
+    details_notes = models.TextField(
         default="",
         blank=True,
-        help_text="This field is no longer in use",
-    )
-    corp_timer = models.BooleanField(
-        default=False, blank=True, help_text="This field is no longer in use",
-    )
-    objective = models.CharField(
-        max_length=254,
-        default="",
-        blank=True,
-        help_text="This field is no longer in use",
+        help_text="Notes with additional information about this timer",
     )
 
     class Meta:
@@ -185,8 +165,10 @@ class Timer(models.Model):
 
     @property
     def structure_display_name(self):
-        return "{} - {} ({})".format(
-            self.system, self.details, self.structure_type.name,
+        return "{}{} ({})".format(
+            self.eve_solar_system.name,
+            f" - {self.location_details}" if self.location_details else "",
+            self.structure_type.name,
         )
 
     def __str__(self):
@@ -219,8 +201,8 @@ class Timer(models.Model):
             self.OBJECTIVE_NEUTRAL: "info",
             self.OBJECTIVE_UNDEFINED: "default",
         }
-        if self.objective_new in label_types_map:
-            label_type = label_types_map[self.objective_new]
+        if self.objective in label_types_map:
+            label_type = label_types_map[self.objective]
         else:
             label_type = "default"
         return label_type

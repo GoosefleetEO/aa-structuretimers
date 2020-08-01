@@ -6,46 +6,30 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
-from eveuniverse.models import EveGroup
-
 from .models import Timer
 
 logger = logging.getLogger(__name__)
-
-
-def generate_structure_choices():
-    groups_qs = (
-        EveGroup.objects.filter(
-            eve_category_id__in=[65], published=True, eve_types__published=True
-        )
-        | EveGroup.objects.filter(id=365, eve_types__published=True)
-        | EveGroup.objects.filter(eve_types__id=2233)
-    )
-    groups_qs = groups_qs.select_related("eve_category").distinct()
-    return [
-        (group.name, [(x.id, x.name) for x in group.eve_types.order_by("name")],)
-        for group in groups_qs.order_by("name")
-    ]
 
 
 class TimerForm(forms.ModelForm):
     class Meta:
         model = Timer
         fields = (
-            "system",
-            "planet_moon",
+            "eve_solar_system_2",
+            "location_details",
             "structure_type_2",
             "timer_type",
-            "details",
+            "structure_name",
             "owner_name",
-            "objective_new",
+            "objective",
             "days_left",
             "hours_left",
             "minutes_left",
-            "fitting_image_url",
             "visibility",
             "opsec",
             "important",
+            "details_image_url",
+            "details_notes",
         )
 
     def __init__(self, *args, **kwargs):
@@ -53,8 +37,9 @@ class TimerForm(forms.ModelForm):
         if "instance" in kwargs and kwargs["instance"] is not None:
             # Do conversion from db datetime to days/hours/minutes
             # for appropriate fields
+            my_instance = kwargs["instance"]
             current_time = timezone.now()
-            td = kwargs["instance"].eve_time - current_time
+            td = my_instance.eve_time - current_time
             initial = kwargs.pop("initial", dict())
             if "days_left" not in initial:
                 initial.update({"days_left": td.days})
@@ -62,32 +47,62 @@ class TimerForm(forms.ModelForm):
                 initial.update({"hours_left": td.seconds // 3600})
             if "minutes_left" not in initial:
                 initial.update({"minutes_left": td.seconds // 60 % 60})
-            initial.update({"structure_type_2": kwargs["instance"].structure_type_id})
-            kwargs.update({"initial": initial})
-        super(TimerForm, self).__init__(*args, **kwargs)
 
-    structure_type_2 = forms.ChoiceField(
-        label=Timer._meta.get_field("structure_type").verbose_name.capitalize(),
-        choices=generate_structure_choices,
-        help_text=Timer._meta.get_field("structure_type").help_text,
+            kwargs.update({"initial": initial})
+        else:
+            my_instance = None
+
+        super().__init__(*args, **kwargs)
+
+        if my_instance:
+            self.fields["eve_solar_system_2"].widget.choices = [
+                (
+                    str(my_instance.eve_solar_system_id),
+                    my_instance.eve_solar_system.name,
+                )
+            ]
+            self.fields["structure_type_2"].widget.choices = [
+                (str(my_instance.structure_type_id), my_instance.structure_type.name,)
+            ]
+
+    eve_solar_system_2 = forms.CharField(
+        label=_("Solar System (*)"),
+        widget=forms.Select(attrs={"class": "select2-solar-systems"}),
+    )
+    structure_type_2 = forms.CharField(
+        label=_("Structure Type (*)"),
+        widget=forms.Select(attrs={"class": "select2-structure-types"}),
+    )
+    objective = forms.ChoiceField(
+        initial=Timer.OBJECTIVE_UNDEFINED,
+        choices=Timer.OBJECTIVE_CHOICES,
+        widget=forms.Select(attrs={"class": "select2-render"}),
+    )
+    timer_type = forms.ChoiceField(
+        choices=Timer.TYPE_CHOICES,
+        widget=forms.Select(attrs={"class": "select2-render"}),
+    )
+    visibility = forms.ChoiceField(
+        choices=Timer.VISIBILITY_CHOICES,
+        widget=forms.Select(attrs={"class": "select2-render"}),
     )
 
     days_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Days Remaining"),
+        label=_("Days Remaining (*)"),
         validators=[MinValueValidator(0)],
     )
     hours_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Hours Remaining"),
+        label=_("Hours Remaining (*)"),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
     )
     minutes_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Minutes Remaining"),
+        label=_("Minutes Remaining (*)"),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
 
@@ -115,9 +130,9 @@ class TimerForm(forms.ModelForm):
         )
 
         # get structure type
-        structure_type_id = self.cleaned_data["structure_type_2"]
+        timer.structure_type_id = self.cleaned_data["structure_type_2"]
+        timer.eve_solar_system_id = self.cleaned_data["eve_solar_system_2"]
 
-        timer.structure_type_id = structure_type_id
         timer.eve_time = eve_time
         timer.eve_character = character
         timer.eve_corp = corporation
