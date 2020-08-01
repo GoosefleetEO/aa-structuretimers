@@ -23,8 +23,7 @@ from .models import Timer
 from .utils import (
     add_no_wrap_html,
     add_bs_label_html,
-    create_bs_glyph_html,
-    create_bs_button_html,
+    create_fa_button_html,
     create_link_html,
     yesno_str,
     timeuntil_str,
@@ -139,11 +138,11 @@ def timer_list_data(request, tab_name):
 
         structure = format_html(
             '<div class="flex-container">'
-            '<div><img src="{}" width="38"></div>'
-            '<div style="text-align: left">'
-            "{}&nbsp;<br>"
-            "{}"
-            "</div>"
+            '  <div style="padding-top: 4px;"><img src="{}" width="40"></div>'
+            '  <div style="text-align: left;">'
+            "    {}&nbsp;<br>"
+            "    {}"
+            "  </div>"
             "</div>",
             structure_type_icon_url,
             mark_safe(add_bs_label_html(structure_type_name, "info")),
@@ -214,22 +213,28 @@ def timer_list_data(request, tab_name):
         actions += (
             format_html(
                 '<a type="button" id="timerboardBtnDetails" '
-                f'class="btn btn-{button_type}" '
+                f'class="btn btn-{button_type}" title="Show details of this timer"'
                 f"{data_toggle}"
                 f'data-timerpk="{timer.pk}"{disabled_html}>'
-                f'{create_bs_glyph_html("zoom-in")}</a>'
+                '<i class="fas fa-search-plus"></i></a>'
             )
             + "&nbsp;"
         )
 
         if request.user.has_perm("timer_management"):
             actions += (
-                create_bs_button_html(
-                    reverse("timerboard2:delete", args=(timer.pk,)), "trash", "danger",
+                create_fa_button_html(
+                    reverse("timerboard2:delete", args=(timer.pk,)),
+                    "far fa-trash-alt",
+                    "danger",
+                    "Delete this timer",
                 )
                 + "&nbsp;"
-                + create_bs_button_html(
-                    reverse("timerboard2:edit", args=(timer.pk,)), "pencil", "info",
+                + create_fa_button_html(
+                    reverse("timerboard2:edit", args=(timer.pk,)),
+                    "far fa-edit",
+                    "warning",
+                    "Edit this timer",
                 )
             )
 

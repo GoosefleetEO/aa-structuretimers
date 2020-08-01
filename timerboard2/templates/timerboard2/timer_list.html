@@ -11,8 +11,11 @@
 
         <span class="pull-right">
             {% if perms.auth.timer_management %}
-                <a href="{% url 'timerboard2:add' %}" class="btn btn-primary">
-                    {% trans "Add Timer" %}
+                <a 
+                    href="{% url 'timerboard2:add' %}" 
+                    class="btn btn-success" 
+                    title="Add new timer">
+                    Add Timer
                 </a>
             {% endif %}
         </span>
@@ -23,18 +26,22 @@
             <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
         </ul>
 
-        <div class="tab-content custom_tab">
-            <!-- current timerboard2 tab -->
-            <div role="tabpanel" class="tab-pane active" id="home">
-                {% include 'timerboard2/timer_list_table.html' with tab_name='current' %}
-                <p class="text-muted">
-                    Timers remain on this page for {{ max_hours_expired }} hours after they expired
-                </p>
-            </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="tab-content">            
+                    <!-- current timerboard2 tab -->
+                    <div role="tabpanel" class="tab-pane active" id="home">
+                        {% include 'timerboard2/timer_list_table.html' with tab_name='current' %}
+                        <p class="text-muted">
+                            Timers remain on this page for {{ max_hours_expired }} hours after they expired
+                        </p>
+                    </div>
 
-            <!-- past timerboard2 tab -->
-            <div role="tabpanel" class="tab-pane" id="profile">
-                {% include 'timerboard2/timer_list_table.html' with tab_name='past' %} 
+                    <!-- past timerboard2 tab -->
+                    <div role="tabpanel" class="tab-pane" id="profile">
+                        {% include 'timerboard2/timer_list_table.html' with tab_name='past' %} 
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -86,16 +93,14 @@
     
 {% endblock details %}
 
-{% block extra_javascript %}
-    {% include 'bundles/moment-js.html' with locale=True %}
-    <script src="{% static 'js/timerboard.js' %}"></script>
-        
-    {% include 'bundles/datatables-js.html' %}        
-    <script type="text/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'timerboard2/timer_list.js' %}"></script>
-{% endblock %}
-
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
     <link rel="stylesheet" href="{% static 'timerboard2/timer_list.css' %}" type="text/css" media="screen">    
-{% endblock %}
+{% endblock extra_css%}
+
+{% block extra_javascript %}
+    {% include 'bundles/moment-js.html' with locale=True %}            
+    {% include 'bundles/datatables-js.html' %}        
+    <script type="text/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'timerboard2/timer_list.js' %}"></script>
+{% endblock extra_javascript %}

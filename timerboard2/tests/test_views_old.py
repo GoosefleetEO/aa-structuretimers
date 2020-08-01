@@ -1,6 +1,6 @@
 # flake8: noqa
 
-
+"""
 from django_webtest import WebTest
 from django.utils import timezone
 from django.urls import reverse
@@ -15,7 +15,7 @@ from allianceauth.eveonline.models import EveCorporationInfo
 from ..models import Timer
 from ..form import TimerForm
 
-"""
+
 class TimerboardViewsTestCase(WebTest):
     csrf_checks = False
 

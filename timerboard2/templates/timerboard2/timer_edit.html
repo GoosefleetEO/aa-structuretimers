@@ -13,7 +13,9 @@
                         {% csrf_token %}
                         {{ form|bootstrap }}
                         <br/>
-                        <p class="text-muted">(*) mandatory fields</p>
+                        <p>
+                            <i class="fas fa-asterisk"></i> required fields
+                        </p>
                         <button class="btn btn-lg btn-primary btn-block" type="submit">
                             {% block submit_button_text %}
                             {% endblock %}
@@ -33,9 +35,13 @@
 
 {% endblock details %}
 
-{% block extra_javascript %}
+{% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css" rel="stylesheet" />
+<link href="{% static 'timerboard2/timer_edit.css' %}" rel="stylesheet" />
+{% endblock extra_css %}
+
+{% block extra_javascript %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
 <script type="text/javascript" src="{% static 'timerboard2/timer_edit.js' %}"></script>
-{% endblock %}
+{% endblock extra_javascript %}

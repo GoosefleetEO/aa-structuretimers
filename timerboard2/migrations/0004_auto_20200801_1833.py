@@ -6,32 +6,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('timerboard2', '0003_auto_20200801_1324'),
+        ("timerboard2", "0003_auto_20200801_1324"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='timer',
-            old_name='planet_moon',
-            new_name='location_details',
+            model_name="timer", old_name="planet_moon", new_name="location_details",
         ),
-        migrations.RemoveField(
-            model_name='timer',
-            name='fitting_image_url',
+        migrations.RemoveField(model_name="timer", name="fitting_image_url",),
+        migrations.AddField(
+            model_name="timer",
+            name="details_image_url",
+            field=models.CharField(
+                blank=True,
+                default=None,
+                help_text="URL for details like a screenshot of the structure's fitting, e.g. https://www.example.com/route/image.jpg",
+                max_length=1024,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='timer',
-            name='details_image_url',
-            field=models.CharField(blank=True, default=None, help_text="URL for details like a screenshot of the structure's fitting, e.g. https://www.example.com/route/image.jpg", max_length=1024, null=True),
-        ),
-        migrations.AddField(
-            model_name='timer',
-            name='details_notes',
-            field=models.TextField(blank=True, default='', help_text='Notes with additional information about this timer'),
+            model_name="timer",
+            name="details_notes",
+            field=models.TextField(
+                blank=True,
+                default="",
+                help_text="Notes with additional information about this timer",
+            ),
         ),
         migrations.AlterField(
-            model_name='timer',
-            name='important',
-            field=models.BooleanField(default=False, help_text='Mark this timer as important'),
+            model_name="timer",
+            name="important",
+            field=models.BooleanField(
+                default=False, help_text="Mark this timer as important"
+            ),
         ),
     ]

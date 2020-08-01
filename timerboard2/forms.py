@@ -3,6 +3,7 @@ import datetime
 
 from django import forms
 from django.utils import timezone
+from django.utils.html import mark_safe
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
@@ -65,12 +66,13 @@ class TimerForm(forms.ModelForm):
                 (str(my_instance.structure_type_id), my_instance.structure_type.name,)
             ]
 
+    asterisk_html = '<i class="fas fa-asterisk"></i>'
     eve_solar_system_2 = forms.CharField(
-        label=_("Solar System (*)"),
+        label=_(mark_safe(f"Solar System {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-solar-systems"}),
     )
     structure_type_2 = forms.CharField(
-        label=_("Structure Type (*)"),
+        label=_(mark_safe(f"Structure Type {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-structure-types"}),
     )
     objective = forms.ChoiceField(
@@ -90,19 +92,19 @@ class TimerForm(forms.ModelForm):
     days_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Days Remaining (*)"),
+        label=_(mark_safe(f"Days Remaining {asterisk_html}")),
         validators=[MinValueValidator(0)],
     )
     hours_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Hours Remaining (*)"),
+        label=_(mark_safe(f"Hours Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
     )
     minutes_left = forms.IntegerField(
         required=True,
         initial=0,
-        label=_("Minutes Remaining (*)"),
+        label=_(mark_safe(f"Minutes Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
 

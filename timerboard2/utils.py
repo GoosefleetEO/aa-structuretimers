@@ -357,6 +357,24 @@ def create_bs_button_html(
     )
 
 
+def create_fa_button_html(
+    url: str,
+    fa_code: str,
+    button_type: str,
+    tooltip: str = None,
+    disabled: bool = False,
+) -> str:
+    """create BS botton and return HTML"""
+    return format_html(
+        '<a href="{}" class="btn btn-{}"{}>{}{}</a>',
+        url,
+        button_type,
+        mark_safe(f' title="{tooltip}"') if tooltip else "",
+        mark_safe(' disabled="disabled"') if disabled else "",
+        mark_safe(f'<i class="{fa_code}"></i>'),
+    )
+
+
 class JsonDateTimeDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs) -> None:
         json.JSONDecoder.__init__(

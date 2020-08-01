@@ -36,6 +36,8 @@ class TestListData(LoadTestDataMixin, TestCase):
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
         )
         self.timer_2 = Timer.objects.create(
             structure_name="Timer 2",
@@ -43,6 +45,8 @@ class TestListData(LoadTestDataMixin, TestCase):
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
         )
         self.timer_3 = Timer.objects.create(
             structure_name="Timer 3",
@@ -50,6 +54,8 @@ class TestListData(LoadTestDataMixin, TestCase):
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
+            eve_solar_system=self.system_enaluri,
+            structure_type=self.type_astrahus,
         )
 
     def test_timer_list_view_loads(self):
@@ -85,6 +91,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_show_corp_restricted_to_corp_member(self):
         timer_4 = Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
@@ -98,6 +106,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_dont_show_corp_restricted_to_non_corp_member(self):
         Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -111,6 +121,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_show_alliance_restricted_to_alliance_member(self):
         timer_4 = Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
@@ -125,6 +137,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_dont_show_alliance_restricted_to_non_alliance_member(self):
         Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -142,6 +156,8 @@ class TestListData(LoadTestDataMixin, TestCase):
         )
         timer_4 = Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -155,6 +171,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_dont_show_opsec_restricted_to_non_opsec_member(self):
         Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -171,6 +189,8 @@ class TestListData(LoadTestDataMixin, TestCase):
         )
         Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -185,6 +205,8 @@ class TestListData(LoadTestDataMixin, TestCase):
     def test_always_show_timers_created_by_user(self):
         timer_4 = Timer.objects.create(
             structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
             eve_time=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
@@ -239,4 +261,3 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         data = get_json_response(response)
         self.assertEqual(data, {"results": [{"id": 30004984, "text": "Abune"}]})
-

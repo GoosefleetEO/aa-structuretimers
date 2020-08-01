@@ -11,45 +11,201 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('eveonline', '0012_index_additions'),
-        ('eveuniverse', '0002_load_eveunit'),
+        ("eveonline", "0012_index_additions"),
+        ("eveuniverse", "0002_load_eveunit"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='General',
+            name="General",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
             ],
             options={
-                'permissions': (('basic_access', 'Can access this app'),),
-                'managed': False,
-                'default_permissions': (),
+                "permissions": (("basic_access", "Can access this app"),),
+                "managed": False,
+                "default_permissions": (),
             },
         ),
         migrations.CreateModel(
-            name='Timer',
+            name="Timer",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('details', models.CharField(default='', max_length=254, verbose_name='structure name')),
-                ('timer_type', models.IntegerField(choices=[(1, 'None'), (2, 'Shield'), (3, 'Armor'), (4, 'Hull'), (5, 'Anchoring'), (6, 'Unanchoring'), (7, 'Moon Mining')], default=1, verbose_name='timer type')),
-                ('planet_moon', models.CharField(blank=True, default='', help_text='Additional information about the location of this structure, e.g. name of nearby planet / moon / gate', max_length=254, verbose_name='location details')),
-                ('objective', models.SmallIntegerField(choices=[(1, 'Hostile'), (2, 'Friendly'), (3, 'Neutral'), (4, 'Undefined')], default=4, verbose_name='objective')),
-                ('eve_time', models.DateTimeField(db_index=True, help_text='Eve time when this timer happens')),
-                ('important', models.BooleanField(default=False, help_text='Show this timer as important')),
-                ('opsec', models.BooleanField(db_index=True, default=False, help_text='Limit access to users with OPSEC clearance. Can be combined with visibility.')),
-                ('visibility', models.SmallIntegerField(choices=[(1, 'Unrestricted'), (2, 'Alliance only'), (3, 'Corporation only')], db_index=True, default=1, help_text='The visibility of this timer can be limited to members of your organization')),
-                ('fitting_image_url', models.CharField(blank=True, default=None, help_text="URL to a screenshot of the structure's fitting, e.g. https://www.example.com/route/image.jpg", max_length=1024, null=True)),
-                ('owner_name', models.CharField(blank=True, default=None, help_text='Name of the corporation owning the structure', max_length=254, null=True)),
-                ('eve_alliance', models.ForeignKey(default=None, help_text='Alliance of the user who created this timer', null=True, on_delete=django.db.models.deletion.SET_DEFAULT, related_name='Timers', to='eveonline.EveAllianceInfo')),
-                ('eve_character', models.ForeignKey(default=None, help_text='Main character of the user who created this timer', null=True, on_delete=django.db.models.deletion.SET_DEFAULT, related_name='Timers', to='eveonline.EveCharacter')),
-                ('eve_corp', models.ForeignKey(default=None, help_text='Corporation of the user who created this timer', null=True, on_delete=django.db.models.deletion.SET_DEFAULT, related_name='Timers', to='eveonline.EveCorporationInfo')),
-                ('eve_solar_system', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='eveuniverse.EveSolarSystem')),
-                ('structure_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='eveuniverse.EveType')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='Timers', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "details",
+                    models.CharField(
+                        default="", max_length=254, verbose_name="structure name"
+                    ),
+                ),
+                (
+                    "timer_type",
+                    models.IntegerField(
+                        choices=[
+                            (1, "None"),
+                            (2, "Shield"),
+                            (3, "Armor"),
+                            (4, "Hull"),
+                            (5, "Anchoring"),
+                            (6, "Unanchoring"),
+                            (7, "Moon Mining"),
+                        ],
+                        default=1,
+                        verbose_name="timer type",
+                    ),
+                ),
+                (
+                    "planet_moon",
+                    models.CharField(
+                        blank=True,
+                        default="",
+                        help_text="Additional information about the location of this structure, e.g. name of nearby planet / moon / gate",
+                        max_length=254,
+                        verbose_name="location details",
+                    ),
+                ),
+                (
+                    "objective",
+                    models.SmallIntegerField(
+                        choices=[
+                            (1, "Hostile"),
+                            (2, "Friendly"),
+                            (3, "Neutral"),
+                            (4, "Undefined"),
+                        ],
+                        default=4,
+                        verbose_name="objective",
+                    ),
+                ),
+                (
+                    "eve_time",
+                    models.DateTimeField(
+                        db_index=True, help_text="Eve time when this timer happens"
+                    ),
+                ),
+                (
+                    "important",
+                    models.BooleanField(
+                        default=False, help_text="Show this timer as important"
+                    ),
+                ),
+                (
+                    "opsec",
+                    models.BooleanField(
+                        db_index=True,
+                        default=False,
+                        help_text="Limit access to users with OPSEC clearance. Can be combined with visibility.",
+                    ),
+                ),
+                (
+                    "visibility",
+                    models.SmallIntegerField(
+                        choices=[
+                            (1, "Unrestricted"),
+                            (2, "Alliance only"),
+                            (3, "Corporation only"),
+                        ],
+                        db_index=True,
+                        default=1,
+                        help_text="The visibility of this timer can be limited to members of your organization",
+                    ),
+                ),
+                (
+                    "fitting_image_url",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        help_text="URL to a screenshot of the structure's fitting, e.g. https://www.example.com/route/image.jpg",
+                        max_length=1024,
+                        null=True,
+                    ),
+                ),
+                (
+                    "owner_name",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        help_text="Name of the corporation owning the structure",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "eve_alliance",
+                    models.ForeignKey(
+                        default=None,
+                        help_text="Alliance of the user who created this timer",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_DEFAULT,
+                        related_name="Timers",
+                        to="eveonline.EveAllianceInfo",
+                    ),
+                ),
+                (
+                    "eve_character",
+                    models.ForeignKey(
+                        default=None,
+                        help_text="Main character of the user who created this timer",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_DEFAULT,
+                        related_name="Timers",
+                        to="eveonline.EveCharacter",
+                    ),
+                ),
+                (
+                    "eve_corp",
+                    models.ForeignKey(
+                        default=None,
+                        help_text="Corporation of the user who created this timer",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_DEFAULT,
+                        related_name="Timers",
+                        to="eveonline.EveCorporationInfo",
+                    ),
+                ),
+                (
+                    "eve_solar_system",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="eveuniverse.EveSolarSystem",
+                    ),
+                ),
+                (
+                    "structure_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="eveuniverse.EveType",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="Timers",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_opsec_timer', 'Can view timers marked as opsec'),),
+                "permissions": (
+                    ("view_opsec_timer", "Can view timers marked as opsec"),
+                ),
             },
         ),
     ]

@@ -6,17 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('timerboard2', '0001_initial'),
+        ("timerboard2", "0001_initial"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='timer',
-            name='details',
-        ),
+        migrations.RemoveField(model_name="timer", name="details",),
         migrations.AddField(
-            model_name='timer',
-            name='structure_name',
-            field=models.CharField(blank=True, default='', max_length=254),
+            model_name="timer",
+            name="structure_name",
+            field=models.CharField(blank=True, default="", max_length=254),
         ),
     ]

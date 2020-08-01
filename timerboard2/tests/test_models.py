@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.utils.timezone import now
 
+from eveuniverse.models import EveSolarSystem, EveType
+
 from ..models import Timer
 from .testdata.load_eveuniverse import load_eveuniverse
 
@@ -10,27 +12,31 @@ class TestTimer(TestCase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         load_eveuniverse()
+        cls.type_astrahus = EveType.objects.get(id=35832)
+        cls.type_raitaru = EveType.objects.get(id=35825)
+        cls.system_abune = EveSolarSystem.objects.get(id=30004984)
+        cls.system_enaluri = EveSolarSystem.objects.get(id=30045339)
 
     def test_str(self):
         timer = Timer(
-            details="Test",
+            structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
-            system="Abune",
-            structure_type_id=35825,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
             eve_time=now(),
         )
-        expected = "Armor timer for Abune - Test (Raitaru)"
+        expected = "Armor timer for Abune (Raitaru)"
         self.assertEqual(str(timer), expected)
 
     def test_structure_display_name(self):
         timer = Timer(
-            details="Test",
+            structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
-            system="Abune",
-            structure_type_id=35825,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
             eve_time=now(),
         )
-        expected = "Abune - Test (Raitaru)"
+        expected = "Abune (Raitaru)"
         self.assertEqual(timer.structure_display_name, expected)
 
     def test_label_type_for_timer_type(self):
