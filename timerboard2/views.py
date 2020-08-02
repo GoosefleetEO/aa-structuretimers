@@ -205,15 +205,17 @@ def timer_list_data(request, tab_name):
             button_type = "default"
             disabled_html = ' disabled="disabled"'
             data_toggle = ""
+            title = "No details available"
         else:
             disabled_html = ""
             button_type = "primary"
             data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
+            title = "Show details of this timer"
 
         actions += (
             format_html(
                 '<a type="button" id="timerboardBtnDetails" '
-                f'class="btn btn-{button_type}" title="Show details of this timer"'
+                f'class="btn btn-{button_type}" title="{title}"'
                 f"{data_toggle}"
                 f'data-timerpk="{timer.pk}"{disabled_html}>'
                 '<i class="fas fa-search-plus"></i></a>'
