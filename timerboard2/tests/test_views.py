@@ -32,7 +32,7 @@ class TestListData(LoadTestDataMixin, TestCase):
         # timers
         self.timer_1 = Timer.objects.create(
             structure_name="Timer 1",
-            eve_time=now() + timedelta(hours=4),
+            date=now() + timedelta(hours=4),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
@@ -41,7 +41,7 @@ class TestListData(LoadTestDataMixin, TestCase):
         )
         self.timer_2 = Timer.objects.create(
             structure_name="Timer 2",
-            eve_time=now() - timedelta(hours=8),
+            date=now() - timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
@@ -50,7 +50,7 @@ class TestListData(LoadTestDataMixin, TestCase):
         )
         self.timer_3 = Timer.objects.create(
             structure_name="Timer 3",
-            eve_time=now() - timedelta(hours=8),
+            date=now() - timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,
@@ -93,7 +93,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_2,
@@ -108,7 +108,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             user=self.user_3,
@@ -123,7 +123,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             eve_alliance=self.alliance_1,
@@ -139,7 +139,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             eve_alliance=self.alliance_3,
@@ -158,11 +158,11 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             user=self.user_3,
-            opsec=True,
+            is_opsec=True,
         )
         timer_ids = self._call_timer_list_data_and_get_timer_ids()
         expected = {self.timer_1.id, timer_4.id}
@@ -173,11 +173,11 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             user=self.user_3,
-            opsec=True,
+            is_opsec=True,
         )
         timer_ids = self._call_timer_list_data_and_get_timer_ids()
         expected = {self.timer_1.id}
@@ -191,11 +191,11 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             user=self.user_3,
-            opsec=True,
+            is_opsec=True,
             visibility=Timer.VISIBILITY_CORPORATION,
         )
         timer_ids = self._call_timer_list_data_and_get_timer_ids()
@@ -207,7 +207,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=8),
+            date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corp=self.corporation_3,
             visibility=Timer.VISIBILITY_CORPORATION,
@@ -230,7 +230,7 @@ class TestGetTimerData(LoadTestDataMixin, TestCase):
             structure_name="Timer 1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            eve_time=now() + timedelta(hours=4),
+            date=now() + timedelta(hours=4),
             eve_character=self.character_1,
             eve_corp=self.corporation_1,
             user=self.user_1,

@@ -23,7 +23,7 @@ class TestTimer(TestCase):
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            eve_time=now(),
+            date=now(),
         )
         expected = "Armor timer for Abune (Raitaru)"
         self.assertEqual(str(timer), expected)
@@ -34,13 +34,13 @@ class TestTimer(TestCase):
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            eve_time=now(),
+            date=now(),
         )
         expected = "Abune (Raitaru)"
         self.assertEqual(timer.structure_display_name, expected)
 
     def test_label_type_for_timer_type(self):
-        timer = Timer(eve_time=now())
+        timer = Timer(date=now())
         self.assertEqual(timer.label_type_for_timer_type(), "default")
 
         timer.timer_type = timer.TYPE_ARMOR
@@ -50,7 +50,7 @@ class TestTimer(TestCase):
         self.assertEqual(timer.label_type_for_timer_type(), "danger")
 
     def test_label_type_for_objective(self):
-        timer = Timer(eve_time=now())
+        timer = Timer(date=now())
         self.assertEqual(timer.label_type_for_objective(), "default")
 
         timer.objective = Timer.OBJECTIVE_HOSTILE

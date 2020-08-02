@@ -39,8 +39,8 @@ class TimerboardViewsTestCase(WebTest):
             location_details='location_details',
             structure='structure',
             objective='objective',
-            eve_time=timezone.now() + timedelta(days=30),
-            important=True,
+            date=timezone.now() + timedelta(days=30),
+            is_important=True,
             corp_timer=False,
             eve_character=character,
             eve_corp=character.corporation,
@@ -52,8 +52,8 @@ class TimerboardViewsTestCase(WebTest):
             location_details='location_details',
             structure='structure',
             objective='objective',
-            eve_time=timezone.now() + timedelta(days=30),
-            important=False,
+            date=timezone.now() + timedelta(days=30),
+            is_important=False,
             corp_timer=True,
             eve_character=character,
             eve_corp=character.corporation,
@@ -65,8 +65,8 @@ class TimerboardViewsTestCase(WebTest):
             location_details='location_details',
             structure='structure',
             objective='objective',
-            eve_time=timezone.now() + timedelta(days=30),
-            important=False,
+            date=timezone.now() + timedelta(days=30),
+            is_important=False,
             corp_timer=True,
             eve_character=other_character,
             eve_corp=other_character.corporation,
@@ -78,8 +78,8 @@ class TimerboardViewsTestCase(WebTest):
             location_details='location_details',
             structure='structure',
             objective='objective',
-            eve_time=timezone.now() - timedelta(days=30),
-            important=True,
+            date=timezone.now() - timedelta(days=30),
+            is_important=True,
             corp_timer=False,
             eve_character=character,
             eve_corp=character.corporation,
@@ -175,7 +175,7 @@ class TimerboardViewsTestCase(WebTest):
         form['days_left'] = 1
         form['hours_left'] = 2
         form['minutes_left'] = 3
-        form['important'] = True
+        form['is_important'] = True
         form['corp_timer'] = False
 
         response = form.submit()
@@ -214,7 +214,7 @@ class TimerboardViewsTestCase(WebTest):
         form['days_left'] = 1
         form['hours_left'] = 2
         form['minutes_left'] = 3
-        form['important'] = True
+        form['is_important'] = True
         form['corp_timer'] = False
 
         response = form.submit()

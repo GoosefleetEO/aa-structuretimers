@@ -61,7 +61,7 @@ def _timers_visible_to_user(user):
     )
 
     if not user.has_perm("timerboard2.view_opsec_timer"):
-        timers_qs = timers_qs.exclude(opsec=True)
+        timers_qs = timers_qs.exclude(is_opsec=True)
 
     timers_qs = (
         timers_qs.filter(visibility=Timer.VISIBILITY_UNRESTRICTED)
@@ -87,10 +87,10 @@ def timer_list_data(request, tab_name):
 
     if tab_name == "current":
         timers_qs = timers_qs.filter(
-            eve_time__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
+            date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
         )
     else:
-        timers_qs = timers_qs.filter(eve_time__lt=now())
+        timers_qs = timers_qs.filter(date__lt=now())
 
     timers_qs = timers_qs.select_related(
         "eve_solar_system__eve_constellation__eve_region",
@@ -103,12 +103,12 @@ def timer_list_data(request, tab_name):
     for timer in timers_qs:
 
         # timer
-        is_passed = timer.eve_time < now()
-        time = timer.eve_time.strftime(DATETIME_FORMAT)
+        is_passed = timer.date < now()
+        time = timer.date.strftime(DATETIME_FORMAT)
         if is_passed:
             countdown_str = "PASSED"
         else:
-            duration = timer.eve_time - now()
+            duration = timer.date - now()
             countdown_str = timeuntil_str(duration)
 
         time += format_html("<br>{}", countdown_str)
@@ -151,11 +151,11 @@ def timer_list_data(request, tab_name):
 
         # objective & tags
         tags = list()
-        if timer.opsec:
+        if timer.is_opsec:
             tags.append(add_bs_label_html("OPSEC", "danger"))
         if timer.visibility != Timer.VISIBILITY_UNRESTRICTED:
             tags.append(add_bs_label_html(timer.get_visibility_display(), "info"))
-        if timer.important:
+        if timer.is_important:
             tags.append(add_bs_label_html("Important", "warning"))
 
         objective = format_html(
@@ -244,7 +244,7 @@ def timer_list_data(request, tab_name):
             {
                 "id": timer.id,
                 "time": time,
-                "eve_time": timer.eve_time.isoformat(),
+                "date": timer.date.isoformat(),
                 "location": location,
                 "structure_details": structure,
                 "name_objective": name,
@@ -258,10 +258,10 @@ def timer_list_data(request, tab_name):
                 "structure_type_name": timer.structure_type.name,
                 "owner_name": owner_name,
                 "visibility": visibility,
-                "opsec": yesno_str(timer.opsec),
-                "is_opsec": timer.opsec,
+                "opsec_str": yesno_str(timer.is_opsec),
+                "is_opsec": timer.is_opsec,
                 "is_passed": is_passed,
-                "is_important": timer.important,
+                "is_important": timer.is_important,
             }
         )
     return JsonResponse(data, safe=False)
@@ -278,7 +278,7 @@ def get_timer_data(request, pk):
         data = {
             "display_name": str(timer),
             "structure_display_name": timer.structure_display_name,
-            "eve_time": timer.eve_time.strftime(DATETIME_FORMAT),
+            "date": timer.date.strftime(DATETIME_FORMAT),
             "details_image_url": timer.details_image_url
             if timer.details_image_url
             else "",
@@ -327,15 +327,16 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
         timer = self.object
         logger.info(
             "Created new timer in {} at {} by user {}".format(
-                timer.eve_solar_system, timer.eve_time, self.request.user
+                timer.eve_solar_system, timer.date, self.request.user
             )
         )
         messages_plus.success(
             self.request,
-            _("Added new timer in %(system)s at %(time)s.")
+            _("Added new timer for %(type)s in %(system)s at %(time)s.")
             % {
-                "system": timer.eve_solar_system,
-                "time": timer.eve_time.strftime(DATETIME_FORMAT),
+                "type": timer.structure_type.name,
+                "system": timer.eve_solar_system.name,
+                "time": timer.date.strftime(DATETIME_FORMAT),
             },
         )
         return result

@@ -26,11 +26,11 @@ class TimerForm(forms.ModelForm):
             "days_left",
             "hours_left",
             "minutes_left",
-            "visibility",
-            "opsec",
-            "important",
             "details_image_url",
             "details_notes",
+            "visibility",
+            "is_opsec",
+            "is_important",
         )
 
     def __init__(self, *args, **kwargs):
@@ -40,7 +40,7 @@ class TimerForm(forms.ModelForm):
             # for appropriate fields
             my_instance = kwargs["instance"]
             current_time = timezone.now()
-            td = my_instance.eve_time - current_time
+            td = my_instance.date - current_time
             initial = kwargs.pop("initial", dict())
             if "days_left" not in initial:
                 initial.update({"days_left": td.days})
@@ -68,10 +68,12 @@ class TimerForm(forms.ModelForm):
 
     asterisk_html = '<i class="fas fa-asterisk"></i>'
     eve_solar_system_2 = forms.CharField(
+        required=True,
         label=_(mark_safe(f"Solar System {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-solar-systems"}),
     )
     structure_type_2 = forms.CharField(
+        required=True,
         label=_(mark_safe(f"Structure Type {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-structure-types"}),
     )
@@ -88,22 +90,18 @@ class TimerForm(forms.ModelForm):
         choices=Timer.VISIBILITY_CHOICES,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
-
     days_left = forms.IntegerField(
         required=True,
-        initial=0,
         label=_(mark_safe(f"Days Remaining {asterisk_html}")),
         validators=[MinValueValidator(0)],
     )
     hours_left = forms.IntegerField(
         required=True,
-        initial=0,
         label=_(mark_safe(f"Hours Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
     )
     minutes_left = forms.IntegerField(
         required=True,
-        initial=0,
         label=_(mark_safe(f"Minutes Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
@@ -125,17 +123,17 @@ class TimerForm(forms.ModelForm):
             minutes=self.cleaned_data["minutes_left"],
         )
         current_time = timezone.now()
-        eve_time = current_time + future_time
+        date = current_time + future_time
         logger.debug(
             "Determined timer eve time is %s - current time %s, "
-            "adding %s" % (eve_time, current_time, future_time)
+            "adding %s" % (date, current_time, future_time)
         )
 
         # get structure type
         timer.structure_type_id = self.cleaned_data["structure_type_2"]
         timer.eve_solar_system_id = self.cleaned_data["eve_solar_system_2"]
 
-        timer.eve_time = eve_time
+        timer.date = date
         timer.eve_character = character
         timer.eve_corp = corporation
         timer.user = self.user

@@ -24,17 +24,15 @@ class Timer(models.Model):
     """A structure timer"""
 
     # timer type
-    TYPE_NONE = 1
-    TYPE_SHIELD = 2
-    TYPE_ARMOR = 3
-    TYPE_HULL = 4
-    TYPE_ANCHORING = 5
-    TYPE_UNANCHORING = 6
-    TYPE_MOONMINING = 7
+    TYPE_NONE = "NO"
+    TYPE_ARMOR = "AR"
+    TYPE_HULL = "HL"
+    TYPE_ANCHORING = "AN"
+    TYPE_UNANCHORING = "UA"
+    TYPE_MOONMINING = "MM"
 
     TYPE_CHOICES = (
         (TYPE_NONE, _("None")),
-        (TYPE_SHIELD, _("Shield")),
         (TYPE_ARMOR, _("Armor")),
         (TYPE_HULL, _("Hull")),
         (TYPE_ANCHORING, _("Anchoring")),
@@ -43,22 +41,22 @@ class Timer(models.Model):
     )
 
     # objective
-    OBJECTIVE_HOSTILE = 1
-    OBJECTIVE_FRIENDLY = 2
-    OBJECTIVE_NEUTRAL = 3
-    OBJECTIVE_UNDEFINED = 4
+    OBJECTIVE_UNDEFINED = "UN"
+    OBJECTIVE_HOSTILE = "HO"
+    OBJECTIVE_FRIENDLY = "FR"
+    OBJECTIVE_NEUTRAL = "NE"
 
     OBJECTIVE_CHOICES = [
+        (OBJECTIVE_UNDEFINED, _("Undefined")),
         (OBJECTIVE_HOSTILE, _("Hostile")),
         (OBJECTIVE_FRIENDLY, _("Friendly")),
         (OBJECTIVE_NEUTRAL, _("Neutral")),
-        (OBJECTIVE_UNDEFINED, _("Undefined")),
     ]
 
     # visibility
-    VISIBILITY_UNRESTRICTED = 1
-    VISIBILITY_ALLIANCE = 2
-    VISIBILITY_CORPORATION = 3
+    VISIBILITY_UNRESTRICTED = "UN"
+    VISIBILITY_ALLIANCE = "AL"
+    VISIBILITY_CORPORATION = "CO"
 
     VISIBILITY_CHOICES = [
         (VISIBILITY_UNRESTRICTED, _("Unrestricted")),
@@ -66,8 +64,8 @@ class Timer(models.Model):
         (VISIBILITY_CORPORATION, _("Corporation only")),
     ]
 
-    timer_type = models.IntegerField(
-        choices=TYPE_CHOICES, default=TYPE_NONE, verbose_name="timer type"
+    timer_type = models.CharField(
+        max_length=2, choices=TYPE_CHOICES, default=TYPE_NONE, verbose_name="timer type"
     )
     eve_solar_system = models.ForeignKey(
         EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
@@ -84,14 +82,17 @@ class Timer(models.Model):
     )
     structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE,)
     structure_name = models.CharField(max_length=254, default="", blank=True)
-    objective = models.SmallIntegerField(
-        choices=OBJECTIVE_CHOICES, default=OBJECTIVE_UNDEFINED, verbose_name="objective"
+    objective = models.CharField(
+        max_length=2,
+        choices=OBJECTIVE_CHOICES,
+        default=OBJECTIVE_UNDEFINED,
+        verbose_name="objective",
     )
-    eve_time = models.DateTimeField(
-        db_index=True, help_text="Eve time when this timer happens",
+    date = models.DateTimeField(
+        db_index=True, help_text="Date when this timer happens",
     )
-    important = models.BooleanField(
-        default=False, help_text="Mark this timer as important",
+    is_important = models.BooleanField(
+        default=False, help_text="Mark this timer as is_important",
     )
     owner_name = models.CharField(
         max_length=254,
@@ -100,7 +101,7 @@ class Timer(models.Model):
         null=True,
         help_text="Name of the corporation owning the structure",
     )
-    opsec = models.BooleanField(
+    is_opsec = models.BooleanField(
         default=False,
         db_index=True,
         help_text=(
@@ -132,7 +133,8 @@ class Timer(models.Model):
         related_name="Timers",
         help_text="Alliance of the user who created this timer",
     )
-    visibility = models.SmallIntegerField(
+    visibility = models.CharField(
+        max_length=2,
         choices=VISIBILITY_CHOICES,
         default=VISIBILITY_UNRESTRICTED,
         db_index=True,
@@ -161,7 +163,7 @@ class Timer(models.Model):
     )
 
     class Meta:
-        permissions = (("view_opsec_timer", "Can view timers marked as opsec"),)
+        permissions = (("view_opsec_timer", "Can view timers marked as is_opsec"),)
 
     @property
     def structure_display_name(self):
@@ -180,7 +182,6 @@ class Timer(models.Model):
         """returns the Boostrap label type for a timer_type"""
         label_types_map = {
             self.TYPE_NONE: "default",
-            self.TYPE_SHIELD: "danger",
             self.TYPE_ARMOR: "danger",
             self.TYPE_HULL: "danger",
             self.TYPE_ANCHORING: "warning",

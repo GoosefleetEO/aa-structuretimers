@@ -51,7 +51,7 @@ $(document).ready(function () {
                     modal
                         .find('.modal-body span')
                         .text(
-                            `${timer['structure_display_name']} @ ${timer['eve_time']}`
+                            `${timer['structure_display_name']} @ ${timer['date']}`
                         );
                     modal
                         .find('.modal-body img')
@@ -90,7 +90,7 @@ $(document).ready(function () {
         { data: 'objective_name' },
         { data: 'owner_name' },
         { data: 'visibility' },
-        { data: 'opsec' }
+        { data: 'opsec_str' }
     ];
     var idx_start = 7
     var filterDropDown = {
@@ -189,10 +189,10 @@ $(document).ready(function () {
         table_current.rows().every(function () {
             var d = this.data();
             if (!d['is_passed']) {
-                eve_time = moment(d['eve_time']).utc()
-                eve_time_str = eve_time.format('YYYY-MM-DD HH:mm')
+                date = moment(d['date']).utc()
+                date_str = date.format('YYYY-MM-DD HH:mm')
                 duration = moment.duration(
-                    eve_time - moment(), 'milliseconds'
+                    date - moment(), 'milliseconds'
                 );
                 if (duration > 0) {
                     countdown_str = getDurationString(duration);
@@ -200,7 +200,7 @@ $(document).ready(function () {
                 else {
                     countdown_str = 'EXPIRED';
                 }
-                d['time'] = eve_time_str + '<br>' + countdown_str;
+                d['time'] = date_str + '<br>' + countdown_str;
                 table_current
                     .row(this)
                     .data(d)

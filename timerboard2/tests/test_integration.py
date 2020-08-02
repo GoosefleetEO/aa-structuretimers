@@ -17,21 +17,21 @@ class TestTimerList(LoadTestDataMixin, WebTest):
         cls.user_2 = create_test_user(cls.character_2)
         cls.timer_1 = Timer.objects.create(
             details="Timer 1",
-            eve_time=now() + timedelta(hours=4),
+            date=now() + timedelta(hours=4),
             eve_character=cls.character_1,
             eve_corp=cls.corporation_1,
             user=cls.user_1,
         )
         cls.timer_2 = Timer.objects.create(
             details="Timer 2",
-            eve_time=now() - timedelta(hours=8),
+            date=now() - timedelta(hours=8),
             eve_character=cls.character_1,
             eve_corp=cls.corporation_1,
             user=cls.user_1,
         )
         cls.timer_3 = Timer.objects.create(
             details="Timer 3",
-            eve_time=now() - timedelta(hours=8),
+            date=now() - timedelta(hours=8),
             eve_character=cls.character_1,
             eve_corp=cls.corporation_1,
             user=cls.user_1,
