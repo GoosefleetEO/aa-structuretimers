@@ -135,7 +135,7 @@ class TimerForm(forms.ModelForm):
 
         timer.date = date
         timer.eve_character = character
-        timer.eve_corp = corporation
+        timer.eve_corporation = corporation
         timer.user = self.user
         if commit:
             timer.save()

@@ -18,11 +18,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     license="MIT",
-    description="Timerboard2 plugin app for Alliance Auth",
+    description=(
+        "An app for keeping track of Eve Online structure timers with Alliance Auth"
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="John Doe",
-    author_email="john.doe@timerboard2.com",
+    author="Erik Kalkoken",
+    author_email="kalkoken87@gmail.com",
     classifiers=[
         "Environment :: Web Environment",
         "Framework :: Django",
@@ -32,7 +34,16 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    ],
+    python_requires="~=3.6",
+    install_requires=[
+        "django-eveuniverse",
+        "redis-simple-mq",
+        "dhooks_lite>=0.5.0",
+        "django-multiselectfield",
     ],
 )

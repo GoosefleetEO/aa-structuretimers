@@ -57,7 +57,7 @@ def _timers_visible_to_user(user):
     user_alliance_ids = {x["character__alliance_id"] for x in user_ids}
 
     timers_qs = Timer.objects.select_related(
-        "structure_type", "eve_corp", "eve_alliance"
+        "structure_type", "eve_corporation", "eve_alliance"
     )
 
     if not user.has_perm("timerboard2.view_opsec_timer"):
@@ -68,7 +68,7 @@ def _timers_visible_to_user(user):
         | timers_qs.filter(user=user)
         | timers_qs.filter(
             visibility=Timer.VISIBILITY_CORPORATION,
-            eve_corp__corporation_id__in=user_corporation_ids,
+            eve_corporation__corporation_id__in=user_corporation_ids,
         )
         | timers_qs.filter(
             visibility=Timer.VISIBILITY_ALLIANCE,
@@ -96,7 +96,7 @@ def timer_list_data(request, tab_name):
         "eve_solar_system__eve_constellation__eve_region",
         "structure_type",
         "eve_character",
-        "eve_corp",
+        "eve_corporation",
         "eve_alliance",
     )
     data = list()
@@ -178,8 +178,8 @@ def timer_list_data(request, tab_name):
         name = format_html("{}<br>{}", timer.structure_name, owner)
 
         # creator
-        if timer.eve_corp:
-            corporation_name = timer.eve_corp.corporation_name
+        if timer.eve_corporation:
+            corporation_name = timer.eve_corporation.corporation_name
         else:
             corporation_name = ""
         creator = format_html(

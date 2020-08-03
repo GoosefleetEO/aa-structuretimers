@@ -43,7 +43,7 @@ class TimerboardViewsTestCase(WebTest):
             is_important=True,
             corp_timer=False,
             eve_character=character,
-            eve_corp=character.corporation,
+            eve_corporation=character.corporation,
             user=self.user,
         )
         self.corp_timer = Timer.objects.create(
@@ -56,7 +56,7 @@ class TimerboardViewsTestCase(WebTest):
             is_important=False,
             corp_timer=True,
             eve_character=character,
-            eve_corp=character.corporation,
+            eve_corporation=character.corporation,
             user=self.user,
         )
         self.other_corp_timer = Timer.objects.create(
@@ -69,7 +69,7 @@ class TimerboardViewsTestCase(WebTest):
             is_important=False,
             corp_timer=True,
             eve_character=other_character,
-            eve_corp=other_character.corporation,
+            eve_corporation=other_character.corporation,
             user=self.user,
         )
         self.expired_timer = Timer.objects.create(
@@ -82,7 +82,7 @@ class TimerboardViewsTestCase(WebTest):
             is_important=True,
             corp_timer=False,
             eve_character=character,
-            eve_corp=character.corporation,
+            eve_corporation=character.corporation,
             user=self.user,
         )
 

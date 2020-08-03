@@ -19,20 +19,20 @@ class TestTimerList(LoadTestDataMixin, WebTest):
             details="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=cls.character_1,
-            eve_corp=cls.corporation_1,
+            eve_corporation=cls.corporation_1,
             user=cls.user_1,
         )
         cls.timer_2 = Timer.objects.create(
             details="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=cls.character_1,
-            eve_corp=cls.corporation_1,
+            eve_corporation=cls.corporation_1,
             user=cls.user_1,
         )
         cls.timer_3 = Timer.objects.create(
             details="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=cls.character_1,
-            eve_corp=cls.corporation_1,
+            eve_corporation=cls.corporation_1,
             user=cls.user_1,
         )
