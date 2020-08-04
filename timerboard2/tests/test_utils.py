@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import translation
 from django.utils.html import mark_safe
@@ -24,8 +25,9 @@ from ..utils import (
     create_link_html,
     add_bs_label_html,
     get_site_base_url,
-    JsonDateTimeDecoder,
-    JsonDateTimeEncoder,
+    JSONDateTimeDecoder,
+    JSONDateTimeEncoder,
+    generate_invalid_pk,
 )
 from ..utils import set_test_logger
 
@@ -292,6 +294,15 @@ class TestGetSiteBaseUrl(NoSocketsTestCase):
 class TestJsonSerializer(NoSocketsTestCase):
     def test_encode_decode(self):
         my_dict = {"alpha": "hello", "bravo": now()}
-        my_json = json.dumps(my_dict, cls=JsonDateTimeEncoder)
-        my_dict_new = json.loads(my_json, cls=JsonDateTimeDecoder)
+        my_json = json.dumps(my_dict, cls=JSONDateTimeEncoder)
+        my_dict_new = json.loads(my_json, cls=JSONDateTimeDecoder)
         self.assertDictEqual(my_dict, my_dict_new)
+
+
+class TestGenerateInvalidPk(NoSocketsTestCase):
+    def test_normal(self):
+        User.objects.all().delete()
+        User.objects.create(username="John Doe", password="dummy")
+        invalid_pk = generate_invalid_pk(User)
+        with self.assertRaises(User.DoesNotExist):
+            User.objects.get(pk=invalid_pk)

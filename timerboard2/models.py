@@ -29,8 +29,8 @@ from .app_settings import TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS
 from .managers import TimerManager
 from .utils import (
     LoggerAddTag,
-    JsonDateTimeDecoder,
-    JsonDateTimeEncoder,
+    JSONDateTimeDecoder,
+    JSONDateTimeEncoder,
     DATETIME_FORMAT,
 )
 
@@ -43,7 +43,10 @@ class General(models.Model):
     class Meta:
         managed = False
         default_permissions = ()
-        permissions = (("basic_access", "Can access this app"),)
+        permissions = (
+            ("basic_access", "Can access this app"),
+            ("timer_management", "Can create and edit timers"),
+        )
 
 
 class DiscordWebhook(models.Model):
@@ -81,17 +84,18 @@ class DiscordWebhook(models.Model):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._queue = SimpleMQ(
-            cache.get_master_client(), f"{__title__}_webhook_{self.pk}"
+        self._main_queue = SimpleMQ(
+            cache.get_master_client(), f"{__title__}_webhook_{self.pk}_main"
+        )
+        self._error_queue = SimpleMQ(
+            cache.get_master_client(), f"{__title__}_webhook_{self.pk}_errors"
         )
 
     def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
-        return "{}(id={}, name='{}')".format(
-            self.__class__.__name__, self.id, self.name
-        )
+        return f"{self.__class__.__name__}(id={self.id}, name='{self.name}')"
 
     def send_message(
         self,
@@ -104,40 +108,57 @@ class DiscordWebhook(models.Model):
         """Adds Discord message to queue for later sending
         
         Returns updated size of queue
+        Raises ValueError if mesage is incomplete
         """
+        if not content and not embeds:
+            raise ValueError("Message must have content or embeds to be valid")
+
         if embeds:
             embeds_list = [obj.asdict() for obj in embeds]
         else:
             embeds_list = None
 
-        message = {
-            "content": content,
-            "embeds": embeds_list,
-            "tts": tts,
-            "username": username,
-            "avatar_url": avatar_url,
-        }
-        return self._queue.enqueue(json.dumps(message, cls=JsonDateTimeEncoder))
+        message = dict()
+        if content:
+            message["content"] = content
+        if embeds_list:
+            message["embeds"] = embeds_list
+        if tts:
+            message["tts"] = tts
+        if username:
+            message["username"] = username
+        if avatar_url:
+            message["avatar_url"] = avatar_url
+
+        return self._main_queue.enqueue(json.dumps(message, cls=JSONDateTimeEncoder))
 
     def send_queued_messages(self) -> int:
         """sends all messages in the queue to this webhook
         
         returns number of successfull sent messages
 
-        Killmails that could not be sent are put back into the queue for later retry
+        Messages that could not be sent are put back into the queue for later retry
         """
         message_count = 0
         while True:
-            message_json = self._queue.dequeue()
+            message_json = self._main_queue.dequeue()
             if message_json:
-                message = json.loads(message_json, cls=JsonDateTimeDecoder)
+                message = json.loads(message_json, cls=JSONDateTimeDecoder)
                 logger.debug("Sending message to webhook %s", self)
-                sleep(self.SEND_DELAY)
-                if self._send_message(message):
+                if self.send_message_to_webhook(message):
                     message_count += 1
                 else:
-                    self.add_killmail_to_queue(message_json)
+                    self._error_queue.enqueue(message_json)
 
+                sleep(self.SEND_DELAY)
+
+            else:
+                break
+
+        while True:
+            message_json = self._error_queue.dequeue()
+            if message_json:
+                self._main_queue.enqueue(message_json)
             else:
                 break
 
@@ -145,13 +166,13 @@ class DiscordWebhook(models.Model):
 
     def queue_size(self) -> int:
         """returns current size of the queue"""
-        return self._queue.size()
+        return self._main_queue.size()
 
     def clear_queue(self) -> int:
-        """deletes all killmails from the queue. Return number of cleared messages."""
+        """deletes all messages from the queue. Returns number of cleared messages."""
         counter = 0
         while True:
-            y = self._queue.dequeue()
+            y = self._main_queue.dequeue()
             if y is None:
                 break
             else:
@@ -159,8 +180,8 @@ class DiscordWebhook(models.Model):
 
         return counter
 
-    def _send_message(self, message: dict) -> bool:
-        """send message to webhook
+    def send_message_to_webhook(self, message: dict) -> bool:
+        """sends message directly to webhook
         
         returns True if successful, else False        
         """
@@ -200,8 +221,11 @@ class DiscordWebhook(models.Model):
     def send_test_message(self) -> Tuple[str, bool]:
         """Sends a test notification to this webhook and returns send report"""
         try:
-            message = {"content": f"Test message from {__title__}"}
-            success = self._send_message(message)
+            message = {
+                "content": f"Test message from {__title__}",
+                "username": __title__,
+            }
+            success = self.send_message_to_webhook(message)
         except Exception as ex:
             logger.warning(
                 "Failed to send test notification to webhook %s: %s",
@@ -409,6 +433,36 @@ class Timer(models.Model):
             label_type = "default"
         return label_type
 
+    def send_notification(self, webhook: DiscordWebhook) -> None:
+        """sends notification for given self to given webhook"""
+        minutes = round((now() - self.date).total_seconds() / 60)
+        content = f"The following self is coming out in less than {minutes} minutes:"
+
+        structure_type_name = self.structure_type.name
+        solar_system_name = self.eve_solar_system.name
+        title = f"{structure_type_name} in {solar_system_name}"
+
+        region_name = self.eve_solar_system.eve_constellation.eve_region.name
+        solar_system_link = webhook.create_discord_link(
+            name=solar_system_name, url=dotlan.solar_system_url(solar_system_name)
+        )
+        solar_system_text = f"{solar_system_link} ({region_name})"
+        near_text = f" near {self.location_details}" if self.location_details else ""
+        owned_text = f" owned by **{self.owner_name}**" if self.owner_name else ""
+        description = (
+            f"An **{structure_type_name}** in {solar_system_text}{near_text}{owned_text} "
+            f"is coming out of **{self.get_timer_type_display()}** self at "
+            f"**{self.date.strftime(DATETIME_FORMAT)}**. "
+            f"Our stance is **{self.get_objective_display()}**."
+        )
+        structure_icon_url = self.structure_type.icon_url(size=128)
+        embed = dhooks_lite.Embed(
+            title=title,
+            description=description,
+            thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
+        )
+        webhook.send_message(content=content, embeds=[embed], username=__title__)
+
 
 class NotificationRule(models.Model):
 
@@ -483,12 +537,17 @@ class NotificationRule(models.Model):
     def __str__(self) -> str:
         return f"Notification Rule #{self.id}"
 
-    def process_timers(self):
-        from .tasks import send_messages_for_webhook
+    def process_timers(self) -> List[int]:
+        """Checks which unprocessed timers match this notification rule 
+        and send notifications for all matching timers
 
+        Returns list of matching timer PKs
+        """
+        send_messages_for_webhook = self._import_send_messages_for_webhook()
         threshold_date = now() - timedelta(
             minutes=TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS
         )
+        matching_timer_pks = list()
         for timer in Timer.objects.filter(date__gt=threshold_date).exclude(
             timernotificationprocessed__notification_rule=self
         ):
@@ -511,8 +570,8 @@ class NotificationRule(models.Model):
 
             if is_matching:
                 for webhook in self.webhooks.filter(is_enabled=True):
-                    self.send_timer_notification(webhook, timer)
-                    send_messages_for_webhook.delay(webhook_pk=webhook.pk)
+                    timer.send_notification(webhook=webhook)
+                    matching_timer_pks.append(timer.pk)
                     try:
                         TimerNotificationProcessed.objects.create(
                             timer=timer, notification_rule=self
@@ -520,35 +579,16 @@ class NotificationRule(models.Model):
                     except IntegrityError:
                         pass
 
-    def send_timer_notification(self, webhook: DiscordWebhook, timer: Timer) -> None:
-        """sends notification for given timer to given webhook"""
-        minutes = round((now() - timer.date).total_seconds() / 60)
-        content = f"The following timer is coming out in less than {minutes} minutes:"
+                for webhook in self.webhooks.filter(is_enabled=True):
+                    send_messages_for_webhook.delay(webhook_pk=webhook.pk)
 
-        structure_type_name = timer.structure_type.name
-        solar_system_name = timer.eve_solar_system.name
-        title = f"{structure_type_name} in {solar_system_name}"
+        return matching_timer_pks
 
-        region_name = timer.eve_solar_system.eve_constellation.eve_region.name
-        solar_system_link = webhook.create_discord_link(
-            name=solar_system_name, url=dotlan.solar_system_url(solar_system_name)
-        )
-        solar_system_text = f"{solar_system_link} ({region_name})"
-        near_text = f" near {timer.location_details}" if timer.location_details else ""
-        owned_text = f" owned by **{timer.owner_name}**" if timer.owner_name else ""
-        description = (
-            f"An **{structure_type_name}** in {solar_system_text}{near_text}{owned_text} "
-            f"is coming out of **{timer.get_timer_type_display()}** timer at "
-            f"**{timer.date.strftime(DATETIME_FORMAT)}**. "
-            f"Our stance is **{timer.get_objective_display()}**."
-        )
-        structure_icon_url = timer.structure_type.icon_url(size=128)
-        embed = dhooks_lite.Embed(
-            title=title,
-            description=description,
-            thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
-        )
-        webhook.send_message(content=content, embeds=[embed])
+    @staticmethod
+    def _import_send_messages_for_webhook() -> object:
+        from .tasks import send_messages_for_webhook
+
+        return send_messages_for_webhook
 
     @classmethod
     def get_timer_type_display(cls, value: Any) -> str:
@@ -570,6 +610,7 @@ class NotificationRule(models.Model):
 
 
 class TimerNotificationProcessed(models.Model):
+    """Marks timers as processed by a notification rule"""
 
     timer = models.ForeignKey(Timer, on_delete=models.CASCADE)
     notification_rule = models.ForeignKey(NotificationRule, on_delete=models.CASCADE)

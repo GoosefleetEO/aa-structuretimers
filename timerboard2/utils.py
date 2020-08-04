@@ -12,6 +12,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.messages.constants import DEBUG, ERROR, SUCCESS, WARNING, INFO
 from django.contrib import messages
+from django.db import models
 from django.test import TestCase
 from django.utils.functional import lazy
 from django.utils.html import format_html, mark_safe
@@ -375,7 +376,7 @@ def create_fa_button_html(
     )
 
 
-class JsonDateTimeDecoder(json.JSONDecoder):
+class JSONDateTimeDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs) -> None:
         json.JSONDecoder.__init__(
             self, object_hook=self.dict_to_object, *args, **kwargs
@@ -396,10 +397,10 @@ class JsonDateTimeDecoder(json.JSONDecoder):
             return dct
 
 
-class JsonDateTimeEncoder(json.JSONEncoder):
+class JSONDateTimeEncoder(json.JSONEncoder):
     """ Instead of letting the default encoder convert datetime to string,
         convert datetime objects into a dict, which can be decoded by the
-        JsonDateTimeDecoder
+        JSONDateTimeDecoder
     """
 
     def default(self, o: Any) -> Any:
@@ -417,3 +418,8 @@ class JsonDateTimeEncoder(json.JSONEncoder):
             }
         else:
             return json.JSONEncoder.default(self, o)
+
+
+def generate_invalid_pk(MyModel: models.Model) -> int:
+    """return an invalid PK for the given Django model"""
+    return MyModel.objects.aggregate(models.Max("pk"))["pk__max"] + 1

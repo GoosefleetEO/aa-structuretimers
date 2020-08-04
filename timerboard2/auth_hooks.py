@@ -16,7 +16,7 @@ class TimersMenuItem(MenuItemHook):
             _("Timerboard"),
             "far fa-calendar-times",
             "timerboard2:timer_list",
-            navactive=["timerboard2:index"],
+            navactive=["timerboard2:timer_list"],
         )
 
     def render(self, request):

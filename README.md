@@ -7,7 +7,9 @@ An app for keeping track of structure timers
 ## Contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Installation](#installation)
+- [Permissions](#permissions)
 - [Management commands](#management-commands)
 
 ## Overview
@@ -27,6 +29,20 @@ But also comes with many of the additional features that have been requested by 
 - Create timers more quickly and precisely with autocomplete for solar system and structure types
 - Find timers more quickly with category based filters and search
 - Improved UI
+
+## Screenshots
+
+### List of timers
+
+![timerboard](https://i.imgur.com/LXsvyvY.png)
+
+### Details for a timer
+
+![timerboard](https://i.imgur.com/ZEbl2Vc.png)
+
+### Creating a new timer
+
+![timerboard](https://i.imgur.com/LPCEQNr.png)
 
 ## Installation
 
@@ -54,9 +70,9 @@ Configure your Auth settings (`local.py`) as follows:
 - Add below lines to your settings file:
 
 ```python
-CELERYBEAT_SCHEDULE['timerboard2_run_killtracker'] = {
-    'task': 'timerboard2.tasks.run_killtracker',
-    'schedule': crontab(minute='*/1'),
+CELERYBEAT_SCHEDULE['timerboard2_send_notifications'] = {
+    'task': 'timerboard2.tasks.send_notifications',
+    'schedule': crontab(minute='*/2'),
 }
 ```
 
@@ -88,6 +104,26 @@ python manage.py timerboard_load_eve
 ```
 
 You may want to wait until the data loading is complete before starting to create new timers.
+
+## Settings
+
+Here is a list of available settings for this app. They can be configured by adding them to your Auth settings file (`local.py`).
+
+Note that all settings are optional and the app will use the documented default settings if they are not used.
+
+Name | Description | Default
+-- | -- | --
+`TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS`| Will not sent notifications for timers, which event time is older than the given minutes | `60`
+
+## Permissions
+
+Here are all relevant permissions:
+
+Codename | Description
+-- | --
+`timerboard2.basic_access` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
+`timerboard2.timer_management` | Users with this permission can create new timers and edit existing timers.
+`timerboard2.view_opsec_timer` | Users with this permission can create and view timers that are opsec restricted.
 
 ## Management commands
 

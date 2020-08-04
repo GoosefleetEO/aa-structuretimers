@@ -296,7 +296,7 @@ class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 
 class TimerManagementView(BaseTimerView):
-    permission_required = "auth.timer_management"
+    permission_required = "timerboard2.timer_management"
     index_redirect = "timerboard2:timer_list"
     success_url = reverse_lazy(index_redirect)
     model = Timer

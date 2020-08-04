@@ -45,7 +45,8 @@ def process_notification_rules(rule_pk: int) -> None:
 
 
 @shared_task
-def process_all():
+def send_notifications():
+    """Main task for sending timer notifications"""
     for rule in NotificationRule.objects.filter(is_enabled=True):
         process_notification_rules.delay(rule.pk)
 
