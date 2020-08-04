@@ -433,10 +433,13 @@ class Timer(models.Model):
             label_type = "default"
         return label_type
 
-    def send_notification(self, webhook: DiscordWebhook) -> None:
+    def send_notification(self, webhook: DiscordWebhook, ping_text: str = None) -> None:
         """sends notification for given self to given webhook"""
-        minutes = round((now() - self.date).total_seconds() / 60)
-        content = f"The following self is coming out in less than {minutes} minutes:"
+        content = f"{ping_text} " if ping_text else ""
+        minutes = round((self.date - now()).total_seconds() / 60)
+        content += (
+            f"The following timer is coming out in less than **{minutes}** minutes:"
+        )
 
         structure_type_name = self.structure_type.name
         solar_system_name = self.eve_solar_system.name
@@ -468,21 +471,30 @@ class NotificationRule(models.Model):
 
     MINUTES_0 = 0
     MINUTES_5 = 5
+    MINUTES_10 = 10
     MINUTES_15 = 15
     MINUTES_30 = 30
+    MINUTES_45 = 45
+    MINUTES_60 = 60
+    MINUTES_120 = 120
+
     MINUTES_CHOICES = (
         (MINUTES_0, "0"),
         (MINUTES_5, "5"),
+        (MINUTES_10, "10"),
         (MINUTES_15, "15"),
         (MINUTES_30, "30"),
+        (MINUTES_45, "45"),
+        (MINUTES_60, "60"),
+        (MINUTES_120, "120"),
     )
     PING_TYPE_NONE = "PN"
     PING_TYPE_HERE = "PH"
-    PING_TYPE_EVERYBODY = "PE"
+    PING_TYPE_EVERYONE = "PE"
     PING_TYPE_CHOICES = (
         (PING_TYPE_NONE, "(no ping)"),
         (PING_TYPE_HERE, "@here"),
-        (PING_TYPE_EVERYBODY, "@everybody"),
+        (PING_TYPE_EVERYONE, "@everyone"),
     )
 
     minutes = models.PositiveIntegerField(
@@ -537,6 +549,10 @@ class NotificationRule(models.Model):
     def __str__(self) -> str:
         return f"Notification Rule #{self.id}"
 
+    @property
+    def ping_type_text(self) -> str:
+        return self.ping_type_to_text(self.ping_type)
+
     def process_timers(self) -> List[int]:
         """Checks which unprocessed timers match this notification rule 
         and send notifications for all matching timers
@@ -570,7 +586,9 @@ class NotificationRule(models.Model):
 
             if is_matching:
                 for webhook in self.webhooks.filter(is_enabled=True):
-                    timer.send_notification(webhook=webhook)
+                    timer.send_notification(
+                        webhook=webhook, ping_text=self.ping_type_text
+                    )
                     matching_timer_pks.append(timer.pk)
                     try:
                         TimerNotificationProcessed.objects.create(
@@ -583,6 +601,16 @@ class NotificationRule(models.Model):
                     send_messages_for_webhook.delay(webhook_pk=webhook.pk)
 
         return matching_timer_pks
+
+    @classmethod
+    def ping_type_to_text(cls, ping_type: str) -> str:
+        """returns the text for creating the given ping on Discord"""
+        my_map = {
+            NotificationRule.PING_TYPE_NONE: "",
+            NotificationRule.PING_TYPE_HERE: "@here",
+            NotificationRule.PING_TYPE_EVERYONE: "@everyone",
+        }
+        return my_map[ping_type] if ping_type in my_map else ""
 
     @staticmethod
     def _import_send_messages_for_webhook() -> object:

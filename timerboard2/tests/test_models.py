@@ -83,6 +83,21 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
 
         self.assertEqual(mock_send_message.call_count, 1)
 
+    def test_with_ping_type(self, mock_send_message):
+        timer = Timer.objects.create(
+            structure_name="Test",
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now(),
+        )
+
+        timer.send_notification(self.webhook, "@here")
+
+        self.assertEqual(mock_send_message.call_count, 1)
+        _, kwargs = mock_send_message.call_args
+        self.assertIn("@here", kwargs["content"])
+
 
 @patch(MODULE_PATH + ".NotificationRule._import_send_messages_for_webhook")
 @patch(MODULE_PATH + ".Timer.send_notification")
