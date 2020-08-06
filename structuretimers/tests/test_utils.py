@@ -32,7 +32,7 @@ from ..utils import (
 from ..utils import set_test_logger
 
 
-MODULE_PATH = "timerboard2.utils"
+MODULE_PATH = "structuretimers.utils"
 logger = set_test_logger(MODULE_PATH, __file__)
 
 

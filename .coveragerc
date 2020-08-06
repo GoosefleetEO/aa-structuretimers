@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = timerboard2
+source = structuretimers
 
 [report]
 exclude_lines =

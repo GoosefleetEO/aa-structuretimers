@@ -36,18 +36,18 @@ MAX_HOURS_PASSED = 2
 
 
 @login_required
-@permission_required("timerboard2.basic_access")
+@permission_required("structuretimers.basic_access")
 def timer_list(request):
     context = {
         "current_time": now().strftime("%Y-%m-%d %H:%M:%S"),
         "max_hours_expired": MAX_HOURS_PASSED,
         "title": __title__,
     }
-    return render(request, "timerboard2/timer_list.html", context=context)
+    return render(request, "structuretimers/timer_list.html", context=context)
 
 
 def _timers_visible_to_user(user):
-    """returns queryset of all timerboard2 visible to the given user"""
+    """returns queryset of all structuretimers visible to the given user"""
     user_ids = list(
         user.character_ownerships.select_related("character").values(
             "character__corporation_id", "character__alliance_id"
@@ -60,7 +60,7 @@ def _timers_visible_to_user(user):
         "structure_type", "eve_corporation", "eve_alliance"
     )
 
-    if not user.has_perm("timerboard2.view_opsec_timer"):
+    if not user.has_perm("structuretimers.view_opsec_timer"):
         timers_qs = timers_qs.exclude(is_opsec=True)
 
     timers_qs = (
@@ -79,7 +79,7 @@ def _timers_visible_to_user(user):
 
 
 @login_required
-@permission_required("timerboard2.basic_access")
+@permission_required("structuretimers.basic_access")
 def timer_list_data(request, tab_name):
     """returns timer list in JSON for AJAX call in timer_list view"""
 
@@ -226,14 +226,14 @@ def timer_list_data(request, tab_name):
         if request.user.has_perm("timer_management"):
             actions += (
                 create_fa_button_html(
-                    reverse("timerboard2:delete", args=(timer.pk,)),
+                    reverse("structuretimers:delete", args=(timer.pk,)),
                     "far fa-trash-alt",
                     "danger",
                     "Delete this timer",
                 )
                 + "&nbsp;"
                 + create_fa_button_html(
-                    reverse("timerboard2:edit", args=(timer.pk,)),
+                    reverse("structuretimers:edit", args=(timer.pk,)),
                     "far fa-edit",
                     "warning",
                     "Edit this timer",
@@ -270,7 +270,7 @@ def timer_list_data(request, tab_name):
 
 
 @login_required
-@permission_required("timerboard2.basic_access")
+@permission_required("structuretimers.basic_access")
 def get_timer_data(request, pk):
     """returns data for a timer"""
     timers_qs = _timers_visible_to_user(request.user)
@@ -296,8 +296,8 @@ class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 
 class TimerManagementView(BaseTimerView):
-    permission_required = "timerboard2.timer_management"
-    index_redirect = "timerboard2:timer_list"
+    permission_required = "structuretimers.timer_management"
+    index_redirect = "structuretimers:timer_list"
     success_url = reverse_lazy(index_redirect)
     model = Timer
     form_class = TimerForm
@@ -362,7 +362,7 @@ class RemoveTimerView(TimerManagementView, DeleteView):
 
 
 @login_required
-@permission_required("timerboard2.basic_access")
+@permission_required("structuretimers.basic_access")
 def select2_solar_systems(request):
     term = request.GET.get("term")
     if term:
@@ -379,7 +379,7 @@ def select2_solar_systems(request):
 
 
 @login_required
-@permission_required("timerboard2.basic_access")
+@permission_required("structuretimers.basic_access")
 def select2_structure_types(request):
     term = request.GET.get("term")
     if term:

@@ -21,9 +21,9 @@ def get_json_response(response: object):
     return json.loads(response.content.decode("utf-8"))
 
 
-@patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestListData(LoadTestDataMixin, TestCase):
-    @patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -65,7 +65,7 @@ class TestListData(LoadTestDataMixin, TestCase):
         self.timer_3.save()
 
     def test_timer_list_view_loads(self):
-        request = self.factory.get(reverse("timerboard2:timer_list"))
+        request = self.factory.get(reverse("structuretimers:timer_list"))
         request.user = self.user_1
         response = views.timer_list(request)
         self.assertEqual(response.status_code, 200)
@@ -76,7 +76,7 @@ class TestListData(LoadTestDataMixin, TestCase):
         if not user:
             user = self.user_1
         request = self.factory.get(
-            reverse("timerboard2:timer_list_data", args=[tab_name])
+            reverse("structuretimers:timer_list_data", args=[tab_name])
         )
         request.user = user
         response = views.timer_list_data(request, tab_name)
@@ -162,7 +162,7 @@ class TestListData(LoadTestDataMixin, TestCase):
 
     def test_show_opsec_restricted_to_opsec_member(self):
         AuthUtils.add_permission_to_user_by_name(
-            "timerboard2.view_opsec_timer", self.user_1
+            "structuretimers.view_opsec_timer", self.user_1
         )
         timer_4 = Timer(
             structure_name="Timer 4",
@@ -197,7 +197,7 @@ class TestListData(LoadTestDataMixin, TestCase):
 
     def test_dont_show_opsec_corp_restricted_to_opsec_member_other_corp(self):
         AuthUtils.add_permission_to_user_by_name(
-            "timerboard2.view_opsec_timer", self.user_1
+            "structuretimers.view_opsec_timer", self.user_1
         )
         timer = Timer(
             structure_name="Timer 4",
@@ -232,9 +232,9 @@ class TestListData(LoadTestDataMixin, TestCase):
         self.assertSetEqual(timer_ids, expected)
 
 
-@patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestGetTimerData(LoadTestDataMixin, TestCase):
-    @patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -255,7 +255,7 @@ class TestGetTimerData(LoadTestDataMixin, TestCase):
 
     def test_normal(self):
         request = self.factory.get(
-            reverse("timerboard2:get_timer_data", args=[self.timer_1.pk])
+            reverse("structuretimers:get_timer_data", args=[self.timer_1.pk])
         )
         request.user = self.user_1
         response = views.get_timer_data(request, self.timer_1.pk)
@@ -271,7 +271,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
 
     def test_normal(self):
         request = self.factory.get(
-            reverse("timerboard2:select2_solar_systems"), data={"term": "abu"}
+            reverse("structuretimers:select2_solar_systems"), data={"term": "abu"}
         )
         request.user = self.user_1
         response = views.select2_solar_systems(request)

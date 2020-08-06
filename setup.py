@@ -1,7 +1,7 @@
 import os
 from setuptools import find_packages, setup
 
-from timerboard2 import __version__
+from structuretimers import __version__
 
 
 # read the contents of your README file
@@ -13,7 +13,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name="aa-timerboard",
+    name="aa-structuretimers",
     version=__version__,
     packages=find_packages(),
     include_package_data=True,

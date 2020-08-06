@@ -66,12 +66,12 @@ pip install aa-timerboard
 
 Configure your Auth settings (`local.py`) as follows:
 
-- Add `'timerboard2'` to `INSTALLED_APPS`
+- Add `'structuretimers'` to `INSTALLED_APPS`
 - Add below lines to your settings file:
 
 ```python
 CELERYBEAT_SCHEDULE['timerboard2_send_notifications'] = {
-    'task': 'timerboard2.tasks.send_notifications',
+    'task': 'structuretimers.tasks.send_notifications',
     'schedule': crontab(minute='*/2'),
 }
 ```
@@ -100,7 +100,7 @@ python manage.py eveuniverse_load_data map
 ```
 
 ```bash
-python manage.py timerboard_load_eve
+python manage.py structuretimers_load_eve
 ```
 
 You may want to wait until the data loading is complete before starting to create new timers.
@@ -121,12 +121,12 @@ Here are all relevant permissions:
 
 Codename | Description
 -- | --
-`timerboard2.basic_access` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
-`timerboard2.timer_management` | Users with this permission can create new timers and edit existing timers.
-`timerboard2.view_opsec_timer` | Users with this permission can create and view timers that are opsec restricted.
+`structuretimers.basic_access` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
+`structuretimers.timer_management` | Users with this permission can create new timers and edit existing timers.
+`structuretimers.view_opsec_timer` | Users with this permission can create and view timers that are opsec restricted.
 
 ## Management commands
 
 The following management commands are available:
 
-- **timerboard_load_eve**: Preload all eve objects required for this app to function
+- **structuretimers_load_eve**: Preload all eve objects required for this app to function

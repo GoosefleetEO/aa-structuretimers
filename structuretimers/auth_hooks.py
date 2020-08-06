@@ -3,7 +3,7 @@ from django.utils.translation import ugettext_lazy as _
 from allianceauth.services.hooks import MenuItemHook, UrlHook
 from allianceauth import hooks
 
-from . import urls
+from . import urls, __title__
 
 
 class TimersMenuItem(MenuItemHook):
@@ -13,14 +13,14 @@ class TimersMenuItem(MenuItemHook):
         # setup menu entry for sidebar
         MenuItemHook.__init__(
             self,
-            _("Timerboard"),
+            _(__title__),
             "far fa-calendar-times",
-            "timerboard2:timer_list",
-            navactive=["timerboard2:timer_list"],
+            "structuretimers:timer_list",
+            navactive=["structuretimers:timer_list"],
         )
 
     def render(self, request):
-        if request.user.has_perm("timerboard2.basic_access"):
+        if request.user.has_perm("structuretimers.basic_access"):
             return MenuItemHook.render(self, request)
         return ""
 
@@ -32,4 +32,4 @@ def register_menu():
 
 @hooks.register("url_hook")
 def register_urls():
-    return UrlHook(urls, "timerboard2", r"^timerboard/")
+    return UrlHook(urls, "structuretimers", r"^structuretimers/")

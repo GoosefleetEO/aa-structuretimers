@@ -59,7 +59,7 @@ STRUCTURE_CHOICES = [
     (STRUCTURE_TYPE_PHAROLUX, "Pharolux Cyno Beacon"),
     (STRUCTURE_TYPE_TENEBREX, "Tenebrex Cyno Jammer"),
     (STRUCTURE_TYPE_ANSIBLEX, "Ansiblex Jump Gate"),
-    (STRUCTURE_TYPE_AZBEL, "Moon Mining Cycle"),
+    (STRUCTURE_TYPE_ATHANOR, "Moon Mining Cycle"),
 ]
 
 

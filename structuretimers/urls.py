@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from . import views
 
-app_name = "timerboard2"
+app_name = "structuretimers"
 
 urlpatterns = [
     url(r"^$", views.timer_list, name="timer_list"),

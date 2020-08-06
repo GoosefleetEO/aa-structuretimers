@@ -15,7 +15,7 @@ from ..models import DiscordWebhook, NotificationRule, Timer, models
 from ..utils import JSONDateTimeDecoder, NoSocketsTestCase
 
 
-MODULE_PATH = "timerboard2.models"
+MODULE_PATH = "structuretimers.models"
 
 
 class TestTimer(LoadTestDataMixin, TestCase):

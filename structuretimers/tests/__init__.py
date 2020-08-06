@@ -27,7 +27,7 @@ def create_test_user(character: EveCharacter) -> User:
     User.objects.filter(username=character.character_name).delete()
     user = AuthUtils.create_user(character.character_name)
     add_main_to_user(user, character)
-    AuthUtils.add_permission_to_user_by_name("timerboard2.basic_access", user)
+    AuthUtils.add_permission_to_user_by_name("structuretimers.basic_access", user)
     user = User.objects.get(pk=user.pk)
     return user
 

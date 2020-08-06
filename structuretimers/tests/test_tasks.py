@@ -14,11 +14,11 @@ from ..tasks import (
 )
 from ..utils import generate_invalid_pk
 
-MODULE_PATH = "timerboard2.tasks"
+MODULE_PATH = "structuretimers.tasks"
 
 
 class TestCaseBase(LoadTestDataMixin, TestCase):
-    @patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(
             name="Dummy", url="http://www.example.com"
@@ -154,7 +154,7 @@ class TestScheduleNotificationForRule(TestCaseBase):
         )
 
 
-@patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 @patch(MODULE_PATH + ".send_messages_for_webhook")
 class TestSendScheduledNotification(TestCaseBase):
     def test_normal(self, mock_send_messages_for_webhook):

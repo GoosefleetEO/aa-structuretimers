@@ -1,4 +1,4 @@
-{% extends "timerboard2/base.html" %}
+{% extends "structuretimers/base.html" %}
 {% load static %}
 {% load i18n %}
 
@@ -10,9 +10,9 @@
         </div>
 
         <span class="pull-right">
-            {% if perms.timerboard2.timer_management %}
+            {% if perms.structuretimers.timer_management %}
                 <a 
-                    href="{% url 'timerboard2:add' %}" 
+                    href="{% url 'structuretimers:add' %}" 
                     class="btn btn-success" 
                     title="Add new timer">
                     Add Timer
@@ -29,17 +29,17 @@
         <div class="panel panel-default">
             <div class="panel-body">
                 <div class="tab-content">            
-                    <!-- current timerboard2 tab -->
+                    <!-- current structuretimers tab -->
                     <div role="tabpanel" class="tab-pane active" id="home">
-                        {% include 'timerboard2/timer_list_table.html' with tab_name='current' %}
+                        {% include 'structuretimers/timer_list_table.html' with tab_name='current' %}
                         <p class="text-muted">
                             Timers remain on this page for {{ max_hours_expired }} hours after they expired
                         </p>
                     </div>
 
-                    <!-- past timerboard2 tab -->
+                    <!-- past structuretimers tab -->
                     <div role="tabpanel" class="tab-pane" id="profile">
-                        {% include 'timerboard2/timer_list_table.html' with tab_name='past' %} 
+                        {% include 'structuretimers/timer_list_table.html' with tab_name='past' %} 
                     </div>
                 </div>
             </div>
@@ -77,9 +77,9 @@
     <!-- share data with JS part -->
     <div 
         id="dataExport" 
-        data-listDataCurrentUrl="{% url 'timerboard2:timer_list_data' 'current' %}" 
-        data-listDataPastUrl="{% url 'timerboard2:timer_list_data' 'past' %}"
-        data-getTimerDataUrl="{% url 'timerboard2:get_timer_data' 'pk_dummy' %}"
+        data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}" 
+        data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}"
+        data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
         data-titleSolarSystem="{% trans 'Solar System' %}"
         data-titleRegion="{% trans 'Region' %}"
         data-titleStructureType="{% trans 'Structure Type' %}"
@@ -87,7 +87,7 @@
         data-titleOwner="{% trans 'Owner' %}"
         data-titleObjective="{% trans 'Objective' %}"
         data-titleVisibility="{% trans 'Visibility' %}"
-        data-hasPermOPSEC="{{ perms.timerboard2.view_opsec_timer }}"
+        data-hasPermOPSEC="{{ perms.structuretimers.view_opsec_timer }}"
     >
     </div>
     
@@ -95,12 +95,12 @@
 
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
-    <link rel="stylesheet" href="{% static 'timerboard2/timer_list.css' %}" type="text/css" media="screen">    
+    <link rel="stylesheet" href="{% static 'structuretimers/timer_list.css' %}" type="text/css" media="screen">    
 {% endblock extra_css%}
 
 {% block extra_javascript %}
     {% include 'bundles/moment-js.html' with locale=True %}            
     {% include 'bundles/datatables-js.html' %}        
     <script type="text/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'timerboard2/timer_list.js' %}"></script>
+    <script type="text/javascript" src="{% static 'structuretimers/timer_list.js' %}"></script>
 {% endblock extra_javascript %}

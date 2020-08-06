@@ -15,7 +15,7 @@ from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
 
 
-@patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestUI(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
@@ -27,11 +27,11 @@ class TestUI(LoadTestDataMixin, WebTest):
         # user 2
         cls.user_2 = create_test_user(cls.character_2)
         AuthUtils.add_permission_to_user_by_name(
-            "timerboard2.timer_management", cls.user_2
+            "structuretimers.timer_management", cls.user_2
         )
         cls.user_2 = User.objects.get(pk=cls.user_2.pk)
 
-    @patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.timer_1 = Timer(
             structure_name="Timer 1",
@@ -74,11 +74,11 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.app.set_user(self.user_2)
 
         # user opens timerboard
-        timerboard = self.app.get(reverse("timerboard2:timer_list"))
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
         self.assertEqual(timerboard.status_code, 200)
 
         # user clicks on "Add Timer"
-        add_timer = timerboard.click(href=reverse("timerboard2:add"))
+        add_timer = timerboard.click(href=reverse("structuretimers:add"))
         self.assertEqual(add_timer.status_code, 200)
 
         # user enters data and clicks create
@@ -94,7 +94,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # assert results
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("timerboard2:timer_list"))
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
 
     def test_edit_existing_timer(self):
@@ -107,11 +107,11 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.app.set_user(self.user_2)
 
         # user opens timerboard
-        timerboard = self.app.get(reverse("timerboard2:timer_list"))
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
         self.assertEqual(timerboard.status_code, 200)
 
         # user clicks on "Edit Timer" for timer 1
-        edit_timer = self.app.get(reverse("timerboard2:edit", args=[self.timer_1.pk]))
+        edit_timer = self.app.get(reverse("structuretimers:edit", args=[self.timer_1.pk]))
         self.assertEqual(edit_timer.status_code, 200)
 
         # user enters data and clicks create
@@ -122,7 +122,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # assert results
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("timerboard2:timer_list"))
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertEqual(self.timer_1.owner_name, "The Boys")
 
     def test_delete_existing_timer(self):
@@ -135,12 +135,12 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.app.set_user(self.user_2)
 
         # user opens timerboard
-        timerboard = self.app.get(reverse("timerboard2:timer_list"))
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
         self.assertEqual(timerboard.status_code, 200)
 
         # user clicks on "Delete Timer" for timer 2
         confirm_page = self.app.get(
-            reverse("timerboard2:delete", args=[self.timer_2.pk])
+            reverse("structuretimers:delete", args=[self.timer_2.pk])
         )
         self.assertEqual(confirm_page.status_code, 200)
 
@@ -150,13 +150,13 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # assert results
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("timerboard2:timer_list"))
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertFalse(Timer.objects.filter(pk=self.timer_2.pk).exists())
 
 
 """
-@patch("timerboard2.models.sleep", new=lambda x: x)
-@patch("timerboard2.models.dhooks_lite.Webhook.execute")
+@patch("structuretimers.models.sleep", new=lambda x: x)
+@patch("structuretimers.models.dhooks_lite.Webhook.execute")
 class TestSendNotifications(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(
@@ -178,9 +178,9 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True)
-@patch("timerboard2.models.sleep", new=lambda x: x)
-@patch("timerboard2.tasks.notify")
-@patch("timerboard2.models.dhooks_lite.Webhook.execute")
+@patch("structuretimers.models.sleep", new=lambda x: x)
+@patch("structuretimers.tasks.notify")
+@patch("structuretimers.models.dhooks_lite.Webhook.execute")
 class TestTestMessageToWebhook(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(

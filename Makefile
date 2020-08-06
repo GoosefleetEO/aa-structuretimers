@@ -1,5 +1,5 @@
-appname = aa-timerboard
-package = timerboard2
+appname = aa-structuretimers
+package = structuretimers
 
 help:
 	@echo "Makefile for $(appname)"	
