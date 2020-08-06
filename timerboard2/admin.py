@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.db.models.functions import Lower
+from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
-from .models import DiscordWebhook, NotificationRule, Timer
+from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 from . import tasks
 
 
@@ -62,27 +63,27 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     )
     list_filter = ("is_enabled",)
 
-    def _require_timer_type(_, obj):
+    def _require_timer_type(self, obj):
         return [
             NotificationRule.get_timer_type_display(x) for x in obj.require_timer_types
         ]
 
-    def _require_objectives(_, obj):
+    def _require_objectives(self, obj):
         return [
             NotificationRule.get_objectives_display(x) for x in obj.require_objectives
         ]
 
-    def _require_corporations(_, obj):
+    def _require_corporations(self, obj):
         return list(
             obj.require_corporations.values_list(
                 "corporation_name", flat=True
             ).order_by("corporation_name")
         )
 
-    def _webhooks(_, obj):
+    def _webhooks(self, obj):
         return list(obj.webhooks.values_list("name", flat=True).order_by("name"))
 
-    def _require_alliances(_, obj):
+    def _require_alliances(self, obj):
         return list(
             obj.require_alliances.values_list("alliance_name", flat=True).order_by(
                 "alliance_name"
@@ -109,6 +110,46 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
+@admin.register(ScheduledNotification)
+class ScheduledNotificationAdmin(admin.ModelAdmin):
+    list_select_related = ("timer", "notification_rule")
+    list_display = ("notification_date", "timer", "notification_rule", "celery_task_id")
+    list_filter = ("notification_rule",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(notification_date__gt=now()).order_by("notification_date")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Timer)
 class TimerAdmin(admin.ModelAdmin):
-    pass
+    list_select_related = ("eve_solar_system", "structure_type", "user")
+    list_filter = (
+        "timer_type",
+        ("eve_solar_system", admin.RelatedOnlyFieldListFilter),
+        ("structure_type", admin.RelatedOnlyFieldListFilter),
+        "objective",
+        "owner_name",
+        ("user", admin.RelatedOnlyFieldListFilter),
+        "is_opsec",
+    )
+    ordering = ("-date",)
+    autocomplete_fields = ["eve_solar_system", "structure_type"]
+
+    """
+    def _scheduled_notifications(self, obj):
+        return sorted(
+            [
+                x["notification_date"].strftime(DATETIME_FORMAT)
+                for x in ScheduledNotification.objects.filter(
+                    timer=obj, notification_date__gt=now()
+                ).values("notification_date", "notification_rule_id")
+            ]
+        )
+    """

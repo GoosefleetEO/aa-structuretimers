@@ -11,10 +11,11 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from . import LoadTestDataMixin, create_test_user
-from ..models import DiscordWebhook, NotificationRule, Timer
-from ..tasks import send_notifications, send_test_message_to_webhook
+from ..models import DiscordWebhook, Timer
+from ..tasks import send_test_message_to_webhook
 
 
+@patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestUI(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
@@ -30,8 +31,9 @@ class TestUI(LoadTestDataMixin, WebTest):
         )
         cls.user_2 = User.objects.get(pk=cls.user_2.pk)
 
+    @patch("timerboard2.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = Timer.objects.create(
+        self.timer_1 = Timer(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -40,7 +42,8 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
-        self.timer_2 = Timer.objects.create(
+        self.timer_1.save()
+        self.timer_2 = Timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -49,7 +52,8 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
         )
-        self.timer_3 = Timer.objects.create(
+        self.timer_2.save()
+        self.timer_3 = Timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -58,6 +62,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_enaluri,
             structure_type=self.type_astrahus,
         )
+        self.timer_3.save()
 
     def test_add_new_timer(self):
         """
@@ -149,7 +154,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertFalse(Timer.objects.filter(pk=self.timer_2.pk).exists())
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True)
+"""
 @patch("timerboard2.models.sleep", new=lambda x: x)
 @patch("timerboard2.models.dhooks_lite.Webhook.execute")
 class TestSendNotifications(LoadTestDataMixin, TestCase):
@@ -157,31 +162,19 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
         self.webhook = DiscordWebhook.objects.create(
             name="Dummy", url="http://www.example.com"
         )
-        self.rule_1 = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_15
-        )
-        self.rule_1.webhooks.add(self.webhook)
-
-        self.rule_2 = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_30
-        )
-        self.rule_2.webhooks.add(self.webhook)
+        self.rule = NotificationRule.objects.create(minutes=NotificationRule.MINUTES_0)
+        self.rule.webhooks.add(self.webhook)
 
     def test_normal(self, mock_execute):
         Timer.objects.create(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=now(),
+            date=now() + timedelta(seconds=2),
         )
-        Timer.objects.create(
-            structure_name="Test_2",
-            eve_solar_system=self.system_enaluri,
-            structure_type=self.type_astrahus,
-            date=now() + timedelta(minutes=5),
-        )
-        send_notifications.delay()
-        self.assertEqual(mock_execute.call_count, 4)
+        sleep(3)
+        self.assertEqual(mock_execute.call_count, 1)
+"""
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True)

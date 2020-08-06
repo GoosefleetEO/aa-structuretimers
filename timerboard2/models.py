@@ -1,4 +1,3 @@
-from datetime import timedelta
 import json
 from time import sleep
 from typing import Any, List, Tuple
@@ -9,7 +8,7 @@ from simple_mq import SimpleMQ
 
 from django.core.cache import cache
 from django.contrib.auth.models import User
-from django.db import models, IntegrityError
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 
@@ -25,8 +24,8 @@ from allianceauth.services.hooks import get_extension_logger
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
-from .app_settings import TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS
-from .managers import TimerManager
+from .app_settings import TIMERBOARD2_NOTIFICATIONS_ENABLED
+from .managers import NotificationRuleManager, TimerManager
 from .utils import (
     LoggerAddTag,
     JSONDateTimeDecoder,
@@ -250,14 +249,16 @@ class Timer(models.Model):
     TYPE_NONE = "NO"
     TYPE_ARMOR = "AR"
     TYPE_HULL = "HL"
+    TYPE_FINAL = "FI"
     TYPE_ANCHORING = "AN"
     TYPE_UNANCHORING = "UA"
     TYPE_MOONMINING = "MM"
 
     TYPE_CHOICES = (
-        (TYPE_NONE, _("None")),
+        (TYPE_NONE, _("Unspecified")),
         (TYPE_ARMOR, _("Armor")),
         (TYPE_HULL, _("Hull")),
+        (TYPE_FINAL, _("Final")),
         (TYPE_ANCHORING, _("Anchoring")),
         (TYPE_UNANCHORING, _("Unanchoring")),
         (TYPE_MOONMINING, _("Moon Mining")),
@@ -384,23 +385,51 @@ class Timer(models.Model):
         blank=True,
         help_text="Notes with additional information about this timer",
     )
+    notification_rules = models.ManyToManyField(
+        "NotificationRule",
+        through="ScheduledNotification",
+        through_fields=("timer", "notification_rule"),
+        help_text="Notification rules conforming with this timer",
+    )
 
     objects = TimerManager()
 
     class Meta:
         permissions = (("view_opsec_timer", "Can view timers marked as is_opsec"),)
 
-    @property
-    def structure_display_name(self):
-        return "{}{} ({})".format(
-            self.eve_solar_system.name,
-            f" - {self.location_details}" if self.location_details else "",
-            self.structure_type.name,
+    def __str__(self):
+        return "%s timer for %s @ %s" % (
+            self.get_timer_type_display(),
+            self.structure_display_name,
+            self.date.strftime(DATETIME_FORMAT),
         )
 
-    def __str__(self):
-        return "{} timer for {}".format(
-            self.get_timer_type_display(), self.structure_display_name,
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        date_changed = False
+        if TIMERBOARD2_NOTIFICATIONS_ENABLED and not is_new:
+            try:
+                date_changed = self.date != Timer.objects.get(pk=self.pk).date
+            except Timer.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+        if TIMERBOARD2_NOTIFICATIONS_ENABLED and (is_new or date_changed):
+            self._import_schedule_notifications_for_timer().delay(timer_pk=self.pk)
+
+    @staticmethod
+    def _import_schedule_notifications_for_timer() -> object:
+        from .tasks import schedule_notifications_for_timer
+
+        return schedule_notifications_for_timer
+
+    @property
+    def structure_display_name(self):
+        return "{}{} in {}{}".format(
+            self.structure_type.name,
+            f' "{self.structure_name}"' if self.structure_name else "",
+            self.eve_solar_system.name,
+            f" near {self.location_details}" if self.location_details else "",
         )
 
     def label_type_for_timer_type(self) -> str:
@@ -409,6 +438,7 @@ class Timer(models.Model):
             self.TYPE_NONE: "default",
             self.TYPE_ARMOR: "danger",
             self.TYPE_HULL: "danger",
+            self.TYPE_FINAL: "danger",
             self.TYPE_ANCHORING: "warning",
             self.TYPE_UNANCHORING: "warning",
             self.TYPE_MOONMINING: "success",
@@ -499,6 +529,7 @@ class NotificationRule(models.Model):
 
     minutes = models.PositiveIntegerField(
         choices=MINUTES_CHOICES,
+        db_index=True,
         help_text="Time before event in minutes when notifications are sent",
     )
     webhooks = models.ManyToManyField(
@@ -546,61 +577,44 @@ class NotificationRule(models.Model):
         ),
     )
 
+    objects = NotificationRuleManager()
+
     def __str__(self) -> str:
         return f"Notification Rule #{self.id}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if TIMERBOARD2_NOTIFICATIONS_ENABLED and self.is_enabled:
+            self._import_scheduled_notifications_for_rule().delay(
+                notification_rule_pk=self.pk
+            )
+
+    @staticmethod
+    def _import_scheduled_notifications_for_rule() -> object:
+        from .tasks import scheduled_notifications_for_rule
+
+        return scheduled_notifications_for_rule
 
     @property
     def ping_type_text(self) -> str:
         return self.ping_type_to_text(self.ping_type)
 
-    def process_timers(self) -> List[int]:
-        """Checks which unprocessed timers match this notification rule 
-        and send notifications for all matching timers
+    def is_matching_timer(self, timer: "Timer") -> bool:
+        """returns True if notification rule is matching the given timer, else False"""
+        is_matching = True
+        if is_matching and self.require_timer_types:
+            is_matching = timer.timer_type in self.require_timer_types
 
-        Returns list of matching timer PKs
-        """
-        send_messages_for_webhook = self._import_send_messages_for_webhook()
-        threshold_date = now() - timedelta(
-            minutes=TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS
-        )
-        matching_timer_pks = list()
-        for timer in Timer.objects.filter(date__gt=threshold_date).exclude(
-            timernotificationprocessed__notification_rule=self
-        ):
-            if timer.date - timedelta(minutes=self.minutes) < now():
-                is_matching = True
-            else:
-                is_matching = False
+        if is_matching and self.require_objectives:
+            is_matching = timer.objective in self.require_objectives
 
-            if is_matching and self.require_timer_types:
-                is_matching = timer.timer_type in self.require_timer_types
+        if is_matching and self.require_corporations.count() > 0:
+            is_matching = timer.eve_corporation in self.require_corporations.all()
 
-            if is_matching and self.require_objectives:
-                is_matching = timer.objective in self.require_objectives
+        if is_matching and self.require_alliances.count() > 0:
+            is_matching = timer.eve_alliance in self.require_alliances.all()
 
-            if is_matching and self.require_corporations.count() > 0:
-                is_matching = timer.eve_corporation in self.require_corporations.all()
-
-            if is_matching and self.require_alliances.count() > 0:
-                is_matching = timer.eve_alliance in self.require_alliances.all()
-
-            if is_matching:
-                for webhook in self.webhooks.filter(is_enabled=True):
-                    timer.send_notification(
-                        webhook=webhook, ping_text=self.ping_type_text
-                    )
-                    matching_timer_pks.append(timer.pk)
-                    try:
-                        TimerNotificationProcessed.objects.create(
-                            timer=timer, notification_rule=self
-                        )
-                    except IntegrityError:
-                        pass
-
-                for webhook in self.webhooks.filter(is_enabled=True):
-                    send_messages_for_webhook.delay(webhook_pk=webhook.pk)
-
-        return matching_timer_pks
+        return is_matching
 
     @classmethod
     def ping_type_to_text(cls, ping_type: str) -> str:
@@ -637,8 +651,28 @@ class NotificationRule(models.Model):
         raise ValueError(f"Invalid choice: {value}")
 
 
-class TimerNotificationProcessed(models.Model):
-    """Marks timers as processed by a notification rule"""
+class ScheduledNotification(models.Model):
+    """A scheduled notification task"""
 
     timer = models.ForeignKey(Timer, on_delete=models.CASCADE)
     notification_rule = models.ForeignKey(NotificationRule, on_delete=models.CASCADE)
+    timer_date = models.DateTimeField(db_index=True)
+    notification_date = models.DateTimeField(db_index=True)
+    celery_task_id = models.CharField(max_length=765, default="")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["timer", "notification_rule"],
+                name="unique_notification_schedule",
+            )
+        ]
+
+    def __repr__(self) -> str:
+        return (
+            f"ScheduledNotification(timer='{self.timer}', "
+            f"notification_rule='{self.notification_rule}', "
+            f"celery_task_id='{self.celery_task_id}', "
+            f"timer_date='{self.timer_date}', "
+            f"timer_date='{self.notification_date}')"
+        )

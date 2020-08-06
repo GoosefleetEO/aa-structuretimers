@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 from unittest.mock import patch
 
@@ -10,9 +10,8 @@ from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
-
 from . import LoadTestDataMixin
-from ..models import DiscordWebhook, NotificationRule, Timer
+from ..models import DiscordWebhook, NotificationRule, Timer, models
 from ..utils import JSONDateTimeDecoder, NoSocketsTestCase
 
 
@@ -26,20 +25,41 @@ class TestTimer(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=now(),
+            date=datetime(2020, 8, 6, 13, 25),
         )
-        expected = "Armor timer for Abune (Raitaru)"
+        expected = 'Armor timer for Raitaru "Test" in Abune @ 2020-08-06 13:25'
         self.assertEqual(str(timer), expected)
 
-    def test_structure_display_name(self):
+    def test_structure_display_name_1(self):
         timer = Timer(
-            structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=now(),
+            date=datetime(2020, 8, 6, 13, 25),
         )
-        expected = "Abune (Raitaru)"
+        expected = "Raitaru in Abune"
+        self.assertEqual(timer.structure_display_name, expected)
+
+    def test_structure_display_name_2(self):
+        timer = Timer(
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            location_details="P5-M3",
+            date=datetime(2020, 8, 6, 13, 25),
+        )
+        expected = "Raitaru in Abune near P5-M3"
+        self.assertEqual(timer.structure_display_name, expected)
+
+    def test_structure_display_name_3(self):
+        timer = Timer(
+            structure_name="Big Boy",
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=datetime(2020, 8, 6, 13, 25),
+        )
+        expected = 'Raitaru "Big Boy" in Abune'
         self.assertEqual(timer.structure_display_name, expected)
 
     def test_label_type_for_timer_type(self):
@@ -71,27 +91,25 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
         )
 
     def test_normal(self, mock_send_message):
-        timer = Timer.objects.create(
+        timer = Timer(
             structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
         )
-
         timer.send_notification(self.webhook)
 
         self.assertEqual(mock_send_message.call_count, 1)
 
     def test_with_ping_type(self, mock_send_message):
-        timer = Timer.objects.create(
+        timer = Timer(
             structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
         )
-
         timer.send_notification(self.webhook, "@here")
 
         self.assertEqual(mock_send_message.call_count, 1)
@@ -99,97 +117,77 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
         self.assertIn("@here", kwargs["content"])
 
 
-@patch(MODULE_PATH + ".NotificationRule._import_send_messages_for_webhook")
-@patch(MODULE_PATH + ".Timer.send_notification")
-class TestNotificationRuleProcessTimers(LoadTestDataMixin, TestCase):
+@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+class TestTimerQuerySet(LoadTestDataMixin, TestCase):
+    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
+        self.timer_1 = Timer(
+            structure_name="Timer 1",
+            date=now() + timedelta(hours=4),
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            timer_type=Timer.TYPE_ARMOR,
+            objective=Timer.OBJECTIVE_FRIENDLY,
         )
-        self.timer = Timer.objects.create(
-            structure_name="Test",
+        self.timer_1.save()
+        self.timer_2 = Timer(
+            structure_name="Timer 2",
+            date=now() - timedelta(hours=8),
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=now(),
+            timer_type=Timer.TYPE_HULL,
+            objective=Timer.OBJECTIVE_FRIENDLY,
         )
-        self.rule = NotificationRule.objects.create(minutes=NotificationRule.MINUTES_15)
-        self.rule.webhooks.add(self.webhook)
+        self.timer_2.save()
+        self.timer_qs = Timer.objects.all()
 
-    def test_normal(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        result = self.rule.process_timers()
-
-        self.assertIn(self.timer.pk, result)
-        self.assertEqual(mock_send_notification.call_count, 1)
-        _, kwargs = mock_send_notification.call_args
-        self.assertEqual(kwargs["webhook"], self.webhook)
-
-        self.assertEqual(
-            mock_import_send_messages_for_webhook.return_value.delay.call_count, 1
+    def test_conforms_with_notification_rule_1(self):
+        """
+        given two timers in qs
+        when one timer conforms with notification rule
+        then qs contains only conforming timer
+        """
+        rule = NotificationRule(
+            minutes=NotificationRule.MINUTES_10, require_timer_types=[Timer.TYPE_ARMOR]
         )
-        _, kwargs = mock_import_send_messages_for_webhook.return_value.delay.call_args
-        self.assertEqual(kwargs["webhook_pk"], self.webhook.pk)
+        rule.save()
+        new_qs = self.timer_qs.conforms_with_notification_rule(rule)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), {self.timer_1.pk})
 
-    def test_minutes(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        self.timer.date = now() + timedelta(hours=1)
-        self.timer.save()
+    def test_conforms_with_notification_rule_2(self):
+        """
+        given two timers in qs
+        when no timer conforms with notification rule
+        then qs is empty
+        """
+        rule = NotificationRule(minutes=NotificationRule.MINUTES_10)
+        rule.save()
+        rule.require_corporations.add(self.corporation_3)
+        new_qs = self.timer_qs.conforms_with_notification_rule(rule)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), set())
 
-        self.assertFalse(self.rule.process_timers())
-
-    def test_require_timer_types(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        # do not process if it does not match
-        self.rule.require_timer_types = [Timer.TYPE_ARMOR]
-        self.rule.save()
-        self.assertFalse(self.rule.process_timers())
-
-        # process if it does match
-        self.timer.timer_type = Timer.TYPE_ARMOR
-        self.timer.save()
-        self.assertIn(self.timer.pk, self.rule.process_timers())
-
-    def test_require_objectives(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        # do not process if it does not match
-        self.rule.require_objectives = [Timer.OBJECTIVE_HOSTILE]
-        self.rule.save()
-        self.assertFalse(self.rule.process_timers())
-
-        # process if it does match
-        self.timer.objective = Timer.OBJECTIVE_HOSTILE
-        self.timer.save()
-        self.assertIn(self.timer.pk, self.rule.process_timers())
-
-    def test_require_corporations(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        # do not process if it does not match
-        self.rule.require_corporations.add(
-            EveCorporationInfo.objects.get(corporation_id=2001)
+    def test_conforms_with_notification_rule_3(self):
+        """
+        given two timers in qs
+        when all timer conforms with notification rule
+        then qs contains all timers
+        """
+        rule = NotificationRule(
+            minutes=NotificationRule.MINUTES_10,
+            require_objectives=[Timer.OBJECTIVE_FRIENDLY],
         )
-        self.assertFalse(self.rule.process_timers())
-
-        # process if it does match
-        self.timer.eve_corporation = EveCorporationInfo.objects.get(corporation_id=2001)
-        self.timer.save()
-        self.assertIn(self.timer.pk, self.rule.process_timers())
-
-    def test_require_alliances(
-        self, mock_send_notification, mock_import_send_messages_for_webhook
-    ):
-        # do not process if it does not match
-        self.rule.require_alliances.add(EveAllianceInfo.objects.get(alliance_id=3001))
-        self.assertFalse(self.rule.process_timers())
-
-        # process if it does match
-        self.timer.eve_alliance = EveAllianceInfo.objects.get(alliance_id=3001)
-        self.timer.save()
-        self.assertIn(self.timer.pk, self.rule.process_timers())
+        rule.save()
+        new_qs = self.timer_qs.conforms_with_notification_rule(rule)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(
+            set(new_qs.values_list("pk", flat=True)), {self.timer_1.pk, self.timer_2.pk}
+        )
 
 
 class TestDiscordWebhook(LoadTestDataMixin, TestCase):
@@ -374,3 +372,138 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
         self.assertFalse(result)
         self.assertTrue(mock_execute.called)
         self.assertTrue(mock_logger.warning.called)
+
+
+@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
+    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    def setUp(self) -> None:
+        self.timer = Timer(
+            structure_name="Test",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now(),
+        )
+        self.timer.save()
+        self.rule = NotificationRule(minutes=NotificationRule.MINUTES_15)
+        self.rule.save()
+
+    def test_require_timer_types(self):
+        # do not process if it does not match
+        self.rule.require_timer_types = [Timer.TYPE_ARMOR]
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.timer_type = Timer.TYPE_ARMOR
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_require_objectives(self):
+        # do not process if it does not match
+        self.rule.require_objectives = [Timer.OBJECTIVE_HOSTILE]
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.objective = Timer.OBJECTIVE_HOSTILE
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_require_corporations(self):
+        # do not process if it does not match
+        self.rule.require_corporations.add(
+            EveCorporationInfo.objects.get(corporation_id=2001)
+        )
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.eve_corporation = EveCorporationInfo.objects.get(corporation_id=2001)
+        self.timer.save()
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_require_alliances(self):
+        # do not process if it does not match
+        self.rule.require_alliances.add(EveAllianceInfo.objects.get(alliance_id=3001))
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.eve_alliance = EveAllianceInfo.objects.get(alliance_id=3001)
+        self.timer.save()
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+
+@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
+    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    def setUp(self) -> None:
+        self.rule_1 = NotificationRule(
+            minutes=10, require_timer_types=[Timer.TYPE_ARMOR]
+        )
+        self.rule_1.save()
+        self.rule_2 = NotificationRule(
+            minutes=15, require_objectives=[Timer.OBJECTIVE_FRIENDLY]
+        )
+        self.rule_2.save()
+        self.rule_qs = NotificationRule.objects.all()
+
+    def test_conforms_with_timer_1(self):
+        """
+        given two rules in qs
+        when one rule conforms with timer
+        then qs contains only conforming rule
+        """
+        timer = Timer(
+            structure_name="Test Timer",
+            date=now() + timedelta(hours=4),
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            timer_type=Timer.TYPE_ARMOR,
+            objective=Timer.OBJECTIVE_HOSTILE,
+        )
+        timer.save()
+        new_qs = self.rule_qs.conforms_with_timer(timer)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), {self.rule_1.pk})
+
+    def test_conforms_with_timer_2(self):
+        """
+        given two rules in qs
+        when no rule conforms with timer
+        then qs is empty
+        """
+        timer = Timer(
+            structure_name="Test Timer",
+            date=now() + timedelta(hours=4),
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            timer_type=Timer.TYPE_HULL,
+            objective=Timer.OBJECTIVE_HOSTILE,
+        )
+        timer.save()
+        new_qs = self.rule_qs.conforms_with_timer(timer)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), set())
+
+    def test_conforms_with_timer_3(self):
+        """
+        given two rules in qs
+        when one rule conforms with timer
+        then qs contains only conforming rule
+        """
+        timer = Timer(
+            structure_name="Test Timer",
+            date=now() + timedelta(hours=4),
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            timer_type=Timer.TYPE_ARMOR,
+            objective=Timer.OBJECTIVE_FRIENDLY,
+        )
+        timer.save()
+        new_qs = self.rule_qs.conforms_with_timer(timer)
+        self.assertIsInstance(new_qs, models.QuerySet)
+        self.assertSetEqual(
+            set(new_qs.values_list("pk", flat=True)), {self.rule_1.pk, self.rule_2.pk}
+        )
