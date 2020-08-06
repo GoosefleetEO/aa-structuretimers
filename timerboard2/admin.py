@@ -153,3 +153,20 @@ class TimerAdmin(admin.ModelAdmin):
             ]
         )
     """
+    actions = ["send_test_notification"]
+
+    def send_test_notification(self, request, queryset):
+        for timer in queryset:
+            for webhook in DiscordWebhook.objects.filter(is_enabled=True):
+                timer.send_notification(webhook=webhook)
+
+            self.message_user(
+                request, f"Initiated sending test notification for timer: {timer}"
+            )
+
+        for webhook in DiscordWebhook.objects.filter(is_enabled=True):
+            tasks.send_messages_for_webhook.delay(webhook.pk)
+
+    send_test_notification.short_description = (
+        "Send test notification for this timer to all enabled webhooks"
+    )

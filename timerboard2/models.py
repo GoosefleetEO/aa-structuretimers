@@ -271,10 +271,10 @@ class Timer(models.Model):
     OBJECTIVE_NEUTRAL = "NE"
 
     OBJECTIVE_CHOICES = [
-        (OBJECTIVE_UNDEFINED, _("Undefined")),
-        (OBJECTIVE_HOSTILE, _("Hostile")),
-        (OBJECTIVE_FRIENDLY, _("Friendly")),
-        (OBJECTIVE_NEUTRAL, _("Neutral")),
+        (OBJECTIVE_UNDEFINED, _("undefined")),
+        (OBJECTIVE_HOSTILE, _("hostile")),
+        (OBJECTIVE_FRIENDLY, _("friendly")),
+        (OBJECTIVE_NEUTRAL, _("neutral")),
     ]
 
     # visibility
@@ -283,7 +283,7 @@ class Timer(models.Model):
     VISIBILITY_CORPORATION = "CO"
 
     VISIBILITY_CHOICES = [
-        (VISIBILITY_UNRESTRICTED, _("Unrestricted")),
+        (VISIBILITY_UNRESTRICTED, _("unrestricted")),
         (VISIBILITY_ALLIANCE, _("Alliance only")),
         (VISIBILITY_CORPORATION, _("Corporation only")),
     ]
@@ -467,13 +467,20 @@ class Timer(models.Model):
         """sends notification for given self to given webhook"""
         content = f"{ping_text} " if ping_text else ""
         minutes = round((self.date - now()).total_seconds() / 60)
+        mod_text = "**important** " if self.is_important else ""
         content += (
-            f"The following timer is coming out in less than **{minutes}** minutes:"
+            f"The following {mod_text}structure timer will elapse "
+            f"in less than **{minutes:,}** minutes:"
         )
 
         structure_type_name = self.structure_type.name
         solar_system_name = self.eve_solar_system.name
         title = f"{structure_type_name} in {solar_system_name}"
+        if self.structure_name:
+            structure_name_text = f'**{structure_type_name}** "{self.structure_name}"'
+        else:
+            article = "an" if structure_type_name[0:1].lower() in "aeiou" else "a"
+            structure_name_text = f"{article} **{structure_type_name}**"
 
         region_name = self.eve_solar_system.eve_constellation.eve_region.name
         solar_system_link = webhook.create_discord_link(
@@ -483,16 +490,24 @@ class Timer(models.Model):
         near_text = f" near {self.location_details}" if self.location_details else ""
         owned_text = f" owned by **{self.owner_name}**" if self.owner_name else ""
         description = (
-            f"An **{structure_type_name}** in {solar_system_text}{near_text}{owned_text} "
-            f"is coming out of **{self.get_timer_type_display()}** self at "
-            f"**{self.date.strftime(DATETIME_FORMAT)}**. "
-            f"Our stance is **{self.get_objective_display()}**."
+            f"The **{self.get_timer_type_display()}** timer for "
+            f"{structure_name_text} in {solar_system_text}{near_text}{owned_text} "
+            f"will elapse at **{self.date.strftime(DATETIME_FORMAT)}**. "
+            f"Our stance is: **{self.get_objective_display()}**."
         )
         structure_icon_url = self.structure_type.icon_url(size=128)
+        if self.objective == self.OBJECTIVE_FRIENDLY:
+            color = int("0x375a7f", 16)
+        elif self.objective == self.OBJECTIVE_HOSTILE:
+            color = int("0xd9534f", 16)
+        else:
+            color = None
+
         embed = dhooks_lite.Embed(
             title=title,
             description=description,
             thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
+            color=color,
         )
         webhook.send_message(content=content, embeds=[embed], username=__title__)
 

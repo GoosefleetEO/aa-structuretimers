@@ -155,6 +155,7 @@ class Command(BaseCommand):
                     eve_character=auth_timer.eve_character,
                     eve_corporation=auth_timer.eve_corp,
                     eve_alliance=eve_alliance,
+                    user=auth_timer.user,
                 )
             migrated_count += 1
 
