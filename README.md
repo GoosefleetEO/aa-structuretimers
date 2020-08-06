@@ -14,7 +14,7 @@ An app for keeping track of Eve Online structure timers with Alliance Auth and D
 
 ## Overview
 
-Structure Timer is an enhancement of the Auth Timerboard / Structure Timer app. It has the same basic functionality has timerboard:
+Structure Timers is a rewrite of the Auth's Structure Timers app. It has the same basic functionality has timerboard:
 
 - Create and edit timers for structures
 - See all current timers at a glance and with live countdowns for each
@@ -43,6 +43,10 @@ But also comes with many of the additional features that have been requested by 
 ### Creating a new timer
 
 ![timerboard](https://i.imgur.com/LPCEQNr.png)
+
+### Notification on Discord
+
+![notification](https://i.imgur.com/X0t5Kuj.png)
 
 ## Installation
 
@@ -121,8 +125,8 @@ Here are all relevant permissions:
 
 Codename | Description
 -- | --
-`structuretimers.basic_access` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
-`structuretimers.timer_management` | Users with this permission can create new timers and edit existing timers.
+`structuretimers | general | Can access this app` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
+`structuretimers | general | Can create and edit timers` | Users with this permission can create new timers and edit existing timers.
 `structuretimers.view_opsec_timer` | Users with this permission can create and view timers that are opsec restricted.
 
 ## Management commands
@@ -130,3 +134,4 @@ Codename | Description
 The following management commands are available:
 
 - **structuretimers_load_eve**: Preload all eve objects required for this app to function
+- **structuretimers_migrate_timers**: Migrate pending timers from Auth's Structure Timers apps

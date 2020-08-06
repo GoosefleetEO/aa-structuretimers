@@ -201,16 +201,16 @@ def timer_list_data(request, tab_name):
         # actions
         actions = ""
 
-        if not timer.details_image_url:
-            button_type = "default"
-            disabled_html = ' disabled="disabled"'
-            data_toggle = ""
-            title = "No details available"
-        else:
+        if timer.details_image_url or timer.details_notes:
             disabled_html = ""
             button_type = "primary"
             data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
             title = "Show details of this timer"
+        else:
+            button_type = "default"
+            disabled_html = ' disabled="disabled"'
+            data_toggle = ""
+            title = "No details available"
 
         actions += (
             format_html(
@@ -223,7 +223,7 @@ def timer_list_data(request, tab_name):
             + "&nbsp;"
         )
 
-        if request.user.has_perm("timer_management"):
+        if request.user.has_perm("structuretimers.timer_management"):
             actions += (
                 create_fa_button_html(
                     reverse("structuretimers:delete", args=(timer.pk,)),

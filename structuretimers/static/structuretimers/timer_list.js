@@ -51,17 +51,33 @@ $(document).ready(function () {
                     modal
                         .find('.modal-body span')
                         .text(
-                            `${timer['structure_display_name']} @ ${timer['date']}`
+                            `${timer['display_name']}`
                         );
-                    modal
-                        .find('.modal-body img')
-                        .attr("src", timer['details_image_url']);
-                    modal
-                        .find('.modal-body a')
-                        .attr("href", timer['details_image_url']);
-                    modal
-                        .find('.modal-body textarea')
-                        .val(timer['notes']);
+                    if (timer['details_image_url'] != "") {
+                        modal
+                            .find('.modal-body label[for="timerboardImgScreenshot"]')
+                            .show()
+                        modal
+                            .find('.modal-body img')
+                            .attr("src", timer['details_image_url']);
+                        modal
+                            .find('.modal-body a')
+                            .show()
+                            .attr("href", timer['details_image_url']);
+                    }
+                    else {
+                        modal
+                            .find('.modal-body a')
+                            .hide()
+                        modal
+                            .find('.modal-body label[for="timerboardImgScreenshot"]')
+                            .hide()
+                    }
+                    if (timer['notes'] != "") {
+                        modal
+                            .find('.modal-body textarea')
+                            .val(timer['notes']);
+                    }
                 } else {
                     modal
                         .find('.modal-body span')
