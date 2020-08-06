@@ -307,7 +307,7 @@ class TimerManagementView(BaseTimerView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = "Edit Timer"
+        context["title"] = "Edit Structure Timer"
         return context
 
 
@@ -328,9 +328,10 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
         result = super().form_valid(form)
         timer = self.object
         logger.info(
-            "Created new timer in {} at {} by user {}".format(
-                timer.eve_solar_system, timer.date, self.request.user
-            )
+            "Created new timer in %s at %s by user %s",
+            timer.eve_solar_system,
+            timer.date,
+            self.request.user,
         )
         messages_plus.success(
             self.request,
@@ -347,14 +348,14 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
 class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
     template_name_suffix = "_update_form"
 
-    def form_valid(self, form):
-        """
+    """
+    def form_valid(self, form):        
         timer = self.object        
         messages_plus.success(
             self.request, _('Saved changes to the timer: {}.').format(timer)
-        )
-        """
+        )        
         return super().form_valid(form)
+    """
 
 
 class RemoveTimerView(TimerManagementView, DeleteView):

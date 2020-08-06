@@ -19,7 +19,8 @@ setup(
     include_package_data=True,
     license="MIT",
     description=(
-        "An app for keeping track of Eve Online structure timers with Alliance Auth"
+        "An app for keeping track of Eve Online structure timers "
+        "with Alliance Auth and Discord"
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",

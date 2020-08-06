@@ -6,6 +6,7 @@ from django.core.management import call_command
 from django.utils.timezone import now
 
 from allianceauth.timerboard.models import Timer as AuthTimer
+from eveuniverse.models import EveType
 
 from . import LoadTestDataMixin, create_test_user
 from ..models import Timer
@@ -82,7 +83,18 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         self.assertEqual(new_timer.timer_type, Timer.TYPE_ANCHORING)
         self.assertEqual(new_timer.objective, Timer.OBJECTIVE_NEUTRAL)
 
-    """
+    def test_final_corp_timer(self, mock_get_input):
+        mock_get_input.return_value = "Y"
+        self.auth_timer.details = "Final timer"
+        self.auth_timer.corp_timer = True
+        self.auth_timer.save()
+
+        call_command("structuretimers_migrate_timers", stdout=self.out)
+
+        new_timer = Timer.objects.first()
+        self.assertEqual(new_timer.timer_type, Timer.TYPE_FINAL)
+        self.assertEqual(new_timer.visibility, Timer.VISIBILITY_CORPORATION)
+
     def test_moon_mining(self, mock_get_input):
         mock_get_input.return_value = "Y"
         self.auth_timer.structure = "Moon Mining Cycle"
@@ -92,5 +104,22 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
 
         new_timer = Timer.objects.first()
         self.assertEqual(new_timer.timer_type, Timer.TYPE_MOONMINING)
-        self.assertEqual(new_timer.structure_type, Timer.OBJECTIVE_NEUTRAL)
-    """
+        self.assertEqual(new_timer.structure_type, EveType.objects.get(id=35835))
+
+    def test_abort_on_unknown_solar_system(self, mock_get_input):
+        mock_get_input.return_value = "Y"
+        self.auth_timer.system = "Unknown"
+        self.auth_timer.save()
+
+        call_command("structuretimers_migrate_timers", stdout=self.out)
+
+        self.assertFalse(Timer.objects.all().exists())
+
+    def test_abort_on_unknown_structure_type(self, mock_get_input):
+        mock_get_input.return_value = "Y"
+        self.auth_timer.structure = "Unknown"
+        self.auth_timer.save()
+
+        call_command("structuretimers_migrate_timers", stdout=self.out)
+
+        self.assertFalse(Timer.objects.all().exists())

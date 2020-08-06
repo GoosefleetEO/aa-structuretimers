@@ -111,7 +111,9 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(timerboard.status_code, 200)
 
         # user clicks on "Edit Timer" for timer 1
-        edit_timer = self.app.get(reverse("structuretimers:edit", args=[self.timer_1.pk]))
+        edit_timer = self.app.get(
+            reverse("structuretimers:edit", args=[self.timer_1.pk])
+        )
         self.assertEqual(edit_timer.status_code, 200)
 
         # user enters data and clicks create

@@ -120,13 +120,8 @@ class Command(BaseCommand):
             else:
                 visibility = Timer.VISIBILITY_UNRESTRICTED
 
-            if auth_timer.eve_corp:
-                eve_alliance = auth_timer.eve_corp.alliance
-            else:
-                eve_alliance = None
-
             details_lower = auth_timer.details.lower()
-            if "moon mining cycle" in auth_timer.structure:
+            if "Moon Mining Cycle" in auth_timer.structure:
                 timer_type = Timer.TYPE_MOONMINING
             elif "armor" in details_lower:
                 timer_type = Timer.TYPE_ARMOR
@@ -154,7 +149,7 @@ class Command(BaseCommand):
                     visibility=visibility,
                     eve_character=auth_timer.eve_character,
                     eve_corporation=auth_timer.eve_corp,
-                    eve_alliance=eve_alliance,
+                    eve_alliance=auth_timer.eve_corp.alliance,
                     user=auth_timer.user,
                 )
             migrated_count += 1

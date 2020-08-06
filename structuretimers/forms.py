@@ -113,8 +113,9 @@ class TimerForm(forms.ModelForm):
         character = self.user.profile.main_character
         corporation = character.corporation
         logger.debug(
-            "Determined timer save request on behalf "
-            "of character {} corporation {}".format(character, corporation)
+            "Determined timer save request on behalf " "of character %s corporation %s",
+            character,
+            corporation,
         )
         # calculate future time
         future_time = datetime.timedelta(
@@ -125,8 +126,10 @@ class TimerForm(forms.ModelForm):
         current_time = timezone.now()
         date = current_time + future_time
         logger.debug(
-            "Determined timer eve time is %s - current time %s, "
-            "adding %s" % (date, current_time, future_time)
+            "Determined timer eve time is %s - current time %s, adding %s",
+            date,
+            current_time,
+            future_time,
         )
 
         # get structure type

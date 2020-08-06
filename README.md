@@ -1,6 +1,6 @@
-# Timerboard
+# Structure Timers
 
-An app for keeping track of structure timers
+An app for keeping track of Eve Online structure timers with Alliance Auth and Discord.
 
 ![release](https://img.shields.io/pypi/v/aa-timerboard?label=release) ![python](https://img.shields.io/pypi/pyversions/aa-timerboard) ![django](https://img.shields.io/pypi/djversions/aa-timerboard?label=django) ![pipeline](https://gitlab.com/ErikKalkoken/aa-timerboard/badges/master/pipeline.svg) ![coverage](https://gitlab.com/ErikKalkoken/aa-timerboard/badges/master/coverage.svg) ![license](https://img.shields.io/badge/license-MIT-green) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
@@ -14,7 +14,7 @@ An app for keeping track of structure timers
 
 ## Overview
 
-Timerboard2 is an enhancement of the Auth timerboard / structure timers app. It has the same basic functionality has timerboard:
+Structure Timer is an enhancement of the Auth Timerboard / Structure Timer app. It has the same basic functionality has timerboard:
 
 - Create and edit timers for structures
 - See all current timers at a glance and with live countdowns for each

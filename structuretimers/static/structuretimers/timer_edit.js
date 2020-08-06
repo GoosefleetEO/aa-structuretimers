@@ -11,7 +11,8 @@ $(document).ready(function () {
         },
         theme: myTheme,
         minimumInputLength: 2,
-        placeholder: "Enter name of solar system"
+        placeholder: "Enter name of solar system",
+        dropdownCssClass: "my_select2_dropdown"
     });
 
     $('.select2-structure-types').select2({
@@ -21,10 +22,12 @@ $(document).ready(function () {
         },
         theme: myTheme,
         minimumInputLength: 2,
-        placeholder: "Enter name of structure type"
+        placeholder: "Enter name of structure type",
+        dropdownCssClass: "my_select2_dropdown"
     });
 
     $('.select2-render').select2({
-        theme: myTheme
+        theme: myTheme,
+        dropdownCssClass: "my_select2_dropdown"
     });
 });

@@ -1,5 +1,6 @@
 import json
 from time import sleep
+from urllib.parse import urljoin
 from typing import Any, List, Tuple
 
 import dhooks_lite
@@ -8,6 +9,7 @@ from simple_mq import SimpleMQ
 
 from django.core.cache import cache
 from django.contrib.auth.models import User
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
@@ -31,9 +33,18 @@ from .utils import (
     JSONDateTimeDecoder,
     JSONDateTimeEncoder,
     DATETIME_FORMAT,
+    get_site_base_url,
 )
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+
+
+def default_avatar_url() -> str:
+    """avatar url for all messages"""
+    return urljoin(
+        get_site_base_url(),
+        staticfiles_storage.url("structuretimers/structuretimers_logo.png"),
+    )
 
 
 class General(models.Model):
@@ -223,6 +234,7 @@ class DiscordWebhook(models.Model):
             message = {
                 "content": f"Test message from {__title__}",
                 "username": __title__,
+                "avatar_url": default_avatar_url(),
             }
             success = self.send_message_to_webhook(message)
         except Exception as ex:
@@ -509,7 +521,12 @@ class Timer(models.Model):
             thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
             color=color,
         )
-        webhook.send_message(content=content, embeds=[embed], username=__title__)
+        webhook.send_message(
+            content=content,
+            embeds=[embed],
+            username=__title__,
+            avatar_url=default_avatar_url(),
+        )
 
 
 class NotificationRule(models.Model):
