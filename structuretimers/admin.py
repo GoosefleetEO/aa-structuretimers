@@ -51,7 +51,7 @@ class DiscordWebhookAdmin(admin.ModelAdmin):
     send_test_message.short_description = "Send test message to selected webhooks"
 
 
-def make_nice(name: str) -> str:
+def field_nice_display(name: str) -> str:
     return name.replace("_", " ").capitalize()
 
 
@@ -81,15 +81,15 @@ class NotificationRuleAdminForm(forms.ModelForm):
             ),
         )
         self._validate_not_same_options_chosen(
-            cleaned_data, "require_corporations", "exclude_corporations", lambda x: x,
+            cleaned_data, "require_corporations", "exclude_corporations",
         )
         self._validate_not_same_options_chosen(
-            cleaned_data, "require_alliances", "exclude_alliances", lambda x: x,
+            cleaned_data, "require_alliances", "exclude_alliances",
         )
 
     @staticmethod
     def _validate_not_same_options_chosen(
-        cleaned_data, field_name_1, field_name_2, display_func
+        cleaned_data, field_name_1, field_name_2, display_func=lambda x: x
     ) -> None:
         same_options = set(cleaned_data[field_name_1]).intersection(
             set(cleaned_data[field_name_2])
@@ -99,8 +99,8 @@ class NotificationRuleAdminForm(forms.ModelForm):
                 map(str, [display_func(x) for x in same_options],)
             )
             raise ValidationError(
-                f"Can not choose same options for {make_nice(field_name_1)} "
-                f"& {make_nice(field_name_2)}: {same_options_text}"
+                f"Can not choose same options for {field_nice_display(field_name_1)} "
+                f"& {field_nice_display(field_name_2)}: {same_options_text}"
             )
 
 
@@ -119,45 +119,49 @@ class NotificationRuleAdmin(admin.ModelAdmin):
 
     def _clauses(self, obj) -> list:
         clauses = list()
-        for field, choices in [
-            ("require_timer_types", Timer.TYPE_CHOICES),
-            ("exclude_timer_types", Timer.TYPE_CHOICES),
-            ("require_objectives", Timer.OBJECTIVE_CHOICES),
-            ("exclude_objectives", Timer.OBJECTIVE_CHOICES),
-            ("require_visibility", Timer.VISIBILITY_CHOICES),
-            ("exclude_visibility", Timer.VISIBILITY_CHOICES),
+        for field, func, choices in [
+            ("require_timer_types", self._add_to_clauses_1, Timer.TYPE_CHOICES),
+            ("exclude_timer_types", self._add_to_clauses_1, Timer.TYPE_CHOICES),
+            ("require_objectives", self._add_to_clauses_1, Timer.OBJECTIVE_CHOICES),
+            ("exclude_objectives", self._add_to_clauses_1, Timer.OBJECTIVE_CHOICES),
+            ("require_visibility", self._add_to_clauses_1, Timer.VISIBILITY_CHOICES),
+            ("exclude_visibility", self._add_to_clauses_1, Timer.VISIBILITY_CHOICES),
+            ("require_corporations", self._add_to_clauses_2, None),
+            ("exclude_corporations", self._add_to_clauses_2, None),
+            ("require_alliances", self._add_to_clauses_2, None),
+            ("exclude_alliances", self._add_to_clauses_2, None),
+            ("is_important", self._add_to_clauses_3, None),
+            ("is_opsec", self._add_to_clauses_3, None),
         ]:
-            if getattr(obj, field):
-                text = ", ".join(
-                    map(
-                        str,
-                        [
-                            NotificationRule.get_multiselect_display(x, choices)
-                            for x in getattr(obj, field)
-                        ],
-                    )
-                )
-                clauses.append(f"{make_nice(field)} = {text}")
-
-        for field in [
-            "require_corporations",
-            "exclude_corporations",
-            "require_alliances",
-            "exclude_alliances",
-        ]:
-            if getattr(obj, field).count() > 0:
-                text = ", ".join(map(str, getattr(obj, field).all()))
-                clauses.append(f"{make_nice(field)} = {text}")
-
-        for field in [
-            "is_important",
-            "is_opsec",
-        ]:
-            if getattr(obj, field) != NotificationRule.CLAUSE_ANY:
-                text = getattr(obj, f"get_{field}_display")()
-                clauses.append(f"{make_nice(field)} = {text}")
+            func(clauses, obj, field, choices)
 
         return mark_safe("<br>".join(clauses)) if clauses else None
+
+    def _add_to_clauses_1(self, clauses, obj, field, choices):
+        if getattr(obj, field):
+            text = ", ".join(
+                map(
+                    str,
+                    [
+                        NotificationRule.get_multiselect_display(x, choices)
+                        for x in getattr(obj, field)
+                    ],
+                )
+            )
+            self._append_field_to_clauses(clauses, field, text)
+
+    def _add_to_clauses_2(self, clauses, obj, field, choices=None):
+        if getattr(obj, field).count() > 0:
+            text = ", ".join(map(str, getattr(obj, field).all()))
+            self._append_field_to_clauses(clauses, field, text)
+
+    def _add_to_clauses_3(self, clauses, obj, field, choices=None):
+        if getattr(obj, field) != NotificationRule.CLAUSE_ANY:
+            text = getattr(obj, f"get_{field}_display")()
+            self._append_field_to_clauses(clauses, field, text)
+
+    def _append_field_to_clauses(self, clauses, field, text):
+        clauses.append(f"{field_nice_display(field)} = {text}")
 
     def _webhooks(self, obj):
         return list(obj.webhooks.values_list("name", flat=True).order_by("name"))
