@@ -569,8 +569,10 @@ class NotificationRule(models.Model):
         db_index=True,
         help_text="Notifications are sent x minutes before timer elapses",
     )
-    webhooks = models.ManyToManyField(
-        DiscordWebhook, help_text="Webhooks notifications are sent to"
+    webhook = models.ForeignKey(
+        DiscordWebhook,
+        on_delete=models.CASCADE,
+        help_text="The webhook all notifications are sent to",
     )
     ping_type = models.CharField(
         max_length=2,

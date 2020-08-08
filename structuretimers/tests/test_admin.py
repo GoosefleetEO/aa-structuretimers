@@ -23,15 +23,22 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
 
     @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        NotificationRule.objects.create(minutes=NotificationRule.MINUTES_10,)
         NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_10, require_timer_types=[Timer.TYPE_ARMOR]
+            minutes=NotificationRule.MINUTES_10, webhook=self.webhook
         )
-        rule = NotificationRule.objects.create(minutes=NotificationRule.MINUTES_10,)
+        NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_10,
+            require_timer_types=[Timer.TYPE_ARMOR],
+            webhook=self.webhook,
+        )
+        rule = NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_10, webhook=self.webhook
+        )
         rule.require_corporations.add(self.corporation_1)
         NotificationRule.objects.create(
             minutes=NotificationRule.MINUTES_10,
             is_important=NotificationRule.CLAUSE_EXCLUDED,
+            webhook=self.webhook,
         )
 
     def test_can_open_page_normally(self):
@@ -73,7 +80,7 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
         self.assertEqual(add_page.status_code, 200)
         form = add_page.form
         form["minutes"] = NotificationRule.MINUTES_10
-        form["webhooks"] = [self.webhook.pk]
+        form["webhook"] = self.webhook.pk
         return form
 
     def test_no_errors(self):

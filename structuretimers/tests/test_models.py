@@ -144,6 +144,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         )
         self.timer_2.save()
         self.timer_qs = Timer.objects.all()
+        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
 
     def test_conforms_with_notification_rule_1(self):
         """
@@ -151,10 +152,11 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         when one timer conforms with notification rule
         then qs contains only conforming timer
         """
-        rule = NotificationRule(
-            minutes=NotificationRule.MINUTES_10, require_timer_types=[Timer.TYPE_ARMOR]
+        rule = NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_10,
+            require_timer_types=[Timer.TYPE_ARMOR],
+            webhook=self.webhook,
         )
-        rule.save()
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
         self.assertIsInstance(new_qs, models.QuerySet)
         self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), {self.timer_1.pk})
@@ -165,8 +167,9 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         when no timer conforms with notification rule
         then qs is empty
         """
-        rule = NotificationRule(minutes=NotificationRule.MINUTES_10)
-        rule.save()
+        rule = NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_10, webhook=self.webhook,
+        )
         rule.require_corporations.add(self.corporation_3)
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
         self.assertIsInstance(new_qs, models.QuerySet)
@@ -178,11 +181,11 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         when all timer conforms with notification rule
         then qs contains all timers
         """
-        rule = NotificationRule(
+        rule = NotificationRule.objects.create(
             minutes=NotificationRule.MINUTES_10,
             require_objectives=[Timer.OBJECTIVE_FRIENDLY],
+            webhook=self.webhook,
         )
-        rule.save()
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
         self.assertIsInstance(new_qs, models.QuerySet)
         self.assertSetEqual(
@@ -378,15 +381,16 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
 class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
     @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer = Timer(
+        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
+        self.timer = Timer.objects.create(
             structure_name="Test",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
         )
-        self.timer.save()
-        self.rule = NotificationRule(minutes=NotificationRule.MINUTES_15)
-        self.rule.save()
+        self.rule = NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_15, webhook=self.webhook
+        )
 
     def test_require_timer_types(self):
         # do not process if it does not match
@@ -527,14 +531,15 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
     @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.rule_1 = NotificationRule(
-            minutes=10, require_timer_types=[Timer.TYPE_ARMOR]
+        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
+        self.rule_1 = NotificationRule.objects.create(
+            minutes=10, require_timer_types=[Timer.TYPE_ARMOR], webhook=self.webhook
         )
-        self.rule_1.save()
-        self.rule_2 = NotificationRule(
-            minutes=15, require_objectives=[Timer.OBJECTIVE_FRIENDLY]
+        self.rule_2 = NotificationRule.objects.create(
+            minutes=15,
+            require_objectives=[Timer.OBJECTIVE_FRIENDLY],
+            webhook=self.webhook,
         )
-        self.rule_2.save()
         self.rule_qs = NotificationRule.objects.all()
 
     def test_conforms_with_timer_1(self):

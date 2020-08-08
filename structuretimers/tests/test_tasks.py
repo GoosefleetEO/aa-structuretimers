@@ -23,16 +23,15 @@ class TestCaseBase(LoadTestDataMixin, TestCase):
         self.webhook = DiscordWebhook.objects.create(
             name="Dummy", url="http://www.example.com"
         )
-        self.rule = NotificationRule(minutes=NotificationRule.MINUTES_15)
-        self.rule.save()
-        self.rule.webhooks.add(self.webhook)
-        self.timer = Timer(
+        self.rule = NotificationRule.objects.create(
+            minutes=NotificationRule.MINUTES_15, webhook=self.webhook
+        )
+        self.timer = Timer.objects.create(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now() + timedelta(minutes=30),
         )
-        self.timer.save()
 
 
 @patch(MODULE_PATH + ".DiscordWebhook.send_queued_messages")

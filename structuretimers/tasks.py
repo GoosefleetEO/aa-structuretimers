@@ -76,9 +76,8 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
                 scheduled_notification.timer,
                 scheduled_notification.notification_rule,
             )
-            for webhook in scheduled_notification.notification_rule.webhooks.filter(
-                is_enabled=True
-            ):
+            webhook = scheduled_notification.notification_rule.webhook
+            if webhook.is_enabled:
                 scheduled_notification.timer.send_notification(
                     webhook=webhook,
                     ping_text=scheduled_notification.notification_rule.ping_type_text,

@@ -15,6 +15,7 @@ from . import tasks
 class DiscordWebhookAdmin(admin.ModelAdmin):
     list_display = ("name", "is_enabled", "_messages_in_queue")
     list_filter = ("is_enabled",)
+    ordering = ("name",)
 
     def _messages_in_queue(self, obj):
         return obj.queue_size()
@@ -111,11 +112,12 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         "id",
         "is_enabled",
         "minutes",
-        "_webhooks",
+        "webhook",
         "ping_type",
         "_clauses",
     )
     list_filter = ("is_enabled",)
+    ordering = ("id",)
 
     def _clauses(self, obj) -> list:
         clauses = list()
@@ -163,15 +165,11 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     def _append_field_to_clauses(self, clauses, field, text):
         clauses.append(f"{field_nice_display(field)} = {text}")
 
-    def _webhooks(self, obj):
-        return list(obj.webhooks.values_list("name", flat=True).order_by("name"))
-
     filter_horizontal = (
         "require_alliances",
         "exclude_alliances",
         "require_corporations",
         "exclude_corporations",
-        "webhooks",
     )
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
@@ -185,9 +183,6 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             kwargs["queryset"] = EveCorporationInfo.objects.all().order_by(
                 Lower("corporation_name")
             )
-
-        elif db_field.name == "webhooks":
-            kwargs["queryset"] = DiscordWebhook.objects.all().order_by(Lower("name"))
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
