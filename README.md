@@ -14,14 +14,11 @@ An app for keeping track of Eve Online structure timers with Alliance Auth and D
 
 ## Overview
 
-Structure Timers is a rewrite of the Auth's Structure Timers app. It has the same basic functionality has timerboard:
+Structure Timers is a rewrite of the Auth's timerboard app. On top of the basic functionality provided also by timerboard it has many additional useful features:
 
 - Create and edit timers for structures
 - See all current timers at a glance and with live countdowns for each
 - Restrict access to your corporation members
-
-But also comes with many of the additional features that have been requested by users for years:
-
 - Get automatic notifications about upcoming timers on Discord
 - Define a timer type (e.g. armor or hull)
 - Restrict timer access to your alliance and/or people with opsec clearance
@@ -108,6 +105,18 @@ python manage.py structuretimers_load_eve
 ```
 
 You may want to wait until the data loading is complete before starting to create new timers.
+
+### Step 5 - Setup permission
+
+Another important step is to setup permissions, to ensure the right people have access to Structure Timers. Please see [Permissions](#permissions) for an overview of all permissions.
+
+### Step 6 - Migrate existing timers
+
+Last, but not least: If you have already been using the classic Structure Timers app from Auth, you can migrate your existing timers over to new app. Just run the following command:
+
+```bash
+python manage.py structuretimers_migrate_timers
+```
 
 ## Settings
 

@@ -182,14 +182,18 @@ def timer_list_data(request, tab_name):
             corporation_name = timer.eve_corporation.corporation_name
         else:
             corporation_name = ""
-        creator = format_html(
-            "{}<br>{}",
-            create_link_html(
-                evewho.character_url(timer.eve_character.character_id),
-                timer.eve_character.character_name,
-            ),
-            corporation_name,
-        )
+
+        if timer.eve_character:
+            creator = format_html(
+                "{}<br>{}",
+                create_link_html(
+                    evewho.character_url(timer.eve_character.character_id),
+                    timer.eve_character.character_name,
+                ),
+                corporation_name,
+            )
+        else:
+            creator = "-"
 
         # visibility
         visibility = ""

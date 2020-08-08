@@ -44,6 +44,8 @@ $(document).ready(function () {
         var button = $(event.relatedTarget)
         var timer_pk = button.data('timerpk')
         var modal = $(this)
+        $('#modal_div_data').hide()
+        $('#modal_div_spinner').show()
         $.get(
             getTimerDataUrl.replace('pk_dummy', timer_pk),
             function (timer, status) {
@@ -78,6 +80,8 @@ $(document).ready(function () {
                             .find('.modal-body textarea')
                             .val(timer['notes']);
                     }
+                    $('#modal_div_spinner').hide()
+                    $('#modal_div_data').show()
                 } else {
                     modal
                         .find('.modal-body span')

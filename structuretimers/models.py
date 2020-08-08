@@ -344,6 +344,7 @@ class Timer(models.Model):
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
+        blank=True,
         related_name="Timers",
         help_text="Main character of the user who created this timer",
     )
@@ -352,6 +353,7 @@ class Timer(models.Model):
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
+        blank=True,
         related_name="Timers",
         help_text="Corporation of the user who created this timer",
     )
@@ -360,6 +362,7 @@ class Timer(models.Model):
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
+        blank=True,
         related_name="Timers",
         help_text="Alliance of the user who created this timer",
     )
@@ -374,7 +377,7 @@ class Timer(models.Model):
         ),
     )
     user = models.ForeignKey(
-        User, null=True, on_delete=models.SET_NULL, related_name="Timers",
+        User, null=True, on_delete=models.SET_NULL, blank=True, related_name="Timers",
     )
     details_image_url = models.CharField(
         max_length=1024,

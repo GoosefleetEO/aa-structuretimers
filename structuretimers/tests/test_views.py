@@ -231,6 +231,17 @@ class TestListData(LoadTestDataMixin, TestCase):
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
+    def test_can_show_timers_without_user_character_corporation_or_alliance(self):
+        timer_4 = Timer.objects.create(
+            structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now() + timedelta(hours=8),
+        )
+        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        expected = {self.timer_1.id, timer_4.id}
+        self.assertSetEqual(timer_ids, expected)
+
 
 @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestGetTimerData(LoadTestDataMixin, TestCase):

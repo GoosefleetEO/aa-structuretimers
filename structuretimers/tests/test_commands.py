@@ -123,3 +123,11 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         call_command("structuretimers_migrate_timers", stdout=self.out)
 
         self.assertFalse(Timer.objects.all().exists())
+
+    def test_do_not_create_duplicates(self, mock_get_input):
+        mock_get_input.return_value = "Y"
+
+        call_command("structuretimers_migrate_timers", stdout=self.out)
+        call_command("structuretimers_migrate_timers", stdout=self.out)
+
+        self.assertEqual(Timer.objects.all().count(), 1)

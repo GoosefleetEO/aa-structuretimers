@@ -84,7 +84,7 @@ class Command(BaseCommand):
         objective_map = {x[1]: x[0] for x in OBJECTIVE_CHOICES}
         structure_map = {x[1]: x[0] for x in STRUCTURE_CHOICES}
         migrated_count = 0
-        ignored_count = 0
+        skipped_count = 0
         for auth_timer in auth_timers_qs:
             try:
                 eve_solar_system = EveSolarSystem.objects.get(name=auth_timer.system)
@@ -95,7 +95,7 @@ class Command(BaseCommand):
                         f"due to invalid solar system: {auth_timer.system}"
                     )
                 )
-                ignored_count += 1
+                skipped_count += 1
                 continue
 
             if auth_timer.structure in structure_map:
@@ -107,7 +107,7 @@ class Command(BaseCommand):
                         f"due to invalid structure type: {auth_timer.structure}"
                     )
                 )
-                ignored_count += 1
+                skipped_count += 1
                 continue
 
             if auth_timer.objective in objective_map:
@@ -137,25 +137,40 @@ class Command(BaseCommand):
                 timer_type = Timer.TYPE_NONE
 
             if not is_test:
-                Timer.objects.create(
-                    eve_solar_system=eve_solar_system,
-                    location_details=auth_timer.planet_moon,
-                    structure_type_id=structure_type_id,
-                    timer_type=timer_type,
-                    details_notes=auth_timer.details,
-                    objective=objective,
-                    date=auth_timer.eve_time,
-                    is_important=auth_timer.important,
-                    visibility=visibility,
-                    eve_character=auth_timer.eve_character,
-                    eve_corporation=auth_timer.eve_corp,
-                    eve_alliance=auth_timer.eve_corp.alliance,
-                    user=auth_timer.user,
-                )
-            migrated_count += 1
+                try:
+                    Timer.objects.get(
+                        eve_solar_system=eve_solar_system,
+                        structure_type_id=structure_type_id,
+                        date=auth_timer.eve_time,
+                        details_notes=auth_timer.details,
+                    )
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Skipping timer '{auth_timer}', since it already exists"
+                        )
+                    )
+                    skipped_count += 1
+
+                except Timer.DoesNotExist:
+                    Timer.objects.create(
+                        eve_solar_system=eve_solar_system,
+                        structure_type_id=structure_type_id,
+                        date=auth_timer.eve_time,
+                        user=auth_timer.user,
+                        location_details=auth_timer.planet_moon,
+                        timer_type=timer_type,
+                        details_notes=auth_timer.details,
+                        objective=objective,
+                        is_important=auth_timer.important,
+                        visibility=visibility,
+                        eve_character=auth_timer.eve_character,
+                        eve_corporation=auth_timer.eve_corp,
+                        eve_alliance=auth_timer.eve_corp.alliance,
+                    )
+                    migrated_count += 1
 
         self.stdout.write(
-            f"Results: Migrated: {migrated_count} - Errors: {ignored_count} "
+            f"Results: Migrated: {migrated_count} - Skipped: {skipped_count} "
             f"- Total: {auth_timers_qs.count()}"
         )
 
@@ -174,7 +189,11 @@ class Command(BaseCommand):
                 f"This command will migrate {auth_timers_qs.count()} "
                 "pending timers from the "
                 "Auth's timerboard app to this app. "
-                "Please note that repeated runs will create duplicates."
+            )
+            self.stdout.write(
+                "Note that timers that have been migrated previously "
+                "will not be migrated again "
+                "unless the migrated timers have been changed significantly."
             )
             is_test = options["test"]
             if is_test:
