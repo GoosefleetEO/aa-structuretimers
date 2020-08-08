@@ -397,6 +397,15 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
         self.timer.timer_type = Timer.TYPE_ARMOR
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
+    def test_exclude_timer_types(self):
+        # process if it does match
+        self.rule.exclude_timer_types = [Timer.TYPE_ARMOR]
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.timer_type = Timer.TYPE_ARMOR
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
     def test_require_objectives(self):
         # do not process if it does not match
         self.rule.require_objectives = [Timer.OBJECTIVE_HOSTILE]
@@ -405,6 +414,15 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
         # process if it does match
         self.timer.objective = Timer.OBJECTIVE_HOSTILE
         self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_exclude_objectives(self):
+        # process if it does match
+        self.rule.exclude_objectives = [Timer.OBJECTIVE_HOSTILE]
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.objective = Timer.OBJECTIVE_HOSTILE
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
 
     def test_require_corporations(self):
         # do not process if it does not match
@@ -418,6 +436,18 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
         self.timer.save()
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
+    def test_exclude_corporations(self):
+        # process if it does match
+        self.rule.exclude_corporations.add(
+            EveCorporationInfo.objects.get(corporation_id=2001)
+        )
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.eve_corporation = EveCorporationInfo.objects.get(corporation_id=2001)
+        self.timer.save()
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
     def test_require_alliances(self):
         # do not process if it does not match
         self.rule.require_alliances.add(EveAllianceInfo.objects.get(alliance_id=3001))
@@ -427,6 +457,70 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
         self.timer.eve_alliance = EveAllianceInfo.objects.get(alliance_id=3001)
         self.timer.save()
         self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_exclude_alliances(self):
+        # process if it does match
+        self.rule.exclude_alliances.add(EveAllianceInfo.objects.get(alliance_id=3001))
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.eve_alliance = EveAllianceInfo.objects.get(alliance_id=3001)
+        self.timer.save()
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+    def test_require_visibility(self):
+        # do not process if it does not match
+        self.rule.require_visibility = [Timer.VISIBILITY_CORPORATION]
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.visibility = Timer.VISIBILITY_CORPORATION
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_exclude_visibility(self):
+        # process if it does match
+        self.rule.exclude_visibility = [Timer.VISIBILITY_CORPORATION]
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.visibility = Timer.VISIBILITY_CORPORATION
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+    def test_require_important(self):
+        # do not process if it does not match
+        self.rule.is_important = NotificationRule.CLAUSE_REQUIRED
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.is_important = True
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_exclude_important(self):
+        # process if it does match
+        self.rule.is_important = NotificationRule.CLAUSE_EXCLUDED
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.is_important = True
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+    def test_require_opsec(self):
+        # do not process if it does not match
+        self.rule.is_opsec = NotificationRule.CLAUSE_REQUIRED
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+        # process if it does match
+        self.timer.is_opsec = True
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+    def test_exclude_opsec(self):
+        # process if it does match
+        self.rule.is_opsec = NotificationRule.CLAUSE_EXCLUDED
+        self.assertTrue(self.rule.is_matching_timer(self.timer))
+
+        # do not process if it does not match
+        self.timer.is_opsec = True
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
 
 
 @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)

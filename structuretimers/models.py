@@ -232,7 +232,7 @@ class DiscordWebhook(models.Model):
         """Sends a test notification to this webhook and returns send report"""
         try:
             message = {
-                "content": f"Test message from {__title__}",
+                "content": f"Test message for webhook: {self.name}",
                 "username": __title__,
                 "avatar_url": default_avatar_url(),
             }
@@ -300,9 +300,7 @@ class Timer(models.Model):
         (VISIBILITY_CORPORATION, _("Corporation only")),
     ]
 
-    timer_type = models.CharField(
-        max_length=2, choices=TYPE_CHOICES, default=TYPE_NONE, verbose_name="timer type"
-    )
+    timer_type = models.CharField(max_length=2, choices=TYPE_CHOICES, default=TYPE_NONE)
     eve_solar_system = models.ForeignKey(
         EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
     )
@@ -310,7 +308,6 @@ class Timer(models.Model):
         max_length=254,
         default="",
         blank=True,
-        verbose_name="location details",
         help_text=(
             "Additional information about the location of this structure, "
             "e.g. name of nearby planet / moon / gate"
@@ -319,10 +316,7 @@ class Timer(models.Model):
     structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE,)
     structure_name = models.CharField(max_length=254, default="", blank=True)
     objective = models.CharField(
-        max_length=2,
-        choices=OBJECTIVE_CHOICES,
-        default=OBJECTIVE_UNDEFINED,
-        verbose_name="objective",
+        max_length=2, choices=OBJECTIVE_CHOICES, default=OBJECTIVE_UNDEFINED,
     )
     date = models.DateTimeField(
         db_index=True, help_text="Date when this timer happens",
@@ -538,6 +532,7 @@ class NotificationRule(models.Model):
     MINUTES_30 = 30
     MINUTES_45 = 45
     MINUTES_60 = 60
+    MINUTES_90 = 90
     MINUTES_120 = 120
 
     MINUTES_CHOICES = (
@@ -548,6 +543,7 @@ class NotificationRule(models.Model):
         (MINUTES_30, "30"),
         (MINUTES_45, "45"),
         (MINUTES_60, "60"),
+        (MINUTES_90, "90"),
         (MINUTES_120, "120"),
     )
     PING_TYPE_NONE = "PN"
@@ -559,10 +555,19 @@ class NotificationRule(models.Model):
         (PING_TYPE_EVERYONE, "@everyone"),
     )
 
+    CLAUSE_ANY = "AN"
+    CLAUSE_REQUIRED = "RQ"
+    CLAUSE_EXCLUDED = "EX"
+    CLAUSE_CHOICES = (
+        (CLAUSE_ANY, "any"),
+        (CLAUSE_REQUIRED, "required"),
+        (CLAUSE_EXCLUDED, "excluded"),
+    )
+
     minutes = models.PositiveIntegerField(
         choices=MINUTES_CHOICES,
         db_index=True,
-        help_text="Time before event in minutes when notifications are sent",
+        help_text="Notifications are sent x minutes before timer elapses",
     )
     webhooks = models.ManyToManyField(
         DiscordWebhook, help_text="Webhooks notifications are sent to"
@@ -584,6 +589,11 @@ class NotificationRule(models.Model):
             "or leave blank to match any."
         ),
     )
+    exclude_timer_types = MultiSelectField(
+        choices=Timer.TYPE_CHOICES,
+        blank=True,
+        help_text=("Timer must NOT have one of the given timer types"),
+    )
     require_objectives = MultiSelectField(
         choices=Timer.OBJECTIVE_CHOICES,
         blank=True,
@@ -592,21 +602,64 @@ class NotificationRule(models.Model):
             "or leave blank to match any."
         ),
     )
+    exclude_objectives = MultiSelectField(
+        choices=Timer.OBJECTIVE_CHOICES,
+        blank=True,
+        help_text=("Timer must NOT have one of the given objectives"),
+    )
     require_corporations = models.ManyToManyField(
         EveCorporationInfo,
         blank=True,
+        related_name="notification_rule_require_corporations",
         help_text=(
             "Timer must be created by one of the given corporations "
             "or leave blank to match any."
         ),
     )
+    exclude_corporations = models.ManyToManyField(
+        EveCorporationInfo,
+        blank=True,
+        related_name="notification_rule_exclude_corporations",
+        help_text=("Timer must NOT be created by one of the given corporations"),
+    )
     require_alliances = models.ManyToManyField(
         EveAllianceInfo,
         blank=True,
+        related_name="notification_rule_require_alliances",
         help_text=(
             "Timer must be created by one of the given alliances "
             "or leave blank to match any."
         ),
+    )
+    exclude_alliances = models.ManyToManyField(
+        EveAllianceInfo,
+        blank=True,
+        related_name="notification_rule_exclude_alliances",
+        help_text=("Timer must NOT be created by one of the given alliances"),
+    )
+    require_visibility = MultiSelectField(
+        choices=Timer.VISIBILITY_CHOICES,
+        blank=True,
+        help_text=(
+            "Visibility must be one of the selected or leave blank to match any."
+        ),
+    )
+    exclude_visibility = MultiSelectField(
+        choices=Timer.VISIBILITY_CHOICES,
+        blank=True,
+        help_text=("Visibility must NOT be one of the selected"),
+    )
+    is_important = models.CharField(
+        max_length=2,
+        choices=CLAUSE_CHOICES,
+        default=CLAUSE_ANY,
+        help_text="Wether the timer must be important",
+    )
+    is_opsec = models.CharField(
+        max_length=2,
+        choices=CLAUSE_CHOICES,
+        default=CLAUSE_ANY,
+        help_text="Wether the timer must be OPSEC",
     )
 
     objects = NotificationRuleManager()
@@ -634,17 +687,47 @@ class NotificationRule(models.Model):
     def is_matching_timer(self, timer: "Timer") -> bool:
         """returns True if notification rule is matching the given timer, else False"""
         is_matching = True
+        if is_matching and self.is_important == self.CLAUSE_REQUIRED:
+            is_matching = timer.is_important
+
+        if is_matching and self.is_important == self.CLAUSE_EXCLUDED:
+            is_matching = not timer.is_important
+
+        if is_matching and self.is_opsec == self.CLAUSE_REQUIRED:
+            is_matching = timer.is_opsec
+
+        if is_matching and self.is_opsec == self.CLAUSE_EXCLUDED:
+            is_matching = not timer.is_opsec
+
+        if is_matching and self.require_visibility:
+            is_matching = timer.visibility in self.require_visibility
+
+        if is_matching and self.exclude_visibility:
+            is_matching = timer.visibility not in self.exclude_visibility
+
         if is_matching and self.require_timer_types:
             is_matching = timer.timer_type in self.require_timer_types
+
+        if is_matching and self.exclude_timer_types:
+            is_matching = timer.timer_type not in self.exclude_timer_types
 
         if is_matching and self.require_objectives:
             is_matching = timer.objective in self.require_objectives
 
+        if is_matching and self.exclude_objectives:
+            is_matching = timer.objective not in self.exclude_objectives
+
         if is_matching and self.require_corporations.count() > 0:
             is_matching = timer.eve_corporation in self.require_corporations.all()
 
+        if is_matching and self.exclude_corporations.count() > 0:
+            is_matching = timer.eve_corporation not in self.exclude_corporations.all()
+
         if is_matching and self.require_alliances.count() > 0:
             is_matching = timer.eve_alliance in self.require_alliances.all()
+
+        if is_matching and self.exclude_alliances.count() > 0:
+            is_matching = timer.eve_alliance not in self.exclude_alliances.all()
 
         return is_matching
 
@@ -666,16 +749,14 @@ class NotificationRule(models.Model):
 
     @classmethod
     def get_timer_type_display(cls, value: Any) -> str:
-        return cls._get_multiselect_display(value, Timer.TYPE_CHOICES)
+        return cls.get_multiselect_display(value, Timer.TYPE_CHOICES)
 
     @classmethod
     def get_objectives_display(cls, value: Any) -> str:
-        return cls._get_multiselect_display(value, Timer.OBJECTIVE_CHOICES)
+        return cls.get_multiselect_display(value, Timer.OBJECTIVE_CHOICES)
 
     @classmethod
-    def _get_multiselect_display(
-        cls, value: Any, choices: List[Tuple[Any, str]]
-    ) -> str:
+    def get_multiselect_display(cls, value: Any, choices: List[Tuple[Any, str]]) -> str:
         for choice, text in choices:
             if str(choice) == str(value):
                 return text

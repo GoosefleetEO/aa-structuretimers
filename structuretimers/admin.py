@@ -1,6 +1,9 @@
+from django import forms
+from django.core.exceptions import ValidationError
 from django.contrib import admin
 from django.db.models.functions import Lower
 from django.utils.timezone import now
+from django.utils.safestring import mark_safe
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
@@ -48,58 +51,133 @@ class DiscordWebhookAdmin(admin.ModelAdmin):
     send_test_message.short_description = "Send test message to selected webhooks"
 
 
+def make_nice(name: str) -> str:
+    return name.replace("_", " ").capitalize()
+
+
+class NotificationRuleAdminForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validate_not_same_options_chosen(
+            cleaned_data,
+            "require_timer_types",
+            "exclude_timer_types",
+            lambda x: NotificationRule.get_multiselect_display(x, Timer.TYPE_CHOICES),
+        )
+        self._validate_not_same_options_chosen(
+            cleaned_data,
+            "require_objectives",
+            "exclude_objectives",
+            lambda x: NotificationRule.get_multiselect_display(
+                x, Timer.OBJECTIVE_CHOICES
+            ),
+        )
+        self._validate_not_same_options_chosen(
+            cleaned_data,
+            "require_visibility",
+            "exclude_visibility",
+            lambda x: NotificationRule.get_multiselect_display(
+                x, Timer.VISIBILITY_CHOICES
+            ),
+        )
+        self._validate_not_same_options_chosen(
+            cleaned_data, "require_corporations", "exclude_corporations", lambda x: x,
+        )
+        self._validate_not_same_options_chosen(
+            cleaned_data, "require_alliances", "exclude_alliances", lambda x: x,
+        )
+
+    @staticmethod
+    def _validate_not_same_options_chosen(
+        cleaned_data, field_name_1, field_name_2, display_func
+    ) -> None:
+        same_options = set(cleaned_data[field_name_1]).intersection(
+            set(cleaned_data[field_name_2])
+        )
+        if same_options:
+            same_options_text = ", ".join(
+                map(str, [display_func(x) for x in same_options],)
+            )
+            raise ValidationError(
+                f"Can not choose same options for {make_nice(field_name_1)} "
+                f"& {make_nice(field_name_2)}: {same_options_text}"
+            )
+
+
 @admin.register(NotificationRule)
 class NotificationRuleAdmin(admin.ModelAdmin):
+    form = NotificationRuleAdminForm
     list_display = (
         "id",
         "is_enabled",
         "minutes",
-        "_require_timer_type",
-        "_require_objectives",
-        "_require_corporations",
-        "_require_alliances",
         "_webhooks",
         "ping_type",
+        "_clauses",
     )
     list_filter = ("is_enabled",)
 
-    def _require_timer_type(self, obj):
-        return [
-            NotificationRule.get_timer_type_display(x) for x in obj.require_timer_types
-        ]
+    def _clauses(self, obj) -> list:
+        clauses = list()
+        for field, choices in [
+            ("require_timer_types", Timer.TYPE_CHOICES),
+            ("exclude_timer_types", Timer.TYPE_CHOICES),
+            ("require_objectives", Timer.OBJECTIVE_CHOICES),
+            ("exclude_objectives", Timer.OBJECTIVE_CHOICES),
+            ("require_visibility", Timer.VISIBILITY_CHOICES),
+            ("exclude_visibility", Timer.VISIBILITY_CHOICES),
+        ]:
+            if getattr(obj, field):
+                text = ", ".join(
+                    map(
+                        str,
+                        [
+                            NotificationRule.get_multiselect_display(x, choices)
+                            for x in getattr(obj, field)
+                        ],
+                    )
+                )
+                clauses.append(f"{make_nice(field)} = {text}")
 
-    def _require_objectives(self, obj):
-        return [
-            NotificationRule.get_objectives_display(x) for x in obj.require_objectives
-        ]
+        for field in [
+            "require_corporations",
+            "exclude_corporations",
+            "require_alliances",
+            "exclude_alliances",
+        ]:
+            if getattr(obj, field).count() > 0:
+                text = ", ".join(map(str, getattr(obj, field).all()))
+                clauses.append(f"{make_nice(field)} = {text}")
 
-    def _require_corporations(self, obj):
-        return list(
-            obj.require_corporations.values_list(
-                "corporation_name", flat=True
-            ).order_by("corporation_name")
-        )
+        for field in [
+            "is_important",
+            "is_opsec",
+        ]:
+            if getattr(obj, field) != NotificationRule.CLAUSE_ANY:
+                text = getattr(obj, f"get_{field}_display")()
+                clauses.append(f"{make_nice(field)} = {text}")
+
+        return mark_safe("<br>".join(clauses)) if clauses else None
 
     def _webhooks(self, obj):
         return list(obj.webhooks.values_list("name", flat=True).order_by("name"))
 
-    def _require_alliances(self, obj):
-        return list(
-            obj.require_alliances.values_list("alliance_name", flat=True).order_by(
-                "alliance_name"
-            )
-        )
-
-    filter_horizontal = ("require_alliances", "require_corporations", "webhooks")
+    filter_horizontal = (
+        "require_alliances",
+        "exclude_alliances",
+        "require_corporations",
+        "exclude_corporations",
+        "webhooks",
+    )
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """overriding this formfield to have sorted lists in the form"""
-        if db_field.name == "require_alliances":
+        if db_field.name in {"require_alliances", "exclude_alliances"}:
             kwargs["queryset"] = EveAllianceInfo.objects.all().order_by(
                 Lower("alliance_name")
             )
 
-        elif db_field.name == "require_corporations":
+        elif db_field.name in {"require_corporations", "exclude_corporations"}:
             kwargs["queryset"] = EveCorporationInfo.objects.all().order_by(
                 Lower("corporation_name")
             )
