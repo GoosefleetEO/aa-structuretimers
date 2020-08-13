@@ -27,7 +27,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         # user 2
         cls.user_2 = create_test_user(cls.character_2)
         AuthUtils.add_permission_to_user_by_name(
-            "structuretimers.timer_management", cls.user_2
+            "structuretimers.create_timer", cls.user_2
         )
         cls.user_2 = User.objects.get(pk=cls.user_2.pk)
 
@@ -36,9 +36,9 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.timer_1 = Timer(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
-            eve_character=self.character_1,
+            eve_character=self.character_2,
             eve_corporation=self.corporation_1,
-            user=self.user_1,
+            user=self.user_2,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -46,9 +46,9 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.timer_2 = Timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
-            eve_character=self.character_1,
+            eve_character=self.character_2,
             eve_corporation=self.corporation_1,
-            user=self.user_1,
+            user=self.user_2,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
         )
@@ -56,9 +56,9 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.timer_3 = Timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
-            eve_character=self.character_1,
+            eve_character=self.character_2,
             eve_corporation=self.corporation_1,
-            user=self.user_1,
+            user=self.user_2,
             eve_solar_system=self.system_enaluri,
             structure_type=self.type_astrahus,
         )
@@ -97,6 +97,29 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
 
+    def test_add_new_timer_without_permission(self):
+        """
+        given a user does not have permissions
+        when trying to access page for adding new timers
+        then he is redirected back to dashboard
+        """
+
+        # login
+        self.app.set_user(self.user_1)
+
+        # user opens timerboard
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
+        self.assertEqual(timerboard.status_code, 200)
+
+        # Add button not shown to user
+        with self.assertRaises(IndexError):
+            timerboard.click(href=reverse("structuretimers:add"))
+
+        # direct request redirects user back to dashboard
+        response = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
+
     def test_edit_existing_timer(self):
         """
         when user has permissions
@@ -127,14 +150,83 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertEqual(self.timer_1.owner_name, "The Boys")
 
+    def test_edit_timer_without_permission_1(self):
+        """
+        given a user does not have permissions
+        when trying to access page for timer edit
+        then he is redirected back to dashboard
+        """
+
+        # login
+        self.app.set_user(self.user_1)
+
+        # user tries to access page for edit directly
+        response = self.app.get(reverse("structuretimers:edit", args=[self.timer_1.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
+
+    def test_edit_timer_of_others_without_permission_2(self):
+        """
+        given a user has permission to create tiemrs
+        when trying to access page for timer edit of another user
+        then he is redirected back to dashboard
+        """
+
+        # login
+        user_3 = create_test_user(self.character_3)
+        AuthUtils.add_permission_to_user_by_name("structuretimers.create_timer", user_3)
+        user_3 = User.objects.get(pk=user_3.pk)
+        self.app.set_user(user_3)
+
+        # user tries to access page for edit directly
+        response = self.app.get(reverse("structuretimers:edit", args=[self.timer_1.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
+
+    def test_edit_timer_of_others_with_manager_permission(self):
+        """        
+        when a user has manager permission
+        then he can edit timers of others
+        """
+
+        # login
+        user_3 = create_test_user(self.character_3)
+        AuthUtils.add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
+        user_3 = User.objects.get(pk=user_3.pk)
+        self.app.set_user(user_3)
+
+        # user opens timerboard
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
+        self.assertEqual(timerboard.status_code, 200)
+
+        # user clicks on "Edit Timer" for timer 1
+        edit_timer = self.app.get(
+            reverse("structuretimers:edit", args=[self.timer_1.pk])
+        )
+        self.assertEqual(edit_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = edit_timer.forms["add-timer-form"]
+        form["owner_name"] = "The Boys"
+        response = form.submit()
+        self.timer_1.refresh_from_db()
+
+        # assert results
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
+        self.assertEqual(self.timer_1.owner_name, "The Boys")
+
     def test_delete_existing_timer(self):
         """
-        when user has permissions
+        when user has manager permissions
         then he can delete an existing timer
         """
 
         # login
-        self.app.set_user(self.user_2)
+        user_3 = create_test_user(self.character_3)
+        AuthUtils.add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
+        user_3 = User.objects.get(pk=user_3.pk)
+        self.app.set_user(user_3)
 
         # user opens timerboard
         timerboard = self.app.get(reverse("structuretimers:timer_list"))
@@ -154,6 +246,23 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertFalse(Timer.objects.filter(pk=self.timer_2.pk).exists())
+
+    def test_delete_timer_without_permission(self):
+        """
+        given a user does not have permissions
+        when trying to access page for timer delete
+        then he is redirected back to dashboard
+        """
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user tries to access page for edit directly
+        response = self.app.get(
+            reverse("structuretimers:delete", args=[self.timer_2.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
 
 
 """

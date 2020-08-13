@@ -22,7 +22,7 @@ def get_json_response(response: object):
 
 
 @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
-class TestListData(LoadTestDataMixin, TestCase):
+class TestViewBase(LoadTestDataMixin, TestCase):
     @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         self.factory = RequestFactory()
@@ -64,17 +64,12 @@ class TestListData(LoadTestDataMixin, TestCase):
         )
         self.timer_3.save()
 
-    def test_timer_list_view_loads(self):
-        request = self.factory.get(reverse("structuretimers:timer_list"))
-        request.user = self.user_1
-        response = views.timer_list(request)
-        self.assertEqual(response.status_code, 200)
 
-    def _call_timer_list_data_and_get_timer_ids(
-        self, tab_name: str = "current", user: User = None
-    ) -> set:
+class TestListData(TestViewBase):
+    def _send_request(self, tab_name: str = "current", user: User = None) -> set:
         if not user:
             user = self.user_1
+
         request = self.factory.get(
             reverse("structuretimers:timer_list_data", args=[tab_name])
         )
@@ -83,14 +78,20 @@ class TestListData(LoadTestDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         return {x["id"] for x in get_json_response(response)}
 
+    def test_timer_list_view_loads(self):
+        request = self.factory.get(reverse("structuretimers:timer_list"))
+        request.user = self.user_1
+        response = views.timer_list(request)
+        self.assertEqual(response.status_code, 200)
+
     def test_timer_list_data_current_and_past(self):
         # test current timers
-        timer_ids = self._call_timer_list_data_and_get_timer_ids("current")
+        timer_ids = self._send_request("current")
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
         # test past timers
-        timer_ids = self._call_timer_list_data_and_get_timer_ids("past")
+        timer_ids = self._send_request("past")
         expected = {self.timer_2.id, self.timer_3.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -106,7 +107,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_CORPORATION,
         )
         timer_4.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -122,7 +123,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_CORPORATION,
         )
         timer.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -139,7 +140,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_ALLIANCE,
         )
         timer_4.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -156,13 +157,13 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_ALLIANCE,
         )
         timer.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_opsec_restricted_to_opsec_member(self):
         AuthUtils.add_permission_to_user_by_name(
-            "structuretimers.view_opsec_timer", self.user_1
+            "structuretimers.opsec_access", self.user_1
         )
         timer_4 = Timer(
             structure_name="Timer 4",
@@ -175,7 +176,7 @@ class TestListData(LoadTestDataMixin, TestCase):
             is_opsec=True,
         )
         timer_4.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -191,13 +192,13 @@ class TestListData(LoadTestDataMixin, TestCase):
             is_opsec=True,
         )
         timer.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_opsec_corp_restricted_to_opsec_member_other_corp(self):
         AuthUtils.add_permission_to_user_by_name(
-            "structuretimers.view_opsec_timer", self.user_1
+            "structuretimers.opsec_access", self.user_1
         )
         timer = Timer(
             structure_name="Timer 4",
@@ -211,12 +212,12 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_CORPORATION,
         )
         timer.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
-    def test_always_show_timers_created_by_user(self):
-        timer_4 = Timer(
+    def test_show_corp_timer_to_creator_of_different_corp(self):
+        timer_4 = Timer.objects.create(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -226,8 +227,23 @@ class TestListData(LoadTestDataMixin, TestCase):
             visibility=Timer.VISIBILITY_CORPORATION,
             user=self.user_1,
         )
-        timer_4.save()
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
+        expected = {self.timer_1.id, timer_4.id}
+        self.assertSetEqual(timer_ids, expected)
+
+    def test_show_alliance_timer_to_creator_of_different_alliance(self):
+        timer_4 = Timer.objects.create(
+            structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now() + timedelta(hours=8),
+            eve_character=self.character_3,
+            eve_alliance=self.alliance_3,
+            eve_corporation=self.corporation_3,
+            visibility=Timer.VISIBILITY_ALLIANCE,
+            user=self.user_1,
+        )
+        timer_ids = self._send_request()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -238,32 +254,12 @@ class TestListData(LoadTestDataMixin, TestCase):
             structure_type=self.type_astrahus,
             date=now() + timedelta(hours=8),
         )
-        timer_ids = self._call_timer_list_data_and_get_timer_ids()
+        timer_ids = self._send_request()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
-class TestGetTimerData(LoadTestDataMixin, TestCase):
-    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
-    def setUp(self):
-        self.factory = RequestFactory()
-
-        # user
-        self.user_1 = create_test_user(self.character_1)
-
-        # timers
-        self.timer_1 = Timer(
-            structure_name="Timer 1",
-            eve_solar_system=self.system_abune,
-            structure_type=self.type_astrahus,
-            date=now() + timedelta(hours=4),
-            eve_character=self.character_1,
-            eve_corporation=self.corporation_1,
-            user=self.user_1,
-        )
-        self.timer_1.save()
-
+class TestGetTimerData(TestViewBase):
     def test_normal(self):
         request = self.factory.get(
             reverse("structuretimers:get_timer_data", args=[self.timer_1.pk])

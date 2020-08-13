@@ -1,8 +1,9 @@
 from datetime import timedelta
 import logging
 
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.utils.html import format_html, mark_safe
 from django.shortcuts import get_object_or_404, render, reverse
 from django.utils.translation import gettext_lazy as _
@@ -60,7 +61,7 @@ def _timers_visible_to_user(user):
         "structure_type", "eve_corporation", "eve_alliance"
     )
 
-    if not user.has_perm("structuretimers.view_opsec_timer"):
+    if not user.has_perm("structuretimers.opsec_access"):
         timers_qs = timers_qs.exclude(is_opsec=True)
 
     timers_qs = (
@@ -106,7 +107,7 @@ def timer_list_data(request, tab_name):
         is_passed = timer.date < now()
         time = timer.date.strftime(DATETIME_FORMAT)
         if is_passed:
-            countdown_str = "PASSED"
+            countdown_str = "ELAPSED"
         else:
             duration = timer.date - now()
             countdown_str = timeuntil_str(duration)
@@ -171,10 +172,11 @@ def timer_list_data(request, tab_name):
         # name & owner
         if timer.owner_name:
             owner_name = timer.owner_name
-            owner = create_link_html(dotlan.corporation_url(owner_name), owner_name)
+            owner = owner_name
         else:
             owner = "-"
             owner_name = ""
+
         name = format_html("{}<br>{}", timer.structure_name, owner)
 
         # creator
@@ -227,7 +229,7 @@ def timer_list_data(request, tab_name):
             + "&nbsp;"
         )
 
-        if request.user.has_perm("structuretimers.timer_management"):
+        if request.user.has_perm("structuretimers.manage_timer"):
             actions += (
                 create_fa_button_html(
                     reverse("structuretimers:delete", args=(timer.pk,)),
@@ -236,12 +238,14 @@ def timer_list_data(request, tab_name):
                     "Delete this timer",
                 )
                 + "&nbsp;"
-                + create_fa_button_html(
-                    reverse("structuretimers:edit", args=(timer.pk,)),
-                    "far fa-edit",
-                    "warning",
-                    "Edit this timer",
-                )
+            )
+
+        if timer.user_can_edit(request.user):
+            actions += create_fa_button_html(
+                reverse("structuretimers:edit", args=(timer.pk,)),
+                "far fa-edit",
+                "warning",
+                "Edit this timer",
             )
 
         actions = add_no_wrap_html(actions)
@@ -300,7 +304,6 @@ class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 
 class TimerManagementView(BaseTimerView):
-    permission_required = "structuretimers.timer_management"
     index_redirect = "structuretimers:timer_list"
     success_url = reverse_lazy(index_redirect)
     model = Timer
@@ -326,6 +329,7 @@ class AddUpdateMixin:
 
 
 class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
+    permission_required = "structuretimers.create_timer"
     template_name_suffix = "_create_form"
 
     def form_valid(self, form):
@@ -350,7 +354,15 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
 
 
 class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
+    permission_required = "structuretimers.basic_access"
     template_name_suffix = "_update_form"
+
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        response = super().dispatch(request, *args, **kwargs)
+        if not self.object.user_can_edit(self.request.user):
+            raise PermissionDenied()
+
+        return response
 
     """
     def form_valid(self, form):        
@@ -363,7 +375,7 @@ class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
 
 
 class RemoveTimerView(TimerManagementView, DeleteView):
-    pass
+    permission_required = "structuretimers.manage_timer"
 
 
 @login_required

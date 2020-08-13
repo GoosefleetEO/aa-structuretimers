@@ -54,8 +54,10 @@ class General(models.Model):
         managed = False
         default_permissions = ()
         permissions = (
-            ("basic_access", "Can access this app"),
-            ("timer_management", "Can create and edit timers"),
+            ("basic_access", "Can access this app and see timers"),
+            ("create_timer", "Can create new timers and edit own timers"),
+            ("manage_timer", "Can edit and delete any timer"),
+            ("opsec_access", "Can create and see opsec timers"),
         )
 
 
@@ -403,9 +405,6 @@ class Timer(models.Model):
 
     objects = TimerManager()
 
-    class Meta:
-        permissions = (("view_opsec_timer", "Can view timers marked as is_opsec"),)
-
     def __str__(self):
         return "%s timer for %s @ %s" % (
             self.get_timer_type_display(),
@@ -439,6 +438,12 @@ class Timer(models.Model):
             f' "{self.structure_name}"' if self.structure_name else "",
             self.eve_solar_system.name,
             f" near {self.location_details}" if self.location_details else "",
+        )
+
+    def user_can_edit(self, user: user) -> bool:
+        """Checks if the given user can edit this timer. Returns True or False"""
+        return user.has_perm("structuretimers.manage_timer") or (
+            self.user == user and user.has_perm("structuretimers.create_timer")
         )
 
     def label_type_for_timer_type(self) -> str:

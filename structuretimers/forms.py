@@ -7,6 +7,8 @@ from django.utils.html import mark_safe
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
+from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
+
 from .models import Timer
 
 logger = logging.getLogger(__name__)
@@ -50,8 +52,10 @@ class TimerForm(forms.ModelForm):
                 initial.update({"minutes_left": td.seconds // 60 % 60})
 
             kwargs.update({"initial": initial})
+            self.is_new = False
         else:
             my_instance = None
+            self.is_new = True
 
         super().__init__(*args, **kwargs)
 
@@ -109,14 +113,33 @@ class TimerForm(forms.ModelForm):
     def save(self, commit=True):
         timer = super(TimerForm, self).save(commit=False)
 
-        # Get character
-        character = self.user.profile.main_character
-        corporation = character.corporation
-        logger.debug(
-            "Determined timer save request on behalf " "of character %s corporation %s",
-            character,
-            corporation,
-        )
+        # character / corporation / alliance
+        if self.is_new:
+            character = self.user.profile.main_character
+            try:
+                alliance = character.alliance
+            except EveAllianceInfo.DoesNotExist:
+                alliance = EveAllianceInfo.objects.create_alliance(
+                    character.alliance_id
+                )
+
+            try:
+                corporation = character.corporation
+            except EveCorporationInfo.DoesNotExist:
+                corporation = EveCorporationInfo.objects.create_corporation(
+                    character.corporation_id
+                )
+
+            logger.debug(
+                "Determined timer save request is on behalf of character %s corporation %s",
+                character,
+                corporation,
+            )
+            timer.eve_character = character
+            timer.eve_corporation = corporation
+            timer.eve_alliance = alliance
+            timer.user = self.user
+
         # calculate future time
         future_time = datetime.timedelta(
             days=self.cleaned_data["days_left"],
@@ -131,15 +154,12 @@ class TimerForm(forms.ModelForm):
             current_time,
             future_time,
         )
+        timer.date = date
 
-        # get structure type
+        # structure type
         timer.structure_type_id = self.cleaned_data["structure_type_2"]
         timer.eve_solar_system_id = self.cleaned_data["eve_solar_system_2"]
 
-        timer.date = date
-        timer.eve_character = character
-        timer.eve_corporation = corporation
-        timer.user = self.user
         if commit:
             timer.save()
         return timer

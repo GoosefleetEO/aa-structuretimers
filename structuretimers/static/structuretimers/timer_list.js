@@ -218,7 +218,7 @@ $(document).ready(function () {
                     countdown_str = getDurationString(duration);
                 }
                 else {
-                    countdown_str = 'EXPIRED';
+                    countdown_str = 'ELAPSED';
                 }
                 d['time'] = date_str + '<br>' + countdown_str;
                 table_current

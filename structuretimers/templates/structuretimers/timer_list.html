@@ -10,7 +10,7 @@
         </div>
 
         <span class="pull-right">
-            {% if perms.structuretimers.timer_management %}
+            {% if perms.structuretimers.create_timer %}
                 <a 
                     href="{% url 'structuretimers:add' %}" 
                     class="btn btn-success" 
@@ -92,7 +92,7 @@
         data-titleOwner="{% trans 'Owner' %}"
         data-titleObjective="{% trans 'Objective' %}"
         data-titleVisibility="{% trans 'Visibility' %}"
-        data-hasPermOPSEC="{{ perms.structuretimers.view_opsec_timer }}"
+        data-hasPermOPSEC="{{ perms.structuretimers.opsec_access }}"
     >
     </div>
     
