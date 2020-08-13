@@ -152,7 +152,7 @@ def clean_setting(
     max_value: int = None,
     required_type: type = None,
     choices: list = None,
-):
+) -> Any:
     """cleans the input for a custom setting
 
     Will use `default_value` if settings does not exit or has the wrong type
@@ -161,6 +161,8 @@ def clean_setting(
     Need to define `required_type` if `default_value` is `None`
 
     Will assume `min_value` of 0 for int (can be overriden)
+
+    `None` allowed as value
 
     Returns cleaned value for setting
     """
@@ -177,7 +179,7 @@ def clean_setting(
         cleaned_value = default_value
     else:
         dirty_value = getattr(settings, name)
-        if (
+        if dirty_value is None or (
             isinstance(dirty_value, required_type)
             and (min_value is None or dirty_value >= min_value)
             and (max_value is None or dirty_value <= max_value)

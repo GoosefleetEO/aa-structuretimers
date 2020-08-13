@@ -196,6 +196,28 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
     """
 
 
+@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.managers.TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS", 1)
+class TestTimerManger(LoadTestDataMixin, TestCase):
+    def test_delete_old_timer(self):
+        timer_1 = Timer.objects.create(
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now(),
+        )
+        timer_2 = Timer.objects.create(
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now() - timedelta(days=1, seconds=1),
+        )
+        result = Timer.objects.delete_obsolete()
+        self.assertEqual(result, 1)
+        self.assertTrue(Timer.objects.filter(pk=timer_1.pk).exists())
+        self.assertFalse(Timer.objects.filter(pk=timer_2.pk).exists())
+
+
 @patch(MODULE_PATH + ".DiscordWebhook.send_message")
 class TestTimerSendNotification(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:

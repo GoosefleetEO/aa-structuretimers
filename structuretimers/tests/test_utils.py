@@ -118,6 +118,12 @@ class TestCleanSetting(TestCase):
         self.assertEqual(result, 50)
 
     @patch(MODULE_PATH + ".settings")
+    def test_none_allowed_for_type_int(self, mock_settings):
+        mock_settings.TEST_SETTING_DUMMY = None
+        result = clean_setting("TEST_SETTING_DUMMY", 50)
+        self.assertIsNone(result)
+
+    @patch(MODULE_PATH + ".settings")
     def test_default_if_below_minimum_1(self, mock_settings):
         mock_settings.TEST_SETTING_DUMMY = -5
         result = clean_setting("TEST_SETTING_DUMMY", default_value=50)

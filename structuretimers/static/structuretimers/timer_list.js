@@ -190,11 +190,11 @@ $(document).ready(function () {
         filterDropDown: filterDropDown,
         columnDefs: columnDefs,
         createdRow: function (row, data, dataIndex) {
-            if (data['is_important']) {
-                $(row).addClass('warning');
-            }
-            else if (data['is_passed']) {
+            if (data['is_passed']) {
                 $(row).addClass('active');
+            }
+            else if (data['is_important']) {
+                $(row).addClass('warning');
             }
         }
     });

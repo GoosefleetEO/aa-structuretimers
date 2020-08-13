@@ -211,3 +211,11 @@ def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
                     message=message,
                     level=level,
                 )
+
+
+@shared_task
+def housekeeping() -> None:
+    """Perform housekeeping tasks"""
+    logger.info("Performing housekeeping")
+    deleted_count = Timer.objects.delete_obsolete()
+    logger.info(f"Deleted {deleted_count:,} obsolete timers.")

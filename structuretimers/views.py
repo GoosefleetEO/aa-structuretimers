@@ -120,10 +120,15 @@ def timer_list_data(request, tab_name):
 
         # objective & tags
         tags = list()
+        is_restricted = False
         if timer.is_opsec:
             tags.append(add_bs_label_html("OPSEC", "danger"))
+            is_restricted = True
+
         if timer.visibility != Timer.VISIBILITY_UNRESTRICTED:
             tags.append(add_bs_label_html(timer.get_visibility_display(), "info"))
+            is_restricted = True
+
         if timer.is_important:
             tags.append(add_bs_label_html("Important", "warning"))
 
@@ -240,6 +245,7 @@ def timer_list_data(request, tab_name):
                 "is_opsec": timer.is_opsec,
                 "is_passed": is_passed,
                 "is_important": timer.is_important,
+                "is_restricted": is_restricted,
             }
         )
     return JsonResponse(data, safe=False)
