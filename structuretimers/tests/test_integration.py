@@ -4,13 +4,12 @@ from unittest.mock import patch
 from allianceauth.tests.auth_utils import AuthUtils
 from django_webtest import WebTest
 
-from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.timezone import now
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from . import LoadTestDataMixin, create_test_user
+from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
 
@@ -26,14 +25,13 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # user 2
         cls.user_2 = create_test_user(cls.character_2)
-        AuthUtils.add_permission_to_user_by_name(
+        cls.user_2 = add_permission_to_user_by_name(
             "structuretimers.create_timer", cls.user_2
         )
-        cls.user_2 = User.objects.get(pk=cls.user_2.pk)
 
     @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = Timer(
+        self.timer_1 = Timer.objects.create(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_2,
@@ -42,8 +40,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
-        self.timer_1.save()
-        self.timer_2 = Timer(
+        self.timer_2 = Timer.objects.create(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -52,8 +49,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
         )
-        self.timer_2.save()
-        self.timer_3 = Timer(
+        self.timer_3 = Timer.objects.create(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -174,8 +170,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # login
         user_3 = create_test_user(self.character_3)
-        AuthUtils.add_permission_to_user_by_name("structuretimers.create_timer", user_3)
-        user_3 = User.objects.get(pk=user_3.pk)
+        user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
         self.app.set_user(user_3)
 
         # user tries to access page for edit directly
@@ -191,8 +186,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # login
         user_3 = create_test_user(self.character_3)
-        AuthUtils.add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
-        user_3 = User.objects.get(pk=user_3.pk)
+        user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
 
         # user opens timerboard
@@ -216,6 +210,47 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertEqual(self.timer_1.owner_name, "The Boys")
 
+    def test_manager_tries_to_edit_corp_restricted_timer_of_others(self):
+        """
+        given a user has permission to create and manage timers
+        when trying to access page for timer edit of a corp restricted timer 
+        from another corp
+        then he is redirected back to dashboard
+        """
+        self.timer_3.visibility = Timer.VISIBILITY_CORPORATION
+        self.timer_3.save()
+
+        # login
+        user_3 = create_test_user(self.character_3)
+        user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
+        user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
+        self.app.set_user(user_3)
+
+        # user tries to access page for edit directly
+        response = self.app.get(reverse("structuretimers:edit", args=[self.timer_3.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
+
+    def test_manager_tries_to_edit_opsec_timer_of_others(self):
+        """
+        given a user has permission to create and manage timers
+        when trying to access page for timer edit of a opsec timer
+        then he is redirected back to dashboard
+        """
+        self.timer_3.is_opsec = True
+        self.timer_3.save()
+
+        # login
+        user_3 = create_test_user(self.character_3)
+        user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
+        user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
+        self.app.set_user(user_3)
+
+        # user tries to access page for edit directly
+        response = self.app.get(reverse("structuretimers:edit", args=[self.timer_3.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("authentication:dashboard"))
+
     def test_delete_existing_timer(self):
         """
         when user has manager permissions
@@ -224,8 +259,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # login
         user_3 = create_test_user(self.character_3)
-        AuthUtils.add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
-        user_3 = User.objects.get(pk=user_3.pk)
+        user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
 
         # user opens timerboard

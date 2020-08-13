@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.utils.html import format_html, mark_safe
-from django.shortcuts import get_object_or_404, render, reverse
+from django.shortcuts import render, reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 
@@ -47,44 +47,12 @@ def timer_list(request):
     return render(request, "structuretimers/timer_list.html", context=context)
 
 
-def _timers_visible_to_user(user):
-    """returns queryset of all structuretimers visible to the given user"""
-    user_ids = list(
-        user.character_ownerships.select_related("character").values(
-            "character__corporation_id", "character__alliance_id"
-        )
-    )
-    user_corporation_ids = {x["character__corporation_id"] for x in user_ids}
-    user_alliance_ids = {x["character__alliance_id"] for x in user_ids}
-
-    timers_qs = Timer.objects.select_related(
-        "structure_type", "eve_corporation", "eve_alliance"
-    )
-
-    if not user.has_perm("structuretimers.opsec_access"):
-        timers_qs = timers_qs.exclude(is_opsec=True)
-
-    timers_qs = (
-        timers_qs.filter(visibility=Timer.VISIBILITY_UNRESTRICTED)
-        | timers_qs.filter(user=user)
-        | timers_qs.filter(
-            visibility=Timer.VISIBILITY_CORPORATION,
-            eve_corporation__corporation_id__in=user_corporation_ids,
-        )
-        | timers_qs.filter(
-            visibility=Timer.VISIBILITY_ALLIANCE,
-            eve_alliance__alliance_id__in=user_alliance_ids,
-        )
-    )
-    return timers_qs
-
-
 @login_required
 @permission_required("structuretimers.basic_access")
 def timer_list_data(request, tab_name):
     """returns timer list in JSON for AJAX call in timer_list view"""
 
-    timers_qs = _timers_visible_to_user(request.user)
+    timers_qs = Timer.objects.all().visible_to_user(request.user)
 
     if tab_name == "current":
         timers_qs = timers_qs.filter(
@@ -281,8 +249,7 @@ def timer_list_data(request, tab_name):
 @permission_required("structuretimers.basic_access")
 def get_timer_data(request, pk):
     """returns data for a timer"""
-    timers_qs = _timers_visible_to_user(request.user)
-    timers_qs = timers_qs.filter(pk=pk)
+    timers_qs = Timer.objects.filter(pk=pk).visible_to_user(request.user)
     if timers_qs.exists():
         timer = timers_qs.first()
         data = {
@@ -308,9 +275,6 @@ class TimerManagementView(BaseTimerView):
     success_url = reverse_lazy(index_redirect)
     model = Timer
     form_class = TimerForm
-
-    def get_timer(self, timer_id):
-        return get_object_or_404(self.model, id=timer_id)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -359,7 +323,12 @@ class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponse:
         response = super().dispatch(request, *args, **kwargs)
-        if not self.object.user_can_edit(self.request.user):
+        if (
+            not self.object.user_can_edit(self.request.user)
+            or not Timer.objects.filter(pk=self.object.pk)
+            .visible_to_user(self.request.user)
+            .exists()
+        ):
             raise PermissionDenied()
 
         return response

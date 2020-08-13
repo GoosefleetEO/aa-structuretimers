@@ -10,7 +10,7 @@ from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
-from . import LoadTestDataMixin
+from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 from ..models import DiscordWebhook, NotificationRule, Timer, models
 from ..utils import JSONDateTimeDecoder, NoSocketsTestCase
 
@@ -81,6 +81,119 @@ class TestTimer(LoadTestDataMixin, TestCase):
 
         timer.objective = Timer.OBJECTIVE_FRIENDLY
         self.assertEqual(timer.label_type_for_objective(), "primary")
+
+
+@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+class TestTimerAccess(LoadTestDataMixin, TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.user_1 = create_test_user(cls.character_1)
+        cls.user_2 = create_test_user(cls.character_2)
+        cls.user_3 = create_test_user(cls.character_3)
+        cls.user_1 = add_permission_to_user_by_name(
+            "structuretimers.create_timer", cls.user_1
+        )
+        cls.user_2 = add_permission_to_user_by_name(
+            "structuretimers.create_timer", cls.user_2
+        )
+        cls.user_2 = add_permission_to_user_by_name(
+            "structuretimers.manage_timer", cls.user_2
+        )
+        cls.user_2 = add_permission_to_user_by_name(
+            "structuretimers.opsec_access", cls.user_2
+        )
+
+    def test_creator_can_edit_own_timer(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            user=self.user_1,
+        )
+        self.assertTrue(timer.user_can_edit(self.user_1))
+
+    def test_manager_can_edit_other_timers(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            user=self.user_1,
+        )
+        self.assertTrue(timer.user_can_edit(self.user_2))
+
+    def test_non_manager_can_not_edit_other_timer(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            user=self.user_1,
+        )
+        self.assertFalse(timer.user_can_edit(self.user_3))
+
+    """
+    def test_user_with_basic_access_can_view_normal_timer(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            user=self.user_1,
+        )
+        self.assertTrue(timer.user_can_view(self.user_3))
+
+    def test_user_can_not_view_corp_restricted_timer_from_other_corp(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            eve_corporation=self.corporation_1,
+            visibility=Timer.VISIBILITY_CORPORATION,
+            user=self.user_1,
+        )
+        self.assertFalse(timer.user_can_view(self.user_3))
+
+    def test_user_can_view_corp_restricted_timer_from_same_corp(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            eve_corporation=self.corporation_1,
+            visibility=Timer.VISIBILITY_CORPORATION,
+            user=self.user_1,
+        )
+        self.assertTrue(timer.user_can_view(self.user_2))
+
+    def test_user_can_not_view_alliance_restricted_timer_from_other_alliance(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            eve_alliance=self.alliance_1,
+            visibility=Timer.VISIBILITY_ALLIANCE,
+            user=self.user_1,
+        )
+        self.assertFalse(timer.user_can_view(self.user_3))
+
+    def test_opsec_user_can_view_opsec_timer(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            is_opsec=True,
+            user=self.user_2,
+        )
+        self.assertTrue(timer.user_can_view(self.user_2))
+
+    def test_non_opsec_user_can_not_view_opsec_timer(self):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            is_opsec=True,
+            user=self.user_2,
+        )
+        self.assertFalse(timer.user_can_view(self.user_1))
+    """
 
 
 @patch(MODULE_PATH + ".DiscordWebhook.send_message")

@@ -7,11 +7,9 @@ from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.utils.timezone import now
 
-from allianceauth.tests.auth_utils import AuthUtils
-
 from ..models import Timer
 from .. import views
-from . import LoadTestDataMixin, create_test_user
+from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 
 
 MODULE_PATH = "structures.views"
@@ -30,17 +28,24 @@ class TestViewBase(LoadTestDataMixin, TestCase):
         # user
         self.user_1 = create_test_user(self.character_1)
         self.user_2 = create_test_user(self.character_2)
+        self.user_2 = add_permission_to_user_by_name(
+            "structuretimers.manage_timer", self.user_2
+        )
         self.user_3 = create_test_user(self.character_3)
 
         # timers
         self.timer_1 = Timer(
             structure_name="Timer 1",
+            location_details="Near the star",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             user=self.user_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
+            owner_name="Big Boss",
+            details_image_url="http://www.example.com/dummy.png",
+            details_notes="Some notes",
         )
         self.timer_1.save()
         self.timer_2 = Timer(
@@ -51,6 +56,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             user=self.user_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
+            is_important=True,
         )
         self.timer_2.save()
         self.timer_3 = Timer(
@@ -162,7 +168,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_opsec_restricted_to_opsec_member(self):
-        AuthUtils.add_permission_to_user_by_name(
+        self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
         timer_4 = Timer(
@@ -197,7 +203,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_opsec_corp_restricted_to_opsec_member_other_corp(self):
-        AuthUtils.add_permission_to_user_by_name(
+        self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
         timer = Timer(
@@ -258,6 +264,11 @@ class TestListData(TestViewBase):
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
+    def test_list_for_manager(self):
+        timer_ids = self._send_request(user=self.user_2)
+        expected = {self.timer_1.id}
+        self.assertSetEqual(timer_ids, expected)
+
 
 class TestGetTimerData(TestViewBase):
     def test_normal(self):
@@ -268,15 +279,25 @@ class TestGetTimerData(TestViewBase):
         response = views.get_timer_data(request, self.timer_1.pk)
         self.assertEqual(response.status_code, 200)
 
+    def test_forbidden(self):
+        self.timer_1.is_opsec = True
+        self.timer_1.save()
+        request = self.factory.get(
+            reverse("structuretimers:get_timer_data", args=[self.timer_1.pk])
+        )
+        request.user = self.user_3
+        response = views.get_timer_data(request, self.timer_1.pk)
+        self.assertEqual(response.status_code, 403)
+
 
 class TestSelect2Views(LoadTestDataMixin, TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        cls.user_1 = create_test_user(cls.character_1)
 
-        # user
-        self.user_1 = create_test_user(self.character_1)
-
-    def test_normal(self):
+    def test_select2_solar_systems_normal(self):
         request = self.factory.get(
             reverse("structuretimers:select2_solar_systems"), data={"term": "abu"}
         )
@@ -285,3 +306,29 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         data = get_json_response(response)
         self.assertEqual(data, {"results": [{"id": 30004984, "text": "Abune"}]})
+
+    def test_select2_solar_systems_empty(self):
+        request = self.factory.get(reverse("structuretimers:select2_solar_systems"))
+        request.user = self.user_1
+        response = views.select2_solar_systems(request)
+        self.assertEqual(response.status_code, 200)
+        data = get_json_response(response)
+        self.assertEqual(data, {"results": None})
+
+    def test_select2_structure_types_normal(self):
+        request = self.factory.get(
+            reverse("structuretimers:select2_structure_types"), data={"term": "ast"}
+        )
+        request.user = self.user_1
+        response = views.select2_structure_types(request)
+        self.assertEqual(response.status_code, 200)
+        data = get_json_response(response)
+        self.assertEqual(data, {"results": [{"id": 35832, "text": "Astrahus"}]})
+
+    def test_select2_structure_types_empty(self):
+        request = self.factory.get(reverse("structuretimers:select2_structure_types"))
+        request.user = self.user_1
+        response = views.select2_structure_types(request)
+        self.assertEqual(response.status_code, 200)
+        data = get_json_response(response)
+        self.assertEqual(data, {"results": None})

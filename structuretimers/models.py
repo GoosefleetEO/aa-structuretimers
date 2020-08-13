@@ -446,6 +446,44 @@ class Timer(models.Model):
             self.user == user and user.has_perm("structuretimers.create_timer")
         )
 
+    """
+    def user_can_view(self, user: user) -> bool:
+        # Checks if the given user can see this timer. Returns True or False
+        if not user.has_perm("structuretimers.basic_access"):
+            return False
+
+        if self.is_opsec and not user.has_perm("structuretimers.opsec_access"):
+            return False
+
+        if (
+            self.visibility == self.VISIBILITY_CORPORATION
+            and self.eve_corporation
+            and (
+                not user.profile.main_character
+                or (
+                    user.profile.main_character.corporation_id
+                    != self.eve_corporation.corporation_id
+                )
+            )
+        ):
+            return False
+
+        if (
+            self.visibility == self.VISIBILITY_ALLIANCE
+            and self.eve_alliance
+            and (
+                not user.profile.main_character
+                or (
+                    user.profile.main_character.alliance_id
+                    != self.eve_alliance.alliance_id
+                )
+            )
+        ):
+            return False
+
+        return True
+    """
+
     def label_type_for_timer_type(self) -> str:
         """returns the Boostrap label type for a timer_type"""
         label_types_map = {
