@@ -12,7 +12,6 @@ from django.contrib.auth.models import User
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import now
 
 from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.eveonline.models import (
@@ -423,7 +422,9 @@ class Timer(models.Model):
 
         super().save(*args, **kwargs)
         if TIMERBOARD2_NOTIFICATIONS_ENABLED and (is_new or date_changed):
-            self._import_schedule_notifications_for_timer().delay(timer_pk=self.pk)
+            self._import_schedule_notifications_for_timer().apply_async(
+                kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
+            )
 
     @staticmethod
     def _import_schedule_notifications_for_timer() -> object:
@@ -515,16 +516,8 @@ class Timer(models.Model):
             label_type = "default"
         return label_type
 
-    def send_notification(self, webhook: DiscordWebhook, ping_text: str = None) -> None:
+    def send_notification(self, webhook: DiscordWebhook, content: str = None) -> None:
         """sends notification for given self to given webhook"""
-        content = f"{ping_text} " if ping_text else ""
-        minutes = round((self.date - now()).total_seconds() / 60)
-        mod_text = "**important** " if self.is_important else ""
-        content += (
-            f"The following {mod_text}structure timer will elapse "
-            f"in less than **{minutes:,}** minutes:"
-        )
-
         structure_type_name = self.structure_type.name
         solar_system_name = self.eve_solar_system.name
         title = f"{structure_type_name} in {solar_system_name}"
@@ -571,6 +564,15 @@ class Timer(models.Model):
 
 class NotificationRule(models.Model):
 
+    # Trigger choices
+    TRIGGER_TIMER_CREATED = "TC"
+    TRIGGER_TIMER_ELAPSES_SOON = "TE"
+    TRIGGER_CHOICES = (
+        (TRIGGER_TIMER_CREATED, "Timer created"),
+        (TRIGGER_TIMER_ELAPSES_SOON, "Timer elapses soon"),
+    )
+
+    # Minutes choices
     MINUTES_0 = 0
     MINUTES_5 = 5
     MINUTES_10 = 10
@@ -580,18 +582,20 @@ class NotificationRule(models.Model):
     MINUTES_60 = 60
     MINUTES_90 = 90
     MINUTES_120 = 120
-
     MINUTES_CHOICES = (
-        (MINUTES_0, "0"),
-        (MINUTES_5, "5"),
-        (MINUTES_10, "10"),
-        (MINUTES_15, "15"),
-        (MINUTES_30, "30"),
-        (MINUTES_45, "45"),
-        (MINUTES_60, "60"),
-        (MINUTES_90, "90"),
-        (MINUTES_120, "120"),
+        (None, "---------"),
+        (MINUTES_0, _("T - 0 minutes")),
+        (MINUTES_5, _("T - 5 minutes")),
+        (MINUTES_10, _("T - 10 minutes")),
+        (MINUTES_15, _("T - 15 minutes")),
+        (MINUTES_30, _("T - 30 minutes")),
+        (MINUTES_45, _("T - 45 minutes")),
+        (MINUTES_60, _("T - 60 minutes")),
+        (MINUTES_90, _("T - 90 minutes")),
+        (MINUTES_120, _("T - 120 minutes")),
     )
+
+    # Ping type choices
     PING_TYPE_NONE = "PN"
     PING_TYPE_HERE = "PH"
     PING_TYPE_EVERYONE = "PE"
@@ -601,6 +605,7 @@ class NotificationRule(models.Model):
         (PING_TYPE_EVERYONE, "@everyone"),
     )
 
+    # Clause choices
     CLAUSE_ANY = "AN"
     CLAUSE_REQUIRED = "RQ"
     CLAUSE_EXCLUDED = "EX"
@@ -610,10 +615,22 @@ class NotificationRule(models.Model):
         (CLAUSE_EXCLUDED, "excluded"),
     )
 
-    minutes = models.PositiveIntegerField(
+    trigger = models.CharField(
+        max_length=2,
+        choices=TRIGGER_CHOICES,
+        default=TRIGGER_TIMER_ELAPSES_SOON,
+        help_text="Trigger for sending a notification",
+    )
+    time = models.PositiveIntegerField(
         choices=MINUTES_CHOICES,
+        null=True,
+        default=None,
+        blank=True,
         db_index=True,
-        help_text="Notifications are sent x minutes before timer elapses",
+        help_text=(
+            "When to sent a notification in relation to when the timer elapses. "
+            "Use together with `elapses soon` trigger."
+        ),
     )
     webhook = models.ForeignKey(
         DiscordWebhook,
@@ -624,7 +641,7 @@ class NotificationRule(models.Model):
         max_length=2,
         choices=PING_TYPE_CHOICES,
         default=PING_TYPE_NONE,
-        help_text="Options for pinging for every notification",
+        help_text="Options for pinging on notification",
     )
     is_enabled = models.BooleanField(
         default=True, help_text="whether this rule is currently active",
@@ -717,20 +734,31 @@ class NotificationRule(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if TIMERBOARD2_NOTIFICATIONS_ENABLED and self.is_enabled:
+        if (
+            TIMERBOARD2_NOTIFICATIONS_ENABLED
+            and self.is_enabled
+            and self.trigger == self.TRIGGER_TIMER_ELAPSES_SOON
+        ):
             self._import_scheduled_notifications_for_rule().delay(
                 notification_rule_pk=self.pk
             )
 
+        if self.trigger == self.TRIGGER_TIMER_CREATED:
+            ScheduledNotification.objects.filter(notification_rule=self).delete()
+
     @staticmethod
     def _import_scheduled_notifications_for_rule() -> object:
-        from .tasks import scheduled_notifications_for_rule
+        from .tasks import schedule_notifications_for_rule
 
-        return scheduled_notifications_for_rule
+        return schedule_notifications_for_rule
 
     @property
     def ping_type_text(self) -> str:
         return self.ping_type_to_text(self.ping_type)
+
+    def prepend_ping_text(self, text: str) -> str:
+        """prepends ping text to given text and returns it as new text string"""
+        return f"{self.ping_type_text} {text}" if self.ping_type_text else text
 
     def is_matching_timer(self, timer: "Timer") -> bool:
         """returns True if notification rule is matching the given timer, else False"""

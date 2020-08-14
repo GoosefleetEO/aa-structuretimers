@@ -29,7 +29,9 @@ def send_messages_for_webhook(webhook_pk: int) -> None:
     try:
         webhook = DiscordWebhook.objects.get(pk=webhook_pk)
     except DiscordWebhook.DoesNotExist:
-        logger.error("DiscordWebhook with pk = %s does not exist", webhook_pk)
+        logger.error(
+            "DiscordWebhook with pk = %s does not exist. Aborting.", webhook_pk
+        )
     else:
         if not webhook.is_enabled:
             logger.info(
@@ -47,7 +49,7 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
     """Sends a scheduled notification for a timer based on a notification rule"""
     try:
         scheduled_notification = ScheduledNotification.objects.select_related(
-            "timer", "notification_rule"
+            "timer", "notification_rule", "notification_rule__webhook"
         ).get(pk=scheduled_notification_pk)
     except ScheduledNotification.DoesNotExist:
         logger.info(
@@ -60,12 +62,14 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
             self.request.id,
             scheduled_notification,
         )
+        timer = scheduled_notification.timer
+        notification_rule = scheduled_notification.notification_rule
         if scheduled_notification.celery_task_id != self.request.id:
             logger.info(
                 "Discarding outdated scheduled notification: %r",
                 scheduled_notification,
             )
-        elif not scheduled_notification.notification_rule.is_enabled:
+        elif not notification_rule.is_enabled:
             logger.info(
                 "Discarding scheduled notification based on disabled rule: %r",
                 scheduled_notification,
@@ -73,16 +77,48 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
         else:
             logger.info(
                 "Sending notifications for timer '%s' and rule '%s'",
-                scheduled_notification.timer,
-                scheduled_notification.notification_rule,
+                timer,
+                notification_rule,
             )
-            webhook = scheduled_notification.notification_rule.webhook
+            webhook = notification_rule.webhook
             if webhook.is_enabled:
-                scheduled_notification.timer.send_notification(
+                minutes = round((timer.date - now()).total_seconds() / 60)
+                mod_text = "**important** " if self.is_important else ""
+                content = (
+                    f"The following {mod_text}structure timer will elapse "
+                    f"in less than **{minutes:,}** minutes:"
+                )
+                timer.send_notification(
                     webhook=webhook,
-                    ping_text=scheduled_notification.notification_rule.ping_type_text,
+                    content=notification_rule.prepend_ping_text(content),
                 )
                 send_messages_for_webhook.apply_async(args=[webhook.pk], priority=3)
+
+
+@shared_task
+def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
+    try:
+        timer = Timer.objects.get(pk=timer_pk)
+        notification_rule = NotificationRule.objects.select_related("webhook").get(
+            pk=notification_rule_pk
+        )
+    except Timer.DoesNotExist:
+        logger.error("Timer with pk = %s does not exist. Aborting.", timer_pk)
+    except NotificationRule.DoesNotExist:
+        logger.error(
+            "NotificationRule with pk = %s does not exist. Aborting.",
+            notification_rule_pk,
+        )
+    else:
+        if notification_rule.is_enabled and notification_rule.webhook.is_enabled:
+            content = f"New timer added by **{timer.eve_character}**:"
+            timer.send_notification(
+                webhook=notification_rule.webhook,
+                content=notification_rule.prepend_ping_text(content),
+            )
+            send_messages_for_webhook.apply_async(
+                args=[notification_rule.webhook.pk], priority=3
+            )
 
 
 def _schedule_notification_for_timer(
@@ -93,7 +129,7 @@ def _schedule_notification_for_timer(
         timer.pk,
         notification_rule.pk,
     )
-    notification_date = timer.date - timedelta(minutes=notification_rule.minutes)
+    notification_date = timer.date - timedelta(minutes=notification_rule.time)
     scheduled_notification, _ = ScheduledNotification.objects.update_or_create(
         timer=timer,
         notification_rule=notification_rule,
@@ -101,7 +137,7 @@ def _schedule_notification_for_timer(
     )
     result = send_scheduled_notification.apply_async(
         kwargs={"scheduled_notification_pk": scheduled_notification.pk},
-        eta=timer.date - timedelta(minutes=notification_rule.minutes),
+        eta=timer.date - timedelta(minutes=notification_rule.time),
         priority=3,
     )
     scheduled_notification.celery_task_id = result.task_id
@@ -122,14 +158,36 @@ def _revoke_notification_for_timer(
 
 
 @shared_task(acks_late=True)
-def schedule_notifications_for_timer(timer_pk: int) -> None:
-    """Schedules notifications for this timer"""
+def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> None:
+    """Schedules notifications for this timer based on notification rules"""
     try:
         timer = Timer.objects.get(pk=timer_pk)
     except Timer.DoesNotExist:
-        logger.error("Timer with pk = %s does not exist", timer_pk)
+        logger.error("Timer with pk = %s does not exist. Aborting.", timer_pk)
     else:
         if timer.date > now():
+            # trigger: newly created
+            if is_new:
+                rules = (
+                    NotificationRule.objects.select_related("webhook")
+                    .filter(
+                        is_enabled=True,
+                        trigger=NotificationRule.TRIGGER_TIMER_CREATED,
+                        webhook__is_enabled=True,
+                    )
+                    .conforms_with_timer(timer)
+                )
+                if rules:
+                    for rule in rules:
+                        notify_about_new_timer.apply_async(
+                            kwargs={
+                                "timer_pk": timer.pk,
+                                "notification_rule_pk": rule.pk,
+                            },
+                            priority=3,
+                        )
+
+            # trigger: timer elapses soon
             with transaction.atomic():
                 # remove existing scheduled notifications if date has changed
                 for obj in ScheduledNotification.objects.filter(timer=timer).exclude(
@@ -139,7 +197,8 @@ def schedule_notifications_for_timer(timer_pk: int) -> None:
 
                 # schedule new notifications
                 for notification_rule in NotificationRule.objects.filter(
-                    is_enabled=True
+                    is_enabled=True,
+                    trigger=NotificationRule.TRIGGER_TIMER_ELAPSES_SOON,
                 ).conforms_with_timer(timer):
                     _schedule_notification_for_timer(
                         timer=timer, notification_rule=notification_rule
@@ -149,7 +208,7 @@ def schedule_notifications_for_timer(timer_pk: int) -> None:
 
 
 @shared_task(acks_late=True)
-def scheduled_notifications_for_rule(notification_rule_pk: int) -> None:
+def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
     """Schedules notifications for all timers confirming with this rule.
     Will recreate all existing and still pending notifications
     """
@@ -157,24 +216,31 @@ def scheduled_notifications_for_rule(notification_rule_pk: int) -> None:
         notification_rule = NotificationRule.objects.get(pk=notification_rule_pk)
     except NotificationRule.DoesNotExist:
         logger.error(
-            "NotificationRule with pk = %s does not exist", notification_rule_pk
+            "NotificationRule with pk = %s does not exist. Aborting.",
+            notification_rule_pk,
         )
     else:
-        logger.debug(
-            "Checking scheduled notifications for: %s", notification_rule,
-        )
-        with transaction.atomic():
-            for obj in notification_rule.schedulednotification_set.filter(
-                timer_date__gt=now()
-            ):
-                _revoke_notification_for_timer(scheduled_notification=obj)
+        if notification_rule.trigger == NotificationRule.TRIGGER_TIMER_CREATED:
+            logger.error(
+                "NotificationRule with pk = %s has the wrong trigger. Aborting.",
+                notification_rule_pk,
+            )
+        else:
+            logger.debug(
+                "Checking scheduled notifications for: %s", notification_rule,
+            )
+            with transaction.atomic():
+                for obj in notification_rule.schedulednotification_set.filter(
+                    timer_date__gt=now()
+                ):
+                    _revoke_notification_for_timer(scheduled_notification=obj)
 
-            for timer in Timer.objects.filter(
-                date__gt=now()
-            ).conforms_with_notification_rule(notification_rule):
-                _schedule_notification_for_timer(
-                    timer=timer, notification_rule=notification_rule
-                )
+                for timer in Timer.objects.filter(
+                    date__gt=now()
+                ).conforms_with_notification_rule(notification_rule):
+                    _schedule_notification_for_timer(
+                        timer=timer, notification_rule=notification_rule
+                    )
 
 
 @shared_task
@@ -185,7 +251,9 @@ def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
     try:
         webhook = DiscordWebhook.objects.get(pk=webhook_pk)
     except DiscordWebhook.DoesNotExist:
-        logger.error("DiscordWebhook with pk = %s does not exist", webhook_pk)
+        logger.error(
+            "DiscordWebhook with pk = %s does not exist. Aborting.", webhook_pk
+        )
     else:
         logger.info("Sending test message to webhook %s", webhook)
         error_text, success = webhook.send_test_message()
@@ -199,7 +267,7 @@ def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
             try:
                 user = User.objects.get(pk=user_pk)
             except User.DoesNotExist:
-                logger.warning("User with pk = %s does not exist", user_pk)
+                logger.warning("User with pk = %s does not exist. Aborting.", user_pk)
             else:
                 level = "success" if success else "error"
                 notify(

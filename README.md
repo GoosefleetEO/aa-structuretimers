@@ -111,11 +111,15 @@ python manage.py structuretimers_load_eve
 
 You may want to wait until the data loading is complete before starting to create new timers.
 
-### Step 5 - Setup permissions
+### Step 5 - Setup notification rules
+
+If you want to receive notifications about timers on Discord you can setup notification rules on the admin site. e.g. you can setup a rule to sent notifications 60 minutes before a timer elapses. Please see Notification Rules for details.
+
+### Step 6 - Setup permissions
 
 Another important step is to setup permissions, to ensure the right people have access features. Please see [Permissions](#permissions) for an overview of all permissions.
 
-### Step 6 - Migrate existing timers
+### Step 7 - Migrate existing timers
 
 Last, but not least: If you have already been using the classic Structure Timers app from Auth, you can migrate your existing timers over to new app. Just run the following command:
 
@@ -134,6 +138,40 @@ Name | Description | Default
 `TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS`| Will not sent notifications for timers, which event time is older than the given minutes | `60`
 `TIMERBOARD2_NOTIFICATIONS_ENABLED`| Wether notifications for timers are scheduled at all | `True`
 `TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS`| Minimum age in days for a timer to be considered obsolete. Obsolete timers will automatically be deleted. If you want to keep all timers, set to `None` | `30`
+
+## Notification Rules
+
+In *Structure Timers II* you can get notifications on Discord for timers by setting up notification rules. Notification rules allow you to define in detail what event and which kind of timers will trigger notification. And of course to which channel to sent them. For example you can define that important timers should always ping everybody or that corp restricted timers should only be sent to a dedicated channel.
+
+In general all rules are independent from each other and all enabled rules will be executed for every timer one by one.
+
+### Example setup
+
+Here is an example for a basic setup of rules:
+
+1. Notify about new every newly created timer without ping (e.g. into a scouts channel)
+2. Notify 45 minutes before any timer elapses with ping (e.g. into the FC channel)
+
+### Key concepts
+
+Here are some key concepts. For all details please see the onscreen help text when creating rules.
+
+#### Triggers
+
+Notifications can be triggered by two kinds of events:
+
+- When a new timers is created
+- When the remaining time of timer has reached a defined threshold (e.g. 10 minutes before timer elapses)
+
+#### Webhooks
+
+Each rule has exactly one webhook. You can of course define multiple rules for the same webhook or define rules for different webhooks.
+
+#### Timer clauses
+
+Almost every property of a timer can be used to define rules. For example you can define to get notifications only for timers which hostile objective or only for final timers.
+
+Note that if a clause is not set, it will always match any.
 
 ## Permissions
 

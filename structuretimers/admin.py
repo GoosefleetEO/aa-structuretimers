@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib import admin
@@ -57,7 +59,7 @@ def field_nice_display(name: str) -> str:
 
 
 class NotificationRuleAdminForm(forms.ModelForm):
-    def clean(self):
+    def clean(self) -> Dict[str, Any]:
         cleaned_data = super().clean()
         self._validate_not_same_options_chosen(
             cleaned_data,
@@ -87,6 +89,18 @@ class NotificationRuleAdminForm(forms.ModelForm):
         self._validate_not_same_options_chosen(
             cleaned_data, "require_alliances", "exclude_alliances",
         )
+        if (
+            cleaned_data["trigger"] == NotificationRule.TRIGGER_TIMER_ELAPSES_SOON
+            and cleaned_data["time"] is None
+        ):
+            raise ValidationError(
+                {"time": "You need to specify time for the `elapses soon` trigger"}
+            )
+
+        if cleaned_data["trigger"] == NotificationRule.TRIGGER_TIMER_CREATED:
+            cleaned_data["time"] = None
+
+        return cleaned_data
 
     @staticmethod
     def _validate_not_same_options_chosen(
@@ -111,13 +125,22 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "is_enabled",
-        "minutes",
+        "trigger",
+        "_time",
         "webhook",
         "ping_type",
         "_clauses",
     )
-    list_filter = ("is_enabled",)
+    list_filter = ("is_enabled", "trigger")
     ordering = ("id",)
+
+    def _time(self, obj) -> Optional[str]:
+        if obj.time is None:
+            return None
+        else:
+            return obj.get_time_display()
+
+    _time.admin_order_field = "time"
 
     def _clauses(self, obj) -> list:
         clauses = list()
@@ -164,6 +187,20 @@ class NotificationRuleAdmin(admin.ModelAdmin):
 
     def _append_field_to_clauses(self, clauses, field, text):
         clauses.append(f"{field_nice_display(field)} = {text}")
+
+    actions = ["enable_rule", "disable_rule"]
+
+    def enable_rule(self, request, queryset):
+        queryset.update(is_enabled=True)
+        self.message_user(request, f"Enabled {queryset.count()} notification rules.")
+
+    enable_rule.short_description = "Enable selected notification rules"
+
+    def disable_rule(self, request, queryset):
+        queryset.update(is_enabled=False)
+        self.message_user(request, f"Disabled {queryset.count()} notification rules.")
+
+    disable_rule.short_description = "Disable selected notification rules"
 
     filter_horizontal = (
         "require_alliances",
@@ -235,7 +272,7 @@ class TimerAdmin(admin.ModelAdmin):
     def send_test_notification(self, request, queryset):
         for timer in queryset:
             for webhook in DiscordWebhook.objects.filter(is_enabled=True):
-                timer.send_notification(webhook=webhook)
+                timer.send_notification(webhook=webhook, content="Test notification")
 
             self.message_user(
                 request, f"Initiated sending test notification for timer: {timer}"

@@ -83,6 +83,62 @@ class TestTimer(LoadTestDataMixin, TestCase):
         self.assertEqual(timer.label_type_for_objective(), "primary")
 
 
+class TestTimerSave(LoadTestDataMixin, TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(
+            name="Dummy", url="http://www.example.com"
+        )
+
+    @patch(MODULE_PATH + ".Timer._import_schedule_notifications_for_timer")
+    def test_schedule_notifications_for_new_timers(self, mock_import_func):
+        timer = Timer.objects.create(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        self.assertTrue(mock_import_func.called)
+        _, kwargs = mock_import_func.return_value.apply_async.call_args
+        self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
+
+    def test_schedule_notifications_when_date_changed(self):
+        with patch(
+            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+        ) as mock_import_func:
+            timer = Timer.objects.create(
+                date=now() + timedelta(hours=4),
+                eve_solar_system=self.system_abune,
+                structure_type=self.type_astrahus,
+            )
+
+        with patch(
+            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+        ) as mock_import_func:
+            timer.date = now() + timedelta(hours=3)
+            timer.save()
+            self.assertTrue(mock_import_func.called)
+            _, kwargs = mock_import_func.return_value.apply_async.call_args
+            self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
+
+    def test_dont_schedule_notifications_else(self):
+        with patch(
+            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+        ) as mock_import_func:
+            timer = Timer.objects.create(
+                date=now() + timedelta(hours=4),
+                eve_solar_system=self.system_abune,
+                structure_type=self.type_astrahus,
+            )
+
+        with patch(
+            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+        ) as mock_import_func:
+            timer.date = now() + timedelta(hours=3)
+            timer.structure_name = "Some fancy name"
+            self.assertFalse(mock_import_func.called)
+
+
 @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
 class TestTimerAccess(LoadTestDataMixin, TestCase):
     @classmethod
@@ -220,8 +276,10 @@ class TestTimerManger(LoadTestDataMixin, TestCase):
 
 @patch(MODULE_PATH + ".DiscordWebhook.send_message")
 class TestTimerSendNotification(LoadTestDataMixin, TestCase):
-    def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(
             name="Dummy", url="http://www.example.com"
         )
 
@@ -288,7 +346,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains only conforming timer
         """
         rule = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_10,
+            time=NotificationRule.MINUTES_10,
             require_timer_types=[Timer.TYPE_ARMOR],
             webhook=self.webhook,
         )
@@ -303,7 +361,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs is empty
         """
         rule = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_10, webhook=self.webhook,
+            time=NotificationRule.MINUTES_10, webhook=self.webhook,
         )
         rule.require_corporations.add(self.corporation_3)
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
@@ -317,7 +375,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains all timers
         """
         rule = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_10,
+            time=NotificationRule.MINUTES_10,
             require_objectives=[Timer.OBJECTIVE_FRIENDLY],
             webhook=self.webhook,
         )
@@ -524,7 +582,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
             date=now(),
         )
         self.rule = NotificationRule.objects.create(
-            minutes=NotificationRule.MINUTES_15, webhook=self.webhook
+            time=NotificationRule.MINUTES_15, webhook=self.webhook
         )
 
     def test_require_timer_types(self):
@@ -668,10 +726,10 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.rule_1 = NotificationRule.objects.create(
-            minutes=10, require_timer_types=[Timer.TYPE_ARMOR], webhook=self.webhook
+            time=10, require_timer_types=[Timer.TYPE_ARMOR], webhook=self.webhook
         )
         self.rule_2 = NotificationRule.objects.create(
-            minutes=15,
+            time=15,
             require_objectives=[Timer.OBJECTIVE_FRIENDLY],
             webhook=self.webhook,
         )
