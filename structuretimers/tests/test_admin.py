@@ -9,7 +9,7 @@ from . import LoadTestDataMixin
 from ..models import DiscordWebhook, NotificationRule, Timer
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
@@ -21,7 +21,7 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
             "Bruce Wayne", "bruce@example.com", "password"
         )
 
-    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         NotificationRule.objects.create(
             time=NotificationRule.MINUTES_10, webhook=self.webhook
@@ -52,7 +52,7 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
         self.assertEqual(add_page.status_code, 200)
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):

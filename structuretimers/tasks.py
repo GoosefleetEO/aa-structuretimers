@@ -250,35 +250,36 @@ def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
     """
     try:
         webhook = DiscordWebhook.objects.get(pk=webhook_pk)
+        if user_pk:
+            user = User.objects.get(pk=user_pk)
+        else:
+            user = None
     except DiscordWebhook.DoesNotExist:
         logger.error(
             "DiscordWebhook with pk = %s does not exist. Aborting.", webhook_pk
         )
+    except User.DoesNotExist:
+        logger.warning("User with pk = %s does not exist. Aborting.", user_pk)
     else:
         logger.info("Sending test message to webhook %s", webhook)
-        error_text, success = webhook.send_test_message()
+        error_text, success = webhook.send_test_message(user)
 
-        if user_pk:
+        if user:
             message = (
                 f"Error text: {error_text}\nCheck log files for details."
                 if not success
                 else "No errors"
             )
-            try:
-                user = User.objects.get(pk=user_pk)
-            except User.DoesNotExist:
-                logger.warning("User with pk = %s does not exist. Aborting.", user_pk)
-            else:
-                level = "success" if success else "error"
-                notify(
-                    user=user,
-                    title=(
-                        f"{__title__}: Result of test message to webhook {webhook}: "
-                        f"{level.upper()}"
-                    ),
-                    message=message,
-                    level=level,
-                )
+            level = "success" if success else "error"
+            notify(
+                user=user,
+                title=(
+                    f"{__title__}: Result of test message to webhook {webhook}: "
+                    f"{level.upper()}"
+                ),
+                message=message,
+                level=level,
+            )
 
 
 @shared_task

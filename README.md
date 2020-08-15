@@ -10,6 +10,7 @@ An app for keeping track of Eve Online structure timers with Alliance Auth and D
 - [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Settings](#settings)
+- [Notification Rules](#notification-rules)
 - [Permissions](#permissions)
 - [Management commands](#management-commands)
 
@@ -111,21 +112,23 @@ python manage.py structuretimers_load_eve
 
 You may want to wait until the data loading is complete before starting to create new timers.
 
-### Step 5 - Setup notification rules
+### Step 5 - Migrate existing timers
 
-If you want to receive notifications about timers on Discord you can setup notification rules on the admin site. e.g. you can setup a rule to sent notifications 60 minutes before a timer elapses. Please see Notification Rules for details.
-
-### Step 6 - Setup permissions
-
-Another important step is to setup permissions, to ensure the right people have access features. Please see [Permissions](#permissions) for an overview of all permissions.
-
-### Step 7 - Migrate existing timers
-
-Last, but not least: If you have already been using the classic Structure Timers app from Auth, you can migrate your existing timers over to new app. Just run the following command:
+If you have already been using the classic app from Auth, you can migrate your existing timers over to **Structure Timers II**. Just run the following command:
 
 ```bash
 python manage.py structuretimers_migrate_timers
 ```
+
+Note: We suggest migration timers before setting up notification rules to avoid potential notification spam for migrated timers.
+
+### Step 6 - Setup notification rules
+
+If you want to receive notifications about timers on Discord you can setup notification rules on the admin site. e.g. you can setup a rule to sent notifications 60 minutes before a timer elapses. Please see [Notification Rules](#notification-rules) for details.
+
+### Step 7 - Setup permissions
+
+Another important step is to setup permissions, to ensure the right people have access features. Please see [Permissions](#permissions) for an overview of all permissions.
 
 ## Settings
 
@@ -135,9 +138,11 @@ Note that all settings are optional and the app will use the documented default 
 
 Name | Description | Default
 -- | -- | --
-`TIMERBOARD2_MAX_AGE_FOR_NOTIFICATIONS`| Will not sent notifications for timers, which event time is older than the given minutes | `60`
-`TIMERBOARD2_NOTIFICATIONS_ENABLED`| Wether notifications for timers are scheduled at all | `True`
-`TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS`| Minimum age in days for a timer to be considered obsolete. Obsolete timers will automatically be deleted. If you want to keep all timers, set to `None` | `30`
+`STRUCTURETIMERS_MAX_AGE_FOR_NOTIFICATIONS`| Will not sent notifications for timers, which event time is older than the given minutes | `60`
+`STRUCTURETIMERS_NOTIFICATIONS_ENABLED`| Wether notifications for timers are scheduled at all | `True`
+`STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS`| Minimum age in days for a timer to be considered obsolete. Obsolete timers will automatically be deleted. If you want to keep all timers, set to `None` | `30`
+`STRUCTURETIMERS_DEFAULT_PAGE_LENGTH`| Default page size for timerboard. Must be an integer value from the available options in the app. | `10`
+`STRUCTURETIMERS_PAGING_ENABLED`| Wether paging is enabled on the timerboard. | `True`
 
 ## Notification Rules
 

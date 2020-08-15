@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
-from .app_settings import TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS
+from .app_settings import STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS
 
 
 class NotificationRuleQuerySet(models.QuerySet):
@@ -71,8 +71,10 @@ class TimerManager(models.Manager):
 
     def delete_obsolete(self) -> int:
         """delete all timers that are considered obsolete"""
-        if TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS:
-            deadline = now() - timedelta(days=TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS)
+        if STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS:
+            deadline = now() - timedelta(
+                days=STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS
+            )
             _, details = self.filter(date__lt=deadline).delete()
             key = f"{self.model._meta.app_label}.{self.model.__name__}"
             deleted_count = details[key]

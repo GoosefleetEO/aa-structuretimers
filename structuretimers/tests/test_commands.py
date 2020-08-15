@@ -15,7 +15,7 @@ from ..utils import NoSocketsTestCase, app_labels
 PACKAGE_PATH = "structuretimers.management.commands"
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 @patch(PACKAGE_PATH + ".structuretimers_migrate_timers.get_input")
 class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod

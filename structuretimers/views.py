@@ -19,6 +19,10 @@ from allianceauth.eveonline.evelinks import evewho, dotlan
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
+from .app_settings import (
+    STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
+    STRUCTURETIMERS_PAGING_ENABLED,
+)
 from .forms import TimerForm
 from .models import Timer
 from .utils import (
@@ -43,6 +47,8 @@ def timer_list(request):
         "current_time": now().strftime("%Y-%m-%d %H:%M:%S"),
         "max_hours_expired": MAX_HOURS_PASSED,
         "title": __title__,
+        "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
+        "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
     }
     return render(request, "structuretimers/timer_list.html", context=context)
 

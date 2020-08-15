@@ -38,6 +38,8 @@ $(document).ready(function () {
     var titleOwner = elem.getAttribute('data-titleOwner');
     var titleVisibility = elem.getAttribute('data-titleVisibility');
     var hasPermOPSEC = (elem.getAttribute('data-hasPermOPSEC') == 'True');
+    var dataTablesPageLength = elem.getAttribute('data-dataTablesPageLength');
+    var dataTablesPaging = (elem.getAttribute('data-dataTablesPaging') == 'True');
 
     /* Update modal with requested timer */
     $('#modalTimerDetails').on('show.bs.modal', function (event) {
@@ -147,6 +149,7 @@ $(document).ready(function () {
         bootstrap: true,
         autoSize: false
     };
+    var lengthMenu = [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
     if (hasPermOPSEC) {
         filterDropDown.columns.push({
             idx: idx_start + 7,
@@ -176,6 +179,9 @@ $(document).ready(function () {
         },
         columns: columns,
         order: [[0, "desc"]],
+        lengthMenu: lengthMenu,
+        paging: dataTablesPaging,
+        pageLength: dataTablesPageLength,
         filterDropDown: filterDropDown,
         columnDefs: columnDefs
     });
@@ -187,6 +193,9 @@ $(document).ready(function () {
         },
         columns: columns,
         order: [[0, "asc"]],
+        lengthMenu: lengthMenu,
+        paging: dataTablesPaging,
+        pageLength: dataTablesPageLength,
         filterDropDown: filterDropDown,
         columnDefs: columnDefs,
         createdRow: function (row, data, dataIndex) {

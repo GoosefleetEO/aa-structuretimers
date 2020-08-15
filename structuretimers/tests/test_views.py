@@ -19,9 +19,9 @@ def get_json_response(response: object):
     return json.loads(response.content.decode("utf-8"))
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestViewBase(LoadTestDataMixin, TestCase):
-    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         self.factory = RequestFactory()
 

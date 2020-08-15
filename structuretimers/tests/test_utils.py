@@ -287,13 +287,13 @@ class TestGetSiteBaseUrl(NoSocketsTestCase):
         "https://www.mysite.com/not-valid/",
     )
     def test_return_dummy_if_url_defined_but_not_valid(self):
-        expected = "http://www.example.com"
+        expected = ""
         self.assertEqual(get_site_base_url(), expected)
 
     @patch(MODULE_PATH + ".settings")
     def test_return_dummy_if_url_not_defined(self, mock_settings):
         delattr(mock_settings, "ESI_SSO_CALLBACK_URL")
-        expected = "http://www.example.com"
+        expected = ""
         self.assertEqual(get_site_base_url(), expected)
 
 

@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db import models
+
 from django.utils.translation import gettext_lazy as _
 
 from allianceauth.eveonline.evelinks import dotlan
@@ -25,7 +26,7 @@ from allianceauth.services.hooks import get_extension_logger
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
-from .app_settings import TIMERBOARD2_NOTIFICATIONS_ENABLED
+from .app_settings import STRUCTURETIMERS_NOTIFICATIONS_ENABLED
 from .managers import NotificationRuleManager, TimerManager
 from .utils import (
     LoggerAddTag,
@@ -33,6 +34,7 @@ from .utils import (
     JSONDateTimeEncoder,
     DATETIME_FORMAT,
     get_site_base_url,
+    get_absolute_url,
 )
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -229,11 +231,12 @@ class DiscordWebhook(models.Model):
     def create_discord_link(cls, name: str, url: str) -> str:
         return f"[{str(name)}]({str(url)})"
 
-    def send_test_message(self) -> Tuple[str, bool]:
+    def send_test_message(self, user: User = None) -> Tuple[str, bool]:
         """Sends a test notification to this webhook and returns send report"""
         try:
+            user_text = f" sent by **{user}**" if user else ""
             message = {
-                "content": f"Test message for webhook: {self.name}",
+                "content": f"Test message for webhook **{self.name}**{user_text}",
                 "username": __title__,
                 "avatar_url": default_avatar_url(),
             }
@@ -412,16 +415,29 @@ class Timer(models.Model):
         )
 
     def save(self, *args, **kwargs):
+        """New save method for Timers. Will also schedule notifications for timers
+        
+        Args:
+            disable_notifications: Set to True to disable all notifications for the saved timer        
+        """
+        try:
+            disable_notifications = kwargs.pop("disable_notifications")
+        except KeyError:
+            disable_notifications = False
+
+        notification_enabled = (
+            STRUCTURETIMERS_NOTIFICATIONS_ENABLED and not disable_notifications
+        )
         is_new = self.pk is None
         date_changed = False
-        if TIMERBOARD2_NOTIFICATIONS_ENABLED and not is_new:
+        if notification_enabled and not is_new:
             try:
                 date_changed = self.date != Timer.objects.get(pk=self.pk).date
             except Timer.DoesNotExist:
                 pass
 
         super().save(*args, **kwargs)
-        if TIMERBOARD2_NOTIFICATIONS_ENABLED and (is_new or date_changed):
+        if notification_enabled and (is_new or date_changed):
             self._import_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
             )
@@ -550,6 +566,7 @@ class Timer(models.Model):
 
         embed = dhooks_lite.Embed(
             title=title,
+            url=get_absolute_url("structuretimers:timer_list"),
             description=description,
             thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
             color=color,
@@ -735,7 +752,7 @@ class NotificationRule(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if (
-            TIMERBOARD2_NOTIFICATIONS_ENABLED
+            STRUCTURETIMERS_NOTIFICATIONS_ENABLED
             and self.is_enabled
             and self.trigger == self.TRIGGER_TIMER_ELAPSES_SOON
         ):

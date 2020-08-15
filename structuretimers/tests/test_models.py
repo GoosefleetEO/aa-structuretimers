@@ -102,6 +102,18 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
         _, kwargs = mock_import_func.return_value.apply_async.call_args
         self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
 
+    @patch(MODULE_PATH + ".Timer._import_schedule_notifications_for_timer")
+    def test_dont_schedule_notifications_for_new_timers_when_turned_off(
+        self, mock_import_func
+    ):
+        timer = Timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        timer.save(disable_notifications=True)
+        self.assertFalse(mock_import_func.called)
+
     def test_schedule_notifications_when_date_changed(self):
         with patch(
             MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
@@ -139,7 +151,7 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
             self.assertFalse(mock_import_func.called)
 
 
-@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestTimerAccess(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -252,8 +264,8 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
     """
 
 
-@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
-@patch("structuretimers.managers.TIMERBOARD2_TIMERS_OBSOLETE_AFTER_DAYS", 1)
+@patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.managers.STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS", 1)
 class TestTimerManger(LoadTestDataMixin, TestCase):
     def test_delete_old_timer(self):
         timer_1 = Timer.objects.create(
@@ -310,9 +322,9 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
         self.assertIn("@here", kwargs["content"])
 
 
-@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestTimerQuerySet(LoadTestDataMixin, TestCase):
-    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.timer_1 = Timer(
             structure_name="Timer 1",
@@ -570,9 +582,9 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
         self.assertTrue(mock_logger.warning.called)
 
 
-@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
-    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.timer = Timer.objects.create(
@@ -720,9 +732,9 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
 
-@patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
-    @patch(MODULE_PATH + ".TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.rule_1 = NotificationRule.objects.create(

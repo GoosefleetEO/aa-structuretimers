@@ -14,7 +14,7 @@ from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
 
 
-@patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestUI(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
@@ -29,7 +29,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             "structuretimers.create_timer", cls.user_2
         )
 
-    @patch("structuretimers.models.TIMERBOARD2_NOTIFICATIONS_ENABLED", False)
+    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.timer_1 = Timer.objects.create(
             structure_name="Timer 1",

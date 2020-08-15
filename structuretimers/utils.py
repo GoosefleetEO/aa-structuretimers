@@ -5,6 +5,7 @@ import logging
 import os
 import re
 from typing import Any
+from urllib.parse import urljoin
 
 from pytz import timezone
 
@@ -14,6 +15,7 @@ from django.contrib.messages.constants import DEBUG, ERROR, SUCCESS, WARNING, IN
 from django.contrib import messages
 from django.db import models
 from django.test import TestCase
+from django.urls import reverse
 from django.utils.functional import lazy
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -294,14 +296,19 @@ def yesno_str(value: bool) -> str:
 
 def get_site_base_url() -> str:
     """return base URL for this site"""
-
-    base_url = "http://www.example.com"
-    if hasattr(settings, "ESI_SSO_CALLBACK_URL"):
+    try:
         match = re.match(r"(.+)\/sso\/callback", settings.ESI_SSO_CALLBACK_URL)
         if match:
-            base_url = match.group(1)
+            return match.group(1)
+    except AttributeError:
+        pass
 
-    return base_url
+    return ""
+
+
+def get_absolute_url(url_name: str) -> str:
+    """Returns absolute URL for the given URL name."""
+    return urljoin(get_site_base_url(), reverse(url_name))
 
 
 def dt_eveformat(dt: object) -> str:
