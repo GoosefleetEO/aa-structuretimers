@@ -90,15 +90,20 @@ class NotificationRuleAdminForm(forms.ModelForm):
             cleaned_data, "require_alliances", "exclude_alliances",
         )
         if (
-            cleaned_data["trigger"] == NotificationRule.TRIGGER_TIMER_ELAPSES_SOON
-            and cleaned_data["time"] is None
+            cleaned_data["trigger"] == NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED
+            and cleaned_data["scheduled_time"] is None
         ):
             raise ValidationError(
-                {"time": "You need to specify time for the `elapses soon` trigger"}
+                {
+                    "scheduled_time": (
+                        "You need to specify scheduled time for "
+                        "the `Scheduled time reached` trigger"
+                    )
+                }
             )
 
-        if cleaned_data["trigger"] == NotificationRule.TRIGGER_TIMER_CREATED:
-            cleaned_data["time"] = None
+        if cleaned_data["trigger"] == NotificationRule.TRIGGER_NEW_TIMER_CREATED:
+            cleaned_data["scheduled_time"] = None
 
         return cleaned_data
 
@@ -135,12 +140,12 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     ordering = ("id",)
 
     def _time(self, obj) -> Optional[str]:
-        if obj.time is None:
+        if obj.scheduled_time is None:
             return None
         else:
-            return obj.get_time_display()
+            return obj.get_scheduled_time_display()
 
-    _time.admin_order_field = "time"
+    _time.admin_order_field = "scheduled time"
 
     def _clauses(self, obj) -> list:
         clauses = list()

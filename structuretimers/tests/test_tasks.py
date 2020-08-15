@@ -1,6 +1,8 @@
 from datetime import timedelta
 from unittest.mock import patch, Mock
 
+from celery import Task
+
 from django.test import TestCase
 from django.utils.timezone import now
 
@@ -26,7 +28,9 @@ class TestCaseBase(LoadTestDataMixin, TestCase):
         )
         self.webhook.clear_queue()
         self.rule = NotificationRule.objects.create(
-            time=NotificationRule.MINUTES_15, webhook=self.webhook
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_15,
+            webhook=self.webhook,
         )
         self.timer = Timer.objects.create(
             structure_name="Test_1",
@@ -121,7 +125,7 @@ class TestScheduleNotificationForTimer(TestCaseBase):
         self.rule.is_enabled = False
         self.rule.save()
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_TIMER_CREATED, webhook=self.webhook
+            trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED, webhook=self.webhook
         )
         schedule_notifications_for_timer(timer_pk=self.timer.pk, is_new=True)
 
@@ -207,7 +211,8 @@ class TestSendScheduledNotification(TestCaseBase):
             timer_date=now() + timedelta(hours=1),
             notification_date=now() + timedelta(minutes=30),
         )
-        mock_task = Mock(**{"request.id": "my-id-123"})
+        mock_task = Mock(spec=Task)
+        mock_task.request.id = "my-id-123"
         send_scheduled_notification_inner = (
             send_scheduled_notification.__wrapped__.__func__
         )
@@ -251,7 +256,8 @@ class TestSendScheduledNotification(TestCaseBase):
             timer_date=now() + timedelta(hours=1),
             notification_date=now() + timedelta(minutes=30),
         )
-        mock_task = Mock(**{"request.id": "my-id-123"})
+        mock_task = Mock(spec=Task)
+        mock_task.request.id = "my-id-123"
         send_scheduled_notification_inner = (
             send_scheduled_notification.__wrapped__.__func__
         )
@@ -266,7 +272,7 @@ class TestSendNotificationForTimer(TestCaseBase):
     def setUp(self) -> None:
         super().setUp()
         self.rule_2 = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_TIMER_CREATED, webhook=self.webhook
+            trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED, webhook=self.webhook
         )
 
     def test_normal(self, mock_send_messages_for_webhook):

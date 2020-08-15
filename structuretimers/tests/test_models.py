@@ -11,7 +11,13 @@ from django.utils.timezone import now
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
 from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
-from ..models import DiscordWebhook, NotificationRule, Timer, models
+from ..models import (
+    DiscordWebhook,
+    NotificationRule,
+    ScheduledNotification,
+    Timer,
+    models,
+)
 from ..utils import JSONDateTimeDecoder, NoSocketsTestCase
 
 
@@ -295,10 +301,8 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
             name="Dummy", url="http://www.example.com"
         )
 
-    def test_normal(self, mock_send_message):
+    def test_minmal(self, mock_send_message):
         timer = Timer(
-            structure_name="Test",
-            timer_type=Timer.TYPE_ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
@@ -307,7 +311,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
 
         self.assertEqual(mock_send_message.call_count, 1)
 
-    def test_with_ping_type(self, mock_send_message):
+    def test_with_content(self, mock_send_message):
         timer = Timer(
             structure_name="Test",
             timer_type=Timer.TYPE_ARMOR,
@@ -315,18 +319,44 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
             structure_type=self.type_raitaru,
             date=now(),
         )
-        timer.send_notification(self.webhook, "@here")
+        timer.send_notification(self.webhook, "Extra Text")
 
         self.assertEqual(mock_send_message.call_count, 1)
         _, kwargs = mock_send_message.call_args
-        self.assertIn("@here", kwargs["content"])
+        self.assertIn("Extra Text", kwargs["content"])
+
+    def test_timer_with_options_1(self, mock_send_message):
+        timer = Timer(
+            structure_name="Test",
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now(),
+            objective=Timer.OBJECTIVE_FRIENDLY,
+        )
+        timer.send_notification(self.webhook)
+
+        self.assertEqual(mock_send_message.call_count, 1)
+
+    def test_timer_with_options_2(self, mock_send_message):
+        timer = Timer(
+            structure_name="Test",
+            timer_type=Timer.TYPE_ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now(),
+            objective=Timer.OBJECTIVE_HOSTILE,
+        )
+        timer.send_notification(self.webhook)
+
+        self.assertEqual(mock_send_message.call_count, 1)
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestTimerQuerySet(LoadTestDataMixin, TestCase):
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = Timer(
+        self.timer_1 = Timer.objects.create(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -336,8 +366,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_ARMOR,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
-        self.timer_1.save()
-        self.timer_2 = Timer(
+        self.timer_2 = Timer.objects.create(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -347,7 +376,6 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_HULL,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
-        self.timer_2.save()
         self.timer_qs = Timer.objects.all()
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
 
@@ -358,7 +386,8 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains only conforming timer
         """
         rule = NotificationRule.objects.create(
-            time=NotificationRule.MINUTES_10,
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
             require_timer_types=[Timer.TYPE_ARMOR],
             webhook=self.webhook,
         )
@@ -373,7 +402,9 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs is empty
         """
         rule = NotificationRule.objects.create(
-            time=NotificationRule.MINUTES_10, webhook=self.webhook,
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
+            webhook=self.webhook,
         )
         rule.require_corporations.add(self.corporation_3)
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
@@ -387,7 +418,8 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains all timers
         """
         rule = NotificationRule.objects.create(
-            time=NotificationRule.MINUTES_10,
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
             require_objectives=[Timer.OBJECTIVE_FRIENDLY],
             webhook=self.webhook,
         )
@@ -594,7 +626,9 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
             date=now(),
         )
         self.rule = NotificationRule.objects.create(
-            time=NotificationRule.MINUTES_15, webhook=self.webhook
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_15,
+            webhook=self.webhook,
         )
 
     def test_require_timer_types(self):
@@ -738,10 +772,14 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.rule_1 = NotificationRule.objects.create(
-            time=10, require_timer_types=[Timer.TYPE_ARMOR], webhook=self.webhook
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=10,
+            require_timer_types=[Timer.TYPE_ARMOR],
+            webhook=self.webhook,
         )
         self.rule_2 = NotificationRule.objects.create(
-            time=15,
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=15,
             require_objectives=[Timer.OBJECTIVE_FRIENDLY],
             webhook=self.webhook,
         )
@@ -753,7 +791,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when one rule conforms with timer
         then qs contains only conforming rule
         """
-        timer = Timer(
+        timer = Timer.objects.create(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -763,7 +801,6 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_ARMOR,
             objective=Timer.OBJECTIVE_HOSTILE,
         )
-        timer.save()
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)
         self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), {self.rule_1.pk})
@@ -774,7 +811,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when no rule conforms with timer
         then qs is empty
         """
-        timer = Timer(
+        timer = Timer.objects.create(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -784,7 +821,6 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_HULL,
             objective=Timer.OBJECTIVE_HOSTILE,
         )
-        timer.save()
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)
         self.assertSetEqual(set(new_qs.values_list("pk", flat=True)), set())
@@ -795,7 +831,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when one rule conforms with timer
         then qs contains only conforming rule
         """
-        timer = Timer(
+        timer = Timer.objects.create(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -805,9 +841,112 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.TYPE_ARMOR,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
-        timer.save()
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)
         self.assertSetEqual(
             set(new_qs.values_list("pk", flat=True)), {self.rule_1.pk, self.rule_2.pk}
         )
+
+
+@patch(MODULE_PATH + ".NotificationRule._import_schedule_notifications_for_rule")
+class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(name="dummy", url="dummy-url")
+
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", True)
+    def test_scheduled_normal(self, mock_import_func):
+        """
+        given notifications are enabled
+        when trigger is scheduled and enabled
+        then schedule notifications
+        """
+        rule = NotificationRule(
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
+            webhook=self.webhook,
+        )
+        rule.save()
+        self.assertTrue(mock_import_func.called)
+
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+    def test_scheduled_disabled_1(self, mock_import_func):
+        """
+        given notifications are disabled
+        when trigger is scheduled and enabled
+        then do not schedule notifications
+        """
+        rule = NotificationRule(
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
+            webhook=self.webhook,
+        )
+        rule.save()
+        self.assertFalse(mock_import_func.called)
+
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", True)
+    def test_scheduled_disabled_2(self, mock_import_func):
+        """
+        given notifications are enabled
+        when trigger is scheduled and disabled
+        then do not schedule notifications
+        """
+        rule = NotificationRule(
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
+            webhook=self.webhook,
+            is_enabled=False,
+        )
+        rule.save()
+        self.assertFalse(mock_import_func.called)
+
+    @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+    def test_created_trigger(self, mock_import_func):
+        """        
+        when trigger is created
+        then delete all scheduled notifications based on same rule
+        """
+        rule = NotificationRule.objects.create(
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_10,
+            webhook=self.webhook,
+        )
+        timer = Timer.objects.create(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        obj = ScheduledNotification.objects.create(
+            timer=timer,
+            notification_rule=rule,
+            timer_date=timer.date,
+            notification_date=timer.date - timedelta(minutes=10),
+        )
+        rule.trigger = NotificationRule.TRIGGER_NEW_TIMER_CREATED
+        rule.scheduled_time = None
+        rule.save()
+
+        self.assertFalse(ScheduledNotification.objects.filter(pk=obj.pk).exists())
+
+
+class TestNotificationRuleMultiselectDisplay(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.choices = [
+            (1, "alpha"),
+            (2, "bravo"),
+        ]
+
+    def test_returns_value_if_found(self):
+        self.assertEqual(
+            NotificationRule.get_multiselect_display(1, self.choices), "alpha"
+        )
+        self.assertEqual(
+            NotificationRule.get_multiselect_display(2, self.choices), "bravo"
+        )
+
+    def test_raises_exception_if_not_found(self):
+        with self.assertRaises(ValueError):
+            NotificationRule.get_multiselect_display(3, self.choices)

@@ -12,3 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 ### Fixed
+
+## 0.2.0 - tbd
+
+Initial release

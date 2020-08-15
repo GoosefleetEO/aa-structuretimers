@@ -582,11 +582,11 @@ class Timer(models.Model):
 class NotificationRule(models.Model):
 
     # Trigger choices
-    TRIGGER_TIMER_CREATED = "TC"
-    TRIGGER_TIMER_ELAPSES_SOON = "TE"
+    TRIGGER_NEW_TIMER_CREATED = "TC"
+    TRIGGER_SCHEDULED_TIME_REACHED = "TR"
     TRIGGER_CHOICES = (
-        (TRIGGER_TIMER_CREATED, "Timer created"),
-        (TRIGGER_TIMER_ELAPSES_SOON, "Timer elapses soon"),
+        (TRIGGER_NEW_TIMER_CREATED, _("New timer created")),
+        (TRIGGER_SCHEDULED_TIME_REACHED, _("Scheduled time reached")),
     )
 
     # Minutes choices
@@ -635,10 +635,9 @@ class NotificationRule(models.Model):
     trigger = models.CharField(
         max_length=2,
         choices=TRIGGER_CHOICES,
-        default=TRIGGER_TIMER_ELAPSES_SOON,
         help_text="Trigger for sending a notification",
     )
-    time = models.PositiveIntegerField(
+    scheduled_time = models.PositiveIntegerField(
         choices=MINUTES_CHOICES,
         null=True,
         default=None,
@@ -646,7 +645,7 @@ class NotificationRule(models.Model):
         db_index=True,
         help_text=(
             "When to sent a notification in relation to when the timer elapses. "
-            "Use together with `elapses soon` trigger."
+            "Use together with `Scheduled time reached` trigger."
         ),
     )
     webhook = models.ForeignKey(
@@ -674,7 +673,7 @@ class NotificationRule(models.Model):
     exclude_timer_types = MultiSelectField(
         choices=Timer.TYPE_CHOICES,
         blank=True,
-        help_text=("Timer must NOT have one of the given timer types"),
+        help_text="Timer must NOT have one of the given timer types",
     )
     require_objectives = MultiSelectField(
         choices=Timer.OBJECTIVE_CHOICES,
@@ -687,7 +686,7 @@ class NotificationRule(models.Model):
     exclude_objectives = MultiSelectField(
         choices=Timer.OBJECTIVE_CHOICES,
         blank=True,
-        help_text=("Timer must NOT have one of the given objectives"),
+        help_text="Timer must NOT have one of the given objectives",
     )
     require_corporations = models.ManyToManyField(
         EveCorporationInfo,
@@ -702,7 +701,7 @@ class NotificationRule(models.Model):
         EveCorporationInfo,
         blank=True,
         related_name="notification_rule_exclude_corporations",
-        help_text=("Timer must NOT be created by one of the given corporations"),
+        help_text="Timer must NOT be created by one of the given corporations",
     )
     require_alliances = models.ManyToManyField(
         EveAllianceInfo,
@@ -717,7 +716,7 @@ class NotificationRule(models.Model):
         EveAllianceInfo,
         blank=True,
         related_name="notification_rule_exclude_alliances",
-        help_text=("Timer must NOT be created by one of the given alliances"),
+        help_text="Timer must NOT be created by one of the given alliances",
     )
     require_visibility = MultiSelectField(
         choices=Timer.VISIBILITY_CHOICES,
@@ -729,7 +728,7 @@ class NotificationRule(models.Model):
     exclude_visibility = MultiSelectField(
         choices=Timer.VISIBILITY_CHOICES,
         blank=True,
-        help_text=("Visibility must NOT be one of the selected"),
+        help_text="Visibility must NOT be one of the selected",
     )
     is_important = models.CharField(
         max_length=2,
@@ -754,17 +753,17 @@ class NotificationRule(models.Model):
         if (
             STRUCTURETIMERS_NOTIFICATIONS_ENABLED
             and self.is_enabled
-            and self.trigger == self.TRIGGER_TIMER_ELAPSES_SOON
+            and self.trigger == self.TRIGGER_SCHEDULED_TIME_REACHED
         ):
-            self._import_scheduled_notifications_for_rule().delay(
+            self._import_schedule_notifications_for_rule().delay(
                 notification_rule_pk=self.pk
             )
 
-        if self.trigger == self.TRIGGER_TIMER_CREATED:
+        if self.trigger == self.TRIGGER_NEW_TIMER_CREATED:
             ScheduledNotification.objects.filter(notification_rule=self).delete()
 
     @staticmethod
-    def _import_scheduled_notifications_for_rule() -> object:
+    def _import_schedule_notifications_for_rule() -> object:
         from .tasks import schedule_notifications_for_rule
 
         return schedule_notifications_for_rule
@@ -848,8 +847,8 @@ class NotificationRule(models.Model):
     def get_objectives_display(cls, value: Any) -> str:
         return cls.get_multiselect_display(value, Timer.OBJECTIVE_CHOICES)
 
-    @classmethod
-    def get_multiselect_display(cls, value: Any, choices: List[Tuple[Any, str]]) -> str:
+    @staticmethod
+    def get_multiselect_display(value: Any, choices: List[Tuple[Any, str]]) -> str:
         for choice, text in choices:
             if str(choice) == str(value):
                 return text

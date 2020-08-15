@@ -83,7 +83,7 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
             webhook = notification_rule.webhook
             if webhook.is_enabled:
                 minutes = round((timer.date - now()).total_seconds() / 60)
-                mod_text = "**important** " if self.is_important else ""
+                mod_text = "**important** " if timer.is_important else ""
                 content = (
                     f"The following {mod_text}structure timer will elapse "
                     f"in less than **{minutes:,}** minutes:"
@@ -129,7 +129,7 @@ def _schedule_notification_for_timer(
         timer.pk,
         notification_rule.pk,
     )
-    notification_date = timer.date - timedelta(minutes=notification_rule.time)
+    notification_date = timer.date - timedelta(minutes=notification_rule.scheduled_time)
     scheduled_notification, _ = ScheduledNotification.objects.update_or_create(
         timer=timer,
         notification_rule=notification_rule,
@@ -137,7 +137,7 @@ def _schedule_notification_for_timer(
     )
     result = send_scheduled_notification.apply_async(
         kwargs={"scheduled_notification_pk": scheduled_notification.pk},
-        eta=timer.date - timedelta(minutes=notification_rule.time),
+        eta=timer.date - timedelta(minutes=notification_rule.scheduled_time),
         priority=3,
     )
     scheduled_notification.celery_task_id = result.task_id
@@ -172,7 +172,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                     NotificationRule.objects.select_related("webhook")
                     .filter(
                         is_enabled=True,
-                        trigger=NotificationRule.TRIGGER_TIMER_CREATED,
+                        trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED,
                         webhook__is_enabled=True,
                     )
                     .conforms_with_timer(timer)
@@ -198,7 +198,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                 # schedule new notifications
                 for notification_rule in NotificationRule.objects.filter(
                     is_enabled=True,
-                    trigger=NotificationRule.TRIGGER_TIMER_ELAPSES_SOON,
+                    trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
                 ).conforms_with_timer(timer):
                     _schedule_notification_for_timer(
                         timer=timer, notification_rule=notification_rule
@@ -220,7 +220,7 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
             notification_rule_pk,
         )
     else:
-        if notification_rule.trigger == NotificationRule.TRIGGER_TIMER_CREATED:
+        if notification_rule.trigger == NotificationRule.TRIGGER_NEW_TIMER_CREATED:
             logger.error(
                 "NotificationRule with pk = %s has the wrong trigger. Aborting.",
                 notification_rule_pk,

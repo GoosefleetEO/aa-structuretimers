@@ -110,8 +110,8 @@ $(document).ready(function () {
         { data: 'structure_type_name' },
         { data: 'timer_type_name' },
         { data: 'objective_name' },
-        { data: 'owner_name' },
         { data: 'visibility' },
+        { data: 'owner_name' },
         { data: 'opsec_str' }
     ];
     var idx_start = 7
@@ -139,11 +139,11 @@ $(document).ready(function () {
             },
             {
                 idx: idx_start + 5,
-                title: titleOwner
+                title: titleVisibility
             },
             {
                 idx: idx_start + 6,
-                title: titleVisibility
+                title: titleOwner
             }
         ],
         bootstrap: true,
