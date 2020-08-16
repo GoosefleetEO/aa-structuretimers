@@ -755,8 +755,8 @@ class NotificationRule(models.Model):
             and self.is_enabled
             and self.trigger == self.TRIGGER_SCHEDULED_TIME_REACHED
         ):
-            self._import_schedule_notifications_for_rule().delay(
-                notification_rule_pk=self.pk
+            self._import_schedule_notifications_for_rule().apply_async(
+                kwargs={"notification_rule_pk": self.pk}, priority=4
             )
 
         if self.trigger == self.TRIGGER_NEW_TIMER_CREATED:
@@ -832,12 +832,6 @@ class NotificationRule(models.Model):
             NotificationRule.PING_TYPE_EVERYONE: "@everyone",
         }
         return my_map[ping_type] if ping_type in my_map else ""
-
-    @staticmethod
-    def _import_send_messages_for_webhook() -> object:
-        from .tasks import send_messages_for_webhook
-
-        return send_messages_for_webhook
 
     @classmethod
     def get_timer_type_display(cls, value: Any) -> str:

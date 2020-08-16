@@ -292,7 +292,7 @@ class TestTimerManger(LoadTestDataMixin, TestCase):
         self.assertFalse(Timer.objects.filter(pk=timer_2.pk).exists())
 
 
-@patch(MODULE_PATH + ".DiscordWebhook.send_message")
+@patch(MODULE_PATH + ".DiscordWebhook.send_message", spec=True)
 class TestTimerSendNotification(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -482,7 +482,7 @@ class TestDiscordWebhook(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".sleep", new=lambda x: x)
-@patch(MODULE_PATH + ".DiscordWebhook.send_message_to_webhook")
+@patch(MODULE_PATH + ".DiscordWebhook.send_message_to_webhook", spec=True)
 class TestDiscordWebhookSendQueuedMessages(TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(
@@ -548,8 +548,8 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
         self.assertEqual(self.webhook.queue_size(), 1)
 
 
-@patch(MODULE_PATH + ".dhooks_lite.Webhook.execute")
-@patch(MODULE_PATH + ".logger")
+@patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
+@patch(MODULE_PATH + ".logger", spec=True)
 class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(

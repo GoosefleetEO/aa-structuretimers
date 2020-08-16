@@ -13,6 +13,7 @@ An app for keeping track of Eve Online structure timers with Alliance Auth and D
 - [Notification Rules](#notification-rules)
 - [Permissions](#permissions)
 - [Management commands](#management-commands)
+- [Change Log](CHANGELOG.md)
 
 ## Overview
 
@@ -146,16 +147,27 @@ Name | Description | Default
 
 ## Notification Rules
 
-In *Structure Timers II* you can get notifications on Discord for timers by setting up notification rules. Notification rules allow you to define in detail what event and which kind of timers will trigger notification. And of course to which channel to sent them. For example you can define that important timers should always ping everybody or that corp restricted timers should only be sent to a dedicated channel.
+In *Structure Timers II* you can receive automatic notifications on Discord for timers by setting up notification rules. Notification rules allow you to define in detail what event and which kind of timers should trigger notifications.
 
-In general all rules are independent from each other and all enabled rules will be executed for every timer one by one.
+Note that in general all rules are independent from each other and all enabled rules will be executed for every timer one by one.
 
 ### Example setup
 
 Here is an example for a basic setup of rules:
 
-1. Notify about new every newly created timer without ping (e.g. into a scouts channel)
-2. Notify 45 minutes before any timer elapses with ping (e.g. into the FC channel)
+#### Example 1: Notify about new every newly created timer without ping (e.g. into a scouts channel)
+
+- Trigger: New timer created
+- Scheduled Time: -
+- Webhook: YOUR-WEBHOOK
+- Ping Type: (no ping)
+
+#### Example 2: Notify 45 minutes before any timer elapses with ping (e.g. into the FC channel)
+
+- Trigger: Scheduled timer reached
+- Scheduled Time: T - 45 minutes
+- Webhook: YOUR-WEBHOOK
+- Ping Type: @here
 
 ### Key concepts
 
@@ -176,7 +188,7 @@ Each rule has exactly one webhook. You can of course define multiple rules for t
 
 Almost every property of a timer can be used to define rules. For example you can define to get notifications only for timers which hostile objective or only for final timers.
 
-Note that if a clause is not set, it will always match any.
+Note that setting a timer clause is optional and clauses that are not set, it will always match any.
 
 ## Permissions
 

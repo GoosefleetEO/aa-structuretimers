@@ -134,7 +134,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         "_time",
         "webhook",
         "ping_type",
-        "_clauses",
+        "_timer_clauses",
     )
     list_filter = ("is_enabled", "trigger")
     ordering = ("id",)
@@ -147,7 +147,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
 
     _time.admin_order_field = "scheduled time"
 
-    def _clauses(self, obj) -> list:
+    def _timer_clauses(self, obj) -> list:
         clauses = list()
         for field, func, choices in [
             ("require_timer_types", self._add_to_clauses_1, Timer.TYPE_CHOICES),
@@ -212,6 +212,41 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         "exclude_alliances",
         "require_corporations",
         "exclude_corporations",
+    )
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "trigger",
+                    "scheduled_time",
+                    "webhook",
+                    "ping_type",
+                    "is_enabled",
+                )
+            },
+        ),
+        (
+            "Timer clauses",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "require_timer_types",
+                    "exclude_timer_types",
+                    "require_objectives",
+                    "exclude_objectives",
+                    "require_corporations",
+                    "exclude_corporations",
+                    "require_alliances",
+                    "exclude_alliances",
+                    "require_visibility",
+                    "exclude_visibility",
+                    "is_important",
+                    "is_opsec",
+                ),
+            },
+        ),
     )
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):

@@ -21,6 +21,7 @@ from .utils import LoggerAddTag
 
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+TASK_PRIO_HIGH = 4
 
 
 @shared_task(base=QueueOnce, acks_late=True)
@@ -92,7 +93,9 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
                     webhook=webhook,
                     content=notification_rule.prepend_ping_text(content),
                 )
-                send_messages_for_webhook.apply_async(args=[webhook.pk], priority=3)
+                send_messages_for_webhook.apply_async(
+                    args=[webhook.pk], priority=TASK_PRIO_HIGH
+                )
 
 
 @shared_task
@@ -117,7 +120,7 @@ def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
                 content=notification_rule.prepend_ping_text(content),
             )
             send_messages_for_webhook.apply_async(
-                args=[notification_rule.webhook.pk], priority=3
+                args=[notification_rule.webhook.pk], priority=TASK_PRIO_HIGH
             )
 
 
@@ -138,7 +141,7 @@ def _schedule_notification_for_timer(
     result = send_scheduled_notification.apply_async(
         kwargs={"scheduled_notification_pk": scheduled_notification.pk},
         eta=timer.date - timedelta(minutes=notification_rule.scheduled_time),
-        priority=3,
+        priority=TASK_PRIO_HIGH,
     )
     scheduled_notification.celery_task_id = result.task_id
     scheduled_notification.save()
@@ -184,7 +187,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                                 "timer_pk": timer.pk,
                                 "notification_rule_pk": rule.pk,
                             },
-                            priority=3,
+                            priority=TASK_PRIO_HIGH,
                         )
 
             # trigger: timer elapses soon

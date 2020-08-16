@@ -324,8 +324,8 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
 
 @override_settings(CELERY_ALWAYS_EAGER=True)
 @patch("structuretimers.models.sleep", new=lambda x: x)
-@patch("structuretimers.tasks.notify")
-@patch("structuretimers.models.dhooks_lite.Webhook.execute")
+@patch("structuretimers.tasks.notify", spec=True)
+@patch("structuretimers.models.dhooks_lite.Webhook.execute", spec=True)
 class TestTestMessageToWebhook(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(
