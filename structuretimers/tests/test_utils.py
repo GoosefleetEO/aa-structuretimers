@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 import requests
 
 from django.contrib.auth.models import User
+from django.http import HttpRequest
 from django.test import TestCase
 from django.utils import translation
 from django.utils.html import mark_safe
@@ -37,9 +38,9 @@ logger = set_test_logger(MODULE_PATH, __file__)
 
 
 class TestMessagePlus(TestCase):
-    @patch(MODULE_PATH + ".messages")
+    @patch(MODULE_PATH + ".messages", spec=True)
     def test_valid_call(self, mock_messages):
-        messages_plus.debug(Mock(), "Test Message")
+        messages_plus.debug(Mock(spec=HttpRequest), "Test Message")
         self.assertTrue(mock_messages.debug.called)
         call_args_list = mock_messages.debug.call_args_list
         args, kwargs = call_args_list[0]
@@ -57,19 +58,19 @@ class TestMessagePlus(TestCase):
     @patch(MODULE_PATH + ".messages")
     def test_all_levels(self, mock_messages):
         text = "Test Message"
-        messages_plus.error(Mock(), text)
+        messages_plus.error(Mock(spec=HttpRequest), text)
         self.assertTrue(mock_messages.error.called)
 
-        messages_plus.debug(Mock(), text)
+        messages_plus.debug(Mock(spec=HttpRequest), text)
         self.assertTrue(mock_messages.debug.called)
 
-        messages_plus.info(Mock(), text)
+        messages_plus.info(Mock(spec=HttpRequest), text)
         self.assertTrue(mock_messages.info.called)
 
-        messages_plus.success(Mock(), text)
+        messages_plus.success(Mock(spec=HttpRequest), text)
         self.assertTrue(mock_messages.success.called)
 
-        messages_plus.warning(Mock(), text)
+        messages_plus.warning(Mock(spec=HttpRequest), text)
         self.assertTrue(mock_messages.warning.called)
 
 

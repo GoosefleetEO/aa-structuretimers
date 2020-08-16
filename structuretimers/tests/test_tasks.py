@@ -40,8 +40,8 @@ class TestCaseBase(LoadTestDataMixin, TestCase):
         )
 
 
-@patch(MODULE_PATH + ".DiscordWebhook.send_queued_messages")
-@patch(MODULE_PATH + ".logger")
+@patch(MODULE_PATH + ".DiscordWebhook.send_queued_messages", spec=True)
+@patch(MODULE_PATH + ".logger", spec=True)
 class TestSendMessagesForWebhook(TestCaseBase):
     def test_normal(self, mock_logger, mock_send_queued_messages):
         send_messages_for_webhook(self.webhook.pk)
@@ -65,8 +65,8 @@ class TestSendMessagesForWebhook(TestCaseBase):
         self.assertEqual(mock_logger.error.call_count, 0)
 
 
-@patch(MODULE_PATH + ".notify_about_new_timer")
-@patch(MODULE_PATH + ".send_scheduled_notification")
+@patch(MODULE_PATH + ".notify_about_new_timer", spec=True)
+@patch(MODULE_PATH + ".send_scheduled_notification", spec=True)
 class TestScheduleNotificationForTimer(TestCaseBase):
     def test_normal(self, mock_send_notification, mock_send_notification_for_timer):
         """
@@ -149,7 +149,7 @@ class TestScheduleNotificationForTimer(TestCaseBase):
         self.assertFalse(mock_send_notification_for_timer.apply_async.called)
 
 
-@patch(MODULE_PATH + ".send_scheduled_notification")
+@patch(MODULE_PATH + ".send_scheduled_notification", spec=True)
 class TestScheduleNotificationForRule(TestCaseBase):
     def test_normal(self, mock_send_notification):
         """
@@ -197,7 +197,7 @@ class TestScheduleNotificationForRule(TestCaseBase):
 
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-@patch(MODULE_PATH + ".send_messages_for_webhook")
+@patch(MODULE_PATH + ".send_messages_for_webhook", spec=True)
 class TestSendScheduledNotification(TestCaseBase):
     def test_normal(self, mock_send_messages_for_webhook):
         """
@@ -267,7 +267,7 @@ class TestSendScheduledNotification(TestCaseBase):
         self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
 
 
-@patch(MODULE_PATH + ".send_messages_for_webhook")
+@patch(MODULE_PATH + ".send_messages_for_webhook", spec=True)
 class TestSendNotificationForTimer(TestCaseBase):
     def setUp(self) -> None:
         super().setUp()
