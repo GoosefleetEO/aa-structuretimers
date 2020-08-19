@@ -45,7 +45,7 @@ def send_messages_for_webhook(webhook_pk: int) -> None:
         logger.info("Completed sending messages to webhook %s", webhook)
 
 
-@shared_task(bind=True, acks_late=True)
+@shared_task(base=QueueOnce, bind=True, acks_late=True)
 def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
     """Sends a scheduled notification for a timer based on a notification rule"""
     try:

@@ -156,13 +156,14 @@ def timer_list_data(request, tab_name):
             owner = "-"
             owner_name = ""
 
-        name = format_html("{}<br>{}", timer.structure_name, owner)
+        structure_name = timer.structure_name if timer.structure_name else "-"
+        name = format_html("{}<br>{}", structure_name, owner)
 
         # creator
         if timer.eve_corporation:
             corporation_name = timer.eve_corporation.corporation_name
         else:
-            corporation_name = ""
+            corporation_name = "-"
 
         if timer.eve_character:
             creator = format_html(
@@ -173,6 +174,8 @@ def timer_list_data(request, tab_name):
                 ),
                 corporation_name,
             )
+        elif corporation_name:
+            creator = corporation_name
         else:
             creator = "-"
 

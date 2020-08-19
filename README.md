@@ -13,6 +13,7 @@ An app for keeping track of Eve Online structure timers with Alliance Auth and D
 - [Notification Rules](#notification-rules)
 - [Permissions](#permissions)
 - [Management commands](#management-commands)
+- [Change Log](CHANGELOG.md)
 
 ## Overview
 
@@ -53,7 +54,9 @@ Automatic cleanup of elapsed timers | - | x
 
 ## Installation
 
-### Preconditions
+### Step 1 - Check Preconditions
+
+Please make sure you meet all preconditions before proceeding:
 
 1. Structure Timers is a plugin for Alliance Auth. If you don't have Alliance Auth running already, please install it first before proceeding. (see the official [AA installation guide](https://allianceauth.readthedocs.io/en/latest/installation/auth/allianceauth/) for details)
 
@@ -61,7 +64,7 @@ Automatic cleanup of elapsed timers | - | x
 
 Note that Structure Timers is compatible with Auth's Structure Timer app and can be installed in parallel.
 
-### Step 1 - Install app
+### Step 2 - Install app
 
 Make sure you are in the virtual environment (venv) of your Alliance Auth installation. Then install the newest release from PyPI:
 
@@ -69,7 +72,7 @@ Make sure you are in the virtual environment (venv) of your Alliance Auth instal
 pip install aa-structuretimers
 ```
 
-### Step 2 - Configure settings
+### Step 3 - Configure settings
 
 Configure your Auth settings (`local.py`) as follows:
 
@@ -85,7 +88,7 @@ CELERYBEAT_SCHEDULE['structuretimers_housekeeping'] = {
 
 - Optional: Add additional settings if you want to change any defaults. See [Settings](#settings) for the full list.
 
-### Step 3 - Finalize installation
+### Step 4 - Finalize installation
 
 Run migrations & copy static files
 
@@ -96,7 +99,7 @@ python manage.py collectstatic
 
 Restart your supervisor services for Auth
 
-### Step 4 - Preload Eve Universe data
+### Step 5 - Preload Eve Universe data
 
 In order to be able to select solar systems and structure types for timers you need to preload some data from ESI once. If you already have run those commands previously you can skip this step.
 
@@ -112,7 +115,7 @@ python manage.py structuretimers_load_eve
 
 You may want to wait until the data loading is complete before starting to create new timers.
 
-### Step 5 - Migrate existing timers
+### Step 6 - Migrate existing timers
 
 If you have already been using the classic app from Auth, you can migrate your existing timers over to **Structure Timers II**. Just run the following command:
 
@@ -122,11 +125,11 @@ python manage.py structuretimers_migrate_timers
 
 Note: We suggest migration timers before setting up notification rules to avoid potential notification spam for migrated timers.
 
-### Step 6 - Setup notification rules
+### Step 7 - Setup notification rules
 
 If you want to receive notifications about timers on Discord you can setup notification rules on the admin site. e.g. you can setup a rule to sent notifications 60 minutes before a timer elapses. Please see [Notification Rules](#notification-rules) for details.
 
-### Step 7 - Setup permissions
+### Step 8 - Setup permissions
 
 Another important step is to setup permissions, to ensure the right people have access features. Please see [Permissions](#permissions) for an overview of all permissions.
 

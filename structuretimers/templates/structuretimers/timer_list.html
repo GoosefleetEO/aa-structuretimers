@@ -2,82 +2,80 @@
 {% load static %}
 {% load i18n %}
 
-{% block details %}
-    <div class="col-lg-12">
-                
-        <div class="col-lg-12 text-center">            
-            <b>{% trans "Current Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
-        </div>
+{% block details %}                
+    <div class="col-lg-12 text-center">            
+        <b>{% trans "Current Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
+    </div>
 
-        <span class="pull-right">
-            {% if perms.structuretimers.create_timer %}
-                <a 
-                    href="{% url 'structuretimers:add' %}" 
-                    class="btn btn-success" 
-                    title="Add new timer">
-                    Add Timer
-                </a>
-            {% endif %}
-        </span>
+    <span class="pull-right">
+        {% if perms.structuretimers.create_timer %}
+            <a 
+                href="{% url 'structuretimers:add' %}" 
+                class="btn btn-success" 
+                title="Add new timer">
+                Add Timer
+            </a>
+        {% endif %}
+    </span>
 
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Current Timers</a></li>
-            <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
-        </ul>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Current Timers</a></li>
+        <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
+    </ul>
 
-        <div class="panel panel-default">
-            <div class="panel-body">
-                <div class="tab-content">            
-                    <!-- current structuretimers tab -->
-                    <div role="tabpanel" class="tab-pane active" id="home">
-                        {% include 'structuretimers/timer_list_table.html' with tab_name='current' %}
-                        <p class="text-muted">
-                            Timers remain on this page for {{ max_hours_expired }} hours after they expired
-                        </p>
-                    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="tab-content">            
+                <!-- current structuretimers tab -->
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    {% include 'structuretimers/timer_list_table.html' with tab_name='current' %}
+                    <p class="text-muted">
+                        Timers remain on this page for {{ max_hours_expired }} hours after they expired
+                    </p>
+                </div>
 
-                    <!-- past structuretimers tab -->
-                    <div role="tabpanel" class="tab-pane" id="profile">
-                        {% include 'structuretimers/timer_list_table.html' with tab_name='past' %} 
-                    </div>
+                <!-- past structuretimers tab -->
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    {% include 'structuretimers/timer_list_table.html' with tab_name='past' %} 
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- modal to show timer details -->
-    <div class="modal" id="modalTimerDetails" tabindex="-1" role="dialog" aria-labelledby="myModal">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
-                </div>                
-                <div class="modal-body">
-                    <div id="modal_div_spinner">
-                        <img class="center-block" src="{% static 'structuretimers/Spinner-1s-200px.gif' %}" alt="Spinner"/>
-                    </div>
-                    <div id="modal_div_data" style="display: none">
-                        <label for="timerboardTimer">Timer</label>
-                        <p><span id="timerboardTimer"></span></p>
-                        <label for="timerboardImgScreenshot">Image</label>
-                        <a href="#" target="_blank">
-                            <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
-                        </a>
-                        <br>
-                        <label for="timerboardNotes">Notes</label>                    
-                        <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
-                    </div>
-                </div>                
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>                    
+<!-- modal to show timer details -->
+<div class="modal" id="modalTimerDetails" tabindex="-1" role="dialog" aria-labelledby="myModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
+            </div>                
+            <div class="modal-body">
+                <div id="modal_div_spinner">
+                    <img class="center-block" src="{% static 'structuretimers/Spinner-1s-200px.gif' %}" alt="Spinner"/>
                 </div>
+                <div id="modal_div_data" style="display: none">
+                    <label for="timerboardTimer">Timer</label>
+                    <p><span id="timerboardTimer"></span></p>
+                    <label for="timerboardImgScreenshot">Image</label>
+                    <a href="#" target="_blank">
+                        <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
+                    </a>
+                    <br>
+                    <label for="timerboardNotes">Notes</label>                    
+                    <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
+                </div>
+            </div>                
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>                    
             </div>
         </div>
     </div>
+
 
     <!-- share data with JS part -->
     <div 

@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
-## 1.0.0 - tbd
+## 1.0.0b2 - 2020-08-19
+
+### Fixed
+
+- Attempt to fix occasional multi-sending of notifications
+- No shows corporation name of creator for generated timers
+- Now using full width of webpage for timers list
+
+## 1.0.0b1 - 2020-08-16
 
 Initial release
