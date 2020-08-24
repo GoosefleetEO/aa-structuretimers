@@ -5,6 +5,8 @@
     text-align: center;    
     word-wrap: break-word;
 }
+.table_timers tbody td:nth-child(1) { white-space: nowrap; }
+.table_timers tbody td:nth-child(2) { white-space: nowrap; }
 /*
 .nav-tabs > li {
     font-weight: bold;
@@ -28,4 +30,8 @@
 
 #timerboardImgScreenshot {
     max-height: 450px;
+}
+
+.nowrap {
+    white-space: nowrap
 }

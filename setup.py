@@ -42,6 +42,7 @@ setup(
     ],
     python_requires="~=3.6",
     install_requires=[
+        "django>=2.2,<3.0",
         "django-eveuniverse",
         "redis-simple-mq",
         "dhooks_lite>=0.5.0",

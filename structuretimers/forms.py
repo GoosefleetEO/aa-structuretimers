@@ -9,6 +9,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
+from eveuniverse.models import EveSolarSystem, EveType
+
 from .models import Timer
 
 logger = logging.getLogger(__name__)
@@ -109,6 +111,32 @@ class TimerForm(forms.ModelForm):
         label=_(mark_safe(f"Minutes Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data["eve_solar_system_2"]:
+            try:
+                solar_system = EveSolarSystem.objects.get(
+                    id=cleaned_data["eve_solar_system_2"]
+                )
+            except EveSolarSystem.DoesNotExist:
+                pass
+            else:
+                self.fields["eve_solar_system_2"].widget.choices = [
+                    (str(solar_system.id), solar_system.name,)
+                ]
+
+        if cleaned_data["structure_type_2"]:
+            try:
+                structure_type = EveType.objects.get(
+                    id=cleaned_data["structure_type_2"]
+                )
+            except EveType.DoesNotExist:
+                pass
+            else:
+                self.fields["structure_type_2"].widget.choices = [
+                    (str(structure_type.id), structure_type.name,)
+                ]
 
     def save(self, commit=True):
         timer = super(TimerForm, self).save(commit=False)

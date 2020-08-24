@@ -31,7 +31,6 @@ from .utils import (
     create_fa_button_html,
     create_link_html,
     yesno_str,
-    timeuntil_str,
     messages_plus,
 )
 
@@ -76,18 +75,6 @@ def timer_list_data(request, tab_name):
     )
     data = list()
     for timer in timers_qs:
-
-        # timer
-        is_passed = timer.date < now()
-        time = timer.date.strftime(DATETIME_FORMAT)
-        if is_passed:
-            countdown_str = "ELAPSED"
-        else:
-            duration = timer.date - now()
-            countdown_str = timeuntil_str(duration)
-
-        time += format_html("<br>{}", countdown_str)
-
         # location
         location = create_link_html(
             dotlan.solar_system_url(timer.eve_solar_system.name),
@@ -235,7 +222,7 @@ def timer_list_data(request, tab_name):
         data.append(
             {
                 "id": timer.id,
-                "time": time,
+                "local_time": timer.date.isoformat(),
                 "date": timer.date.isoformat(),
                 "location": location,
                 "structure_details": structure,
@@ -252,7 +239,7 @@ def timer_list_data(request, tab_name):
                 "visibility": visibility,
                 "opsec_str": yesno_str(timer.is_opsec),
                 "is_opsec": timer.is_opsec,
-                "is_passed": is_passed,
+                "is_passed": timer.date < now(),
                 "is_important": timer.is_important,
                 "is_restricted": is_restricted,
             }

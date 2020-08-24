@@ -1,9 +1,5 @@
-/**
-* Get a duration string like countdown.js
-* e.g. "1y 2d 3h 4m 5s"
-* @param duration moment.duration
-*/
-function getDurationString(duration) {
+/* return duration as countdown string */
+function durationToCountdownStr(duration) {
     var out = "";
     if (duration.years()) {
         out += duration.years() + 'y ';
@@ -17,11 +13,31 @@ function getDurationString(duration) {
     return out + duration.hours() + "h " + duration.minutes() + "m " + duration.seconds() + "s";
 }
 
-
 function getCurrentEveTimeString() {
     return moment().utc().format('dddd LL HH:mm:ss')
 }
 
+/* eve clock and timer countdown feature */
+function updateClock() {
+    document.getElementById("current-time").innerHTML =
+        moment().utc().format('YYYY-MM-DD HH:mm:ss');
+}
+
+/* return countdown to given date as string */
+function dateToCountdownStr(date) {
+    duration = moment.duration(moment(date).utc() - moment(), 'milliseconds');
+    if (duration > 0) {
+        return durationToCountdownStr(duration);
+    }
+    else {
+        return 'ELAPSED';
+    }
+}
+
+/* return local time and countdown string to given date as HTML*/
+function localTimeOutputHtml(date) {
+    return moment(date).format("ddd @ LT") + '<br>' + dateToCountdownStr(date);
+}
 
 $(document).ready(function () {
 
@@ -96,7 +112,8 @@ $(document).ready(function () {
 
     /* build dataTables */
     var columns = [
-        { data: 'time' },
+        { data: 'date' },
+        { data: 'local_time' },
         { data: 'location' },
         { data: 'structure_details' },
         { data: 'owner' },
@@ -114,7 +131,7 @@ $(document).ready(function () {
         { data: 'owner_name' },
         { data: 'opsec_str' }
     ];
-    var idx_start = 7
+    var idx_start = 8
     var filterDropDown = {
         columns: [
             {
@@ -169,6 +186,18 @@ $(document).ready(function () {
                 idx_start + 6,
                 idx_start + 7
             ]
+        },
+        {
+            "render": function (data, type, row) {
+                return moment(data).utc().format("YYYY-MM-DD HH:mm");
+            },
+            "targets": 0
+        },
+        {
+            "render": function (data, type, row) {
+                return localTimeOutputHtml(data);
+            },
+            "targets": 1
         }
     ];
     $('#tab_timers_past').DataTable({
@@ -208,28 +237,11 @@ $(document).ready(function () {
         }
     });
 
-    /* eve clock and timer countdown feature */
-    function updateClock() {
-        document.getElementById("current-time").innerHTML =
-            moment().utc().format('YYYY-MM-DD HH:mm:ss');
-    }
-
     function updateTimers() {
         table_current.rows().every(function () {
             var d = this.data();
             if (!d['is_passed']) {
-                date = moment(d['date']).utc()
-                date_str = date.format('YYYY-MM-DD HH:mm')
-                duration = moment.duration(
-                    date - moment(), 'milliseconds'
-                );
-                if (duration > 0) {
-                    countdown_str = getDurationString(duration);
-                }
-                else {
-                    countdown_str = 'ELAPSED';
-                }
-                d['time'] = date_str + '<br>' + countdown_str;
+                d['local_time'] = d['date']
                 table_current
                     .row(this)
                     .data(d)
