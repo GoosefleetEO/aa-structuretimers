@@ -199,7 +199,7 @@ Here are all relevant permissions:
 Codename | Description
 -- | --
 `general - Can access this app and see timers` | Basic permission required by anyone to access this app. Gives access to the list of timers (which timers a user sees can depend on other permissions and settings for a timers)
-`general - Can create new timers and edit own timers` | Users with this permission can create new timers and their own timers.
+`general - Can create new timers and edit own timers` | Users with this permission can create new timers and edit or delete their own timers.
 `general - Can edit and delete any timer` | Users with this permission can edit and delete any timer.
 `general - Can create and see opsec timers` | Users with this permission can create and view timers that are opsec restricted.
 
