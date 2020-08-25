@@ -7,6 +7,7 @@
 }
 .table_timers tbody td:nth-child(1) { white-space: nowrap; }
 .table_timers tbody td:nth-child(2) { white-space: nowrap; }
+
 /*
 .nav-tabs > li {
     font-weight: bold;
@@ -14,7 +15,8 @@
 */
 
 .flex-container {
-    display: flex;    
+    display: flex;
+    margin: 0 auto;    
 }
 
 .flex-container > div {
@@ -24,7 +26,7 @@
 
 .flex-container > div:first-child {
     align-self: center;
-    padding-left: 60px;
+    padding-left: 20px;
 }
 
 

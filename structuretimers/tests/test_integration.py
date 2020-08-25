@@ -251,7 +251,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("authentication:dashboard"))
 
-    def test_delete_existing_timer(self):
+    def test_delete_existing_timer_by_manager(self):
         """
         when user has manager permissions
         then he can delete an existing timer
@@ -281,15 +281,46 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertFalse(Timer.objects.filter(pk=self.timer_2.pk).exists())
 
-    def test_delete_timer_without_permission(self):
+    def test_delete_own_timer(self):
         """
-        given a user does not have permissions
-        when trying to access page for timer delete
-        then he is redirected back to dashboard
+        given a user has created a timer
+        when trying to delete that time
+        then timer is deleted
         """
 
         # login
         self.app.set_user(self.user_2)
+
+        # user opens timerboard
+        timerboard = self.app.get(reverse("structuretimers:timer_list"))
+        self.assertEqual(timerboard.status_code, 200)
+
+        # user clicks on "Delete Timer" for timer 2
+        confirm_page = self.app.get(
+            reverse("structuretimers:delete", args=[self.timer_2.pk])
+        )
+        self.assertEqual(confirm_page.status_code, 200)
+
+        # user enters data and clicks create
+        form = confirm_page.forms["confirm-delete-form"]
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
+        self.assertFalse(Timer.objects.filter(pk=self.timer_2.pk).exists())
+
+    def test_delete_timer_without_permission(self):
+        """
+        given a user does not have manager permissions
+        when trying to access page to delete timer of another user
+        then he is redirected back to dashboard
+        """
+
+        # login
+        user_3 = create_test_user(self.character_3)
+        user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
+        self.app.set_user(user_3)
 
         # user tries to access page for edit directly
         response = self.app.get(

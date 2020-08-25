@@ -198,7 +198,7 @@ def timer_list_data(request, tab_name):
             + "&nbsp;"
         )
 
-        if request.user.has_perm("structuretimers.manage_timer"):
+        if timer.user_can_edit(request.user):
             actions += (
                 create_fa_button_html(
                     reverse("structuretimers:delete", args=(timer.pk,)),
@@ -207,14 +207,12 @@ def timer_list_data(request, tab_name):
                     "Delete this timer",
                 )
                 + "&nbsp;"
-            )
-
-        if timer.user_can_edit(request.user):
-            actions += create_fa_button_html(
-                reverse("structuretimers:edit", args=(timer.pk,)),
-                "far fa-edit",
-                "warning",
-                "Edit this timer",
+                + create_fa_button_html(
+                    reverse("structuretimers:edit", args=(timer.pk,)),
+                    "far fa-edit",
+                    "warning",
+                    "Edit this timer",
+                )
             )
 
         actions = add_no_wrap_html(actions)
@@ -295,8 +293,11 @@ class AddUpdateMixin:
 
 
 class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
-    permission_required = "structuretimers.create_timer"
     template_name_suffix = "_create_form"
+    permission_required = (
+        "structuretimers.basic_access",
+        "structuretimers.create_timer",
+    )
 
     def form_valid(self, form):
         result = super().form_valid(form)
@@ -319,21 +320,25 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
         return result
 
 
-class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
+class EditTimerMixin:
     permission_required = "structuretimers.basic_access"
-    template_name_suffix = "_update_form"
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponse:
         response = super().dispatch(request, *args, **kwargs)
-        if (
-            not self.object.user_can_edit(self.request.user)
-            or not Timer.objects.filter(pk=self.object.pk)
-            .visible_to_user(self.request.user)
-            .exists()
-        ):
-            raise PermissionDenied()
+        if response.status_code == 200:
+            if (
+                not self.object.user_can_edit(self.request.user)
+                or not Timer.objects.filter(pk=self.object.pk)
+                .visible_to_user(self.request.user)
+                .exists()
+            ):
+                raise PermissionDenied()
 
         return response
+
+
+class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateView):
+    template_name_suffix = "_update_form"
 
     """
     def form_valid(self, form):        
@@ -345,8 +350,8 @@ class EditTimerView(TimerManagementView, AddUpdateMixin, UpdateView):
     """
 
 
-class RemoveTimerView(TimerManagementView, DeleteView):
-    permission_required = "structuretimers.manage_timer"
+class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
+    pass
 
 
 @login_required

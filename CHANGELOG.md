@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Form validation no longer forgets values for structure and solar system [#1](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/1)
 
+- Users can delete their own timers
+
 ## 1.0.0b2 - 2020-08-19
 
 ### Fixed
