@@ -3,7 +3,7 @@ from datetime import timedelta
 from celery import shared_task
 
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.utils.timezone import now
 
 from allianceauth.notifications import notify
@@ -48,54 +48,64 @@ def send_messages_for_webhook(webhook_pk: int) -> None:
 @shared_task(base=QueueOnce, bind=True, acks_late=True)
 def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
     """Sends a scheduled notification for a timer based on a notification rule"""
-    try:
-        scheduled_notification = ScheduledNotification.objects.select_related(
-            "timer", "notification_rule", "notification_rule__webhook"
-        ).get(pk=scheduled_notification_pk)
-    except ScheduledNotification.DoesNotExist:
-        logger.info(
-            "ScheduledNotification with pk = %s does not / no longer exist. Discarding.",
-            scheduled_notification_pk,
-        )
-    else:
-        logger.debug(
-            "send_scheduled_notification with task_id = %s, for %r",
-            self.request.id,
-            scheduled_notification,
-        )
-        timer = scheduled_notification.timer
-        notification_rule = scheduled_notification.notification_rule
-        if scheduled_notification.celery_task_id != self.request.id:
-            logger.info(
-                "Discarding outdated scheduled notification: %r",
-                scheduled_notification,
+    with transaction.atomic():
+        try:
+            scheduled_notification = ScheduledNotification.objects.select_for_update().get(
+                pk=scheduled_notification_pk
             )
-        elif not notification_rule.is_enabled:
+        except (ScheduledNotification.DoesNotExist, DatabaseError):
             logger.info(
-                "Discarding scheduled notification based on disabled rule: %r",
-                scheduled_notification,
+                "ScheduledNotification with pk = %s does not / no longer exist "
+                "or is being processed by another task. Discarding.",
+                scheduled_notification_pk,
+                exc_info=True,
             )
         else:
-            logger.info(
-                "Sending notifications for timer '%s' and rule '%s'",
-                timer,
-                notification_rule,
+            logger.debug(
+                "send_scheduled_notification with task_id = %s, for %r",
+                self.request.id,
+                scheduled_notification,
             )
-            webhook = notification_rule.webhook
-            if webhook.is_enabled:
-                minutes = round((timer.date - now()).total_seconds() / 60)
-                mod_text = "**important** " if timer.is_important else ""
-                content = (
-                    f"The following {mod_text}structure timer will elapse "
-                    f"in less than **{minutes:,}** minutes:"
+            timer = scheduled_notification.timer
+            notification_rule = scheduled_notification.notification_rule
+            if scheduled_notification.celery_task_id != self.request.id:
+                logger.info(
+                    "Discarding outdated scheduled notification: %r",
+                    scheduled_notification,
                 )
-                timer.send_notification(
-                    webhook=webhook,
-                    content=notification_rule.prepend_ping_text(content),
+            elif not notification_rule.is_enabled:
+                logger.info(
+                    "Discarding scheduled notification based on disabled rule: %r",
+                    scheduled_notification,
                 )
-                send_messages_for_webhook.apply_async(
-                    args=[webhook.pk], priority=TASK_PRIO_HIGH
+            else:
+                logger.info(
+                    "Sending notifications for timer '%s' and rule '%s'",
+                    timer,
+                    notification_rule,
                 )
+                webhook = notification_rule.webhook
+                if webhook.is_enabled:
+                    minutes = round((timer.date - now()).total_seconds() / 60)
+                    mod_text = "**important** " if timer.is_important else ""
+                    content = (
+                        f"The following {mod_text}structure timer will elapse "
+                        f"in less than **{minutes:,}** minutes:"
+                    )
+                    timer.send_notification(
+                        webhook=webhook,
+                        content=notification_rule.prepend_ping_text(content),
+                    )
+                    send_messages_for_webhook.apply_async(
+                        args=[webhook.pk], priority=TASK_PRIO_HIGH
+                    )
+                else:
+                    logger.warning(
+                        "Webhook not enabled for %r. Disgarding.",
+                        scheduled_notification,
+                    )
+
+            scheduled_notification.delete()
 
 
 @shared_task

@@ -3,8 +3,10 @@ from unittest.mock import patch, Mock
 
 from celery import Task
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
+
+from eveuniverse.models import EveSolarSystem, EveType
 
 from . import LoadTestDataMixin
 from ..models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
@@ -15,6 +17,7 @@ from ..tasks import (
     send_scheduled_notification,
     notify_about_new_timer,
 )
+from .testdata.load_eveuniverse import load_eveuniverse
 from ..utils import generate_invalid_pk
 
 MODULE_PATH = "structuretimers.tasks"
@@ -198,7 +201,29 @@ class TestScheduleNotificationForRule(TestCaseBase):
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 @patch(MODULE_PATH + ".send_messages_for_webhook", spec=True)
-class TestSendScheduledNotification(TestCaseBase):
+class TestSendScheduledNotification(TransactionTestCase):
+    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+    def setUp(self) -> None:
+        load_eveuniverse()
+        self.type_raitaru = EveType.objects.get(id=35825)
+        self.system_abune = EveSolarSystem.objects.get(id=30004984)
+        self.webhook = DiscordWebhook.objects.create(
+            name="Dummy", url="http://www.example.com"
+        )
+        self.webhook.clear_queue()
+        self.rule = NotificationRule.objects.create(
+            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            scheduled_time=NotificationRule.MINUTES_15,
+            webhook=self.webhook,
+        )
+        self.timer = Timer.objects.create(
+            structure_name="Test_1",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now() + timedelta(minutes=30),
+        )
+        ScheduledNotification.objects.all().delete()
+
     def test_normal(self, mock_send_messages_for_webhook):
         """
         when this notification is correctly scheduled

@@ -873,5 +873,5 @@ class ScheduledNotification(models.Model):
             f"notification_rule='{self.notification_rule}', "
             f"celery_task_id='{self.celery_task_id}', "
             f"timer_date='{self.timer_date}', "
-            f"timer_date='{self.notification_date}')"
+            f"notification_date='{self.notification_date}')"
         )

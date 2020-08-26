@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.0b4 - 2020-08-26
+
+### Changed
+
+- Added additional protection against notification duplicates [#3](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/3)
+
 ## 1.0.0b3 - 2020-08-25
 
 ### Added
