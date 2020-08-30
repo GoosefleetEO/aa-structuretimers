@@ -492,7 +492,7 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 
     def test_one_message(self, mock_send_message_to_webhook):
         """
-        when one mesage in queue 
+        when one mesage in queue
         then send it and returns 1
         """
         mock_send_message_to_webhook.return_value = True
@@ -506,7 +506,7 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 
     def test_three_message(self, mock_send_message_to_webhook):
         """
-        when three mesages in queue 
+        when three mesages in queue
         then sends them and returns 3
         """
         mock_send_message_to_webhook.return_value = True
@@ -522,7 +522,7 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 
     def test_no_messages(self, mock_send_message_to_webhook):
         """
-        when no message in queue 
+        when no message in queue
         then do nothing and return 0
         """
         mock_send_message_to_webhook.return_value = True
@@ -534,8 +534,8 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 
     def test_failed_message(self, mock_send_message_to_webhook):
         """
-        given one message in queue 
-        when sending fails 
+        given one message in queue
+        when sending fails
         then re-queues message and return 0
         """
         mock_send_message_to_webhook.return_value = False
@@ -558,8 +558,8 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
 
     def test_send_normal(self, mock_logger, mock_execute):
         """
-            when sending of message successful
-            return True
+        when sending of message successful
+        return True
         """
         mock_execute.return_value = dhooks_lite.WebhookResponse(
             headers=dict(), status_code=200
@@ -594,8 +594,8 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
 
     def test_send_failed(self, mock_logger, mock_execute):
         """
-            when sending of message failed
-            then log warning and return False
+        when sending of message failed
+        then log warning and return False
         """
         mock_execute.return_value = dhooks_lite.WebhookResponse(
             headers=dict(), status_code=440
@@ -903,7 +903,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def test_created_trigger(self, mock_import_func):
-        """        
+        """
         when trigger is created
         then delete all scheduled notifications based on same rule
         """

@@ -50,8 +50,10 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
     """Sends a scheduled notification for a timer based on a notification rule"""
     with transaction.atomic():
         try:
-            scheduled_notification = ScheduledNotification.objects.select_for_update().get(
-                pk=scheduled_notification_pk
+            scheduled_notification = (
+                ScheduledNotification.objects.select_for_update().get(
+                    pk=scheduled_notification_pk
+                )
             )
         except (ScheduledNotification.DoesNotExist, DatabaseError):
             logger.info(
@@ -240,7 +242,8 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
             )
         else:
             logger.debug(
-                "Checking scheduled notifications for: %s", notification_rule,
+                "Checking scheduled notifications for: %s",
+                notification_rule,
             )
             with transaction.atomic():
                 for obj in notification_rule.schedulednotification_set.filter(
@@ -258,7 +261,7 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
 
 @shared_task
 def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
-    """send a test message to given webhook. 
+    """send a test message to given webhook.
     Optional inform user about result if user ok is given
     """
     try:

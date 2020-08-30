@@ -84,10 +84,14 @@ class NotificationRuleAdminForm(forms.ModelForm):
             ),
         )
         self._validate_not_same_options_chosen(
-            cleaned_data, "require_corporations", "exclude_corporations",
+            cleaned_data,
+            "require_corporations",
+            "exclude_corporations",
         )
         self._validate_not_same_options_chosen(
-            cleaned_data, "require_alliances", "exclude_alliances",
+            cleaned_data,
+            "require_alliances",
+            "exclude_alliances",
         )
         if (
             cleaned_data["trigger"] == NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED
@@ -116,7 +120,10 @@ class NotificationRuleAdminForm(forms.ModelForm):
         )
         if same_options:
             same_options_text = ", ".join(
-                map(str, [display_func(x) for x in same_options],)
+                map(
+                    str,
+                    [display_func(x) for x in same_options],
+                )
             )
             raise ValidationError(
                 f"Can not choose same options for {field_nice_display(field_name_1)} "

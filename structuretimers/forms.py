@@ -69,7 +69,10 @@ class TimerForm(forms.ModelForm):
                 )
             ]
             self.fields["structure_type_2"].widget.choices = [
-                (str(my_instance.structure_type_id), my_instance.structure_type.name,)
+                (
+                    str(my_instance.structure_type_id),
+                    my_instance.structure_type.name,
+                )
             ]
 
     asterisk_html = '<i class="fas fa-asterisk"></i>'
@@ -123,7 +126,10 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["eve_solar_system_2"].widget.choices = [
-                    (str(solar_system.id), solar_system.name,)
+                    (
+                        str(solar_system.id),
+                        solar_system.name,
+                    )
                 ]
 
         if cleaned_data["structure_type_2"]:
@@ -135,7 +141,10 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["structure_type_2"].widget.choices = [
-                    (str(structure_type.id), structure_type.name,)
+                    (
+                        str(structure_type.id),
+                        structure_type.name,
+                    )
                 ]
 
     def save(self, commit=True):

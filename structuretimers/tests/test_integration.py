@@ -179,7 +179,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("authentication:dashboard"))
 
     def test_edit_timer_of_others_with_manager_permission(self):
-        """        
+        """
         when a user has manager permission
         then he can edit timers of others
         """
@@ -213,7 +213,7 @@ class TestUI(LoadTestDataMixin, WebTest):
     def test_manager_tries_to_edit_corp_restricted_timer_of_others(self):
         """
         given a user has permission to create and manage timers
-        when trying to access page for timer edit of a corp restricted timer 
+        when trying to access page for timer edit of a corp restricted timer
         from another corp
         then he is redirected back to dashboard
         """

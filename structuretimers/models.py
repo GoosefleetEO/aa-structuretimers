@@ -119,7 +119,7 @@ class DiscordWebhook(models.Model):
         avatar_url: str = None,
     ) -> int:
         """Adds Discord message to queue for later sending
-        
+
         Returns updated size of queue
         Raises ValueError if mesage is incomplete
         """
@@ -147,7 +147,7 @@ class DiscordWebhook(models.Model):
 
     def send_queued_messages(self) -> int:
         """sends all messages in the queue to this webhook
-        
+
         returns number of successfull sent messages
 
         Messages that could not be sent are put back into the queue for later retry
@@ -195,8 +195,8 @@ class DiscordWebhook(models.Model):
 
     def send_message_to_webhook(self, message: dict) -> bool:
         """sends message directly to webhook
-        
-        returns True if successful, else False        
+
+        returns True if successful, else False
         """
         hook = dhooks_lite.Webhook(url=self.url)
         if message.get("embeds"):
@@ -317,16 +317,23 @@ class Timer(models.Model):
             "e.g. name of nearby planet / moon / gate"
         ),
     )
-    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE,)
+    structure_type = models.ForeignKey(
+        EveType,
+        on_delete=models.CASCADE,
+    )
     structure_name = models.CharField(max_length=254, default="", blank=True)
     objective = models.CharField(
-        max_length=2, choices=OBJECTIVE_CHOICES, default=OBJECTIVE_UNDEFINED,
+        max_length=2,
+        choices=OBJECTIVE_CHOICES,
+        default=OBJECTIVE_UNDEFINED,
     )
     date = models.DateTimeField(
-        db_index=True, help_text="Date when this timer happens",
+        db_index=True,
+        help_text="Date when this timer happens",
     )
     is_important = models.BooleanField(
-        default=False, help_text="Mark this timer as is_important",
+        default=False,
+        help_text="Mark this timer as is_important",
     )
     owner_name = models.CharField(
         max_length=254,
@@ -381,7 +388,11 @@ class Timer(models.Model):
         ),
     )
     user = models.ForeignKey(
-        User, null=True, on_delete=models.SET_NULL, blank=True, related_name="Timers",
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        blank=True,
+        related_name="Timers",
     )
     details_image_url = models.CharField(
         max_length=1024,
@@ -416,9 +427,9 @@ class Timer(models.Model):
 
     def save(self, *args, **kwargs):
         """New save method for Timers. Will also schedule notifications for timers
-        
+
         Args:
-            disable_notifications: Set to True to disable all notifications for the saved timer        
+            disable_notifications: Set to True to disable all notifications for the saved timer
         """
         try:
             disable_notifications = kwargs.pop("disable_notifications")
@@ -660,7 +671,8 @@ class NotificationRule(models.Model):
         help_text="Options for pinging on notification",
     )
     is_enabled = models.BooleanField(
-        default=True, help_text="whether this rule is currently active",
+        default=True,
+        help_text="whether this rule is currently active",
     )
     require_timer_types = MultiSelectField(
         choices=Timer.TYPE_CHOICES,
