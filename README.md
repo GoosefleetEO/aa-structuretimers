@@ -38,7 +38,7 @@ Automatic cleanup of elapsed timers | - | x
 
 ### List of timers
 
-![timerboard](https://i.imgur.com/LXsvyvY.png)
+![timerboard](https://i.imgur.com/MNa2IGl.png)
 
 ### Details for a timer
 
@@ -50,7 +50,7 @@ Automatic cleanup of elapsed timers | - | x
 
 ### Notification on Discord
 
-![notification](https://i.imgur.com/X0t5Kuj.png)
+![notification](https://i.imgur.com/Knq2bif.png)
 
 ## Installation
 
@@ -58,11 +58,11 @@ Automatic cleanup of elapsed timers | - | x
 
 Please make sure you meet all preconditions before proceeding:
 
-1. Structure Timers is a plugin for Alliance Auth. If you don't have Alliance Auth running already, please install it first before proceeding. (see the official [AA installation guide](https://allianceauth.readthedocs.io/en/latest/installation/auth/allianceauth/) for details)
+1. Structure Timers is a plugin for [Alliance Auth](https://gitlab.com/allianceauth/allianceauth). If you don't have Alliance Auth running already, please install it first before proceeding. (see the official [AA installation guide](https://allianceauth.readthedocs.io/en/latest/installation/auth/allianceauth/) for details)
 
-2. Structure Timers needs the app [django-eveuniverse](https://gitlab.com/ErikKalkoken/django-eveuniverse) to function. Please make sure it is installed, before before continuing.
+2. Structure Timers needs the app [django-eveuniverse](https://gitlab.com/ErikKalkoken/django-eveuniverse) to function. Please make sure it is installed, before continuing.
 
-Note that Structure Timers is compatible with Auth's Structure Timer app and can be installed in parallel.
+Note that Structure Timers is compatible with Alliance Auth's Structure Timer app and can be installed in parallel.
 
 ### Step 2 - Install app
 

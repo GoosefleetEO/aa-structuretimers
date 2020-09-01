@@ -245,7 +245,7 @@ $(document).ready(function () {
                 table_current
                     .row(this)
                     .data(d)
-                    .draw();
+                    .draw(false);
             }
         });
     }
