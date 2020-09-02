@@ -1,5 +1,8 @@
-import logging
 import datetime
+import logging
+import imghdr
+
+import requests
 
 from django import forms
 from django.utils import timezone
@@ -114,6 +117,7 @@ class TimerForm(forms.ModelForm):
         label=_(mark_safe(f"Minutes Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
+    details_image_url = forms.URLField(required=False)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -146,6 +150,45 @@ class TimerForm(forms.ModelForm):
                         structure_type.name,
                     )
                 ]
+
+        if cleaned_data["details_image_url"]:
+            details_image_url = cleaned_data["details_image_url"]
+            try:
+                r = requests.get(details_image_url, stream=True, timeout=(3.0, 10.0))
+                r.raise_for_status()
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+            ):
+                logger.warning(
+                    f"Failed to load image from URL: {details_image_url}", exc_info=True
+                )
+                raise forms.ValidationError(
+                    {
+                        "details_image_url": _(
+                            "Failed to load image file. Please double check URL."
+                        )
+                    },
+                    code="details_url_failed_to_load",
+                )
+            else:
+                image_type = imghdr.what(None, h=r.content)
+                if image_type not in {"gif", "jpeg", "png"}:
+                    logger.warning(
+                        f"{image_type} is not a valid image type "
+                        "for URL: {details_image_url}"
+                    )
+                    raise forms.ValidationError(
+                        {
+                            "details_image_url": _(
+                                _(
+                                    "URL does not point to a valid image file. "
+                                    "Valid types are: gif, jpeg, png"
+                                )
+                            )
+                        },
+                        code="details_url_unsupported_type",
+                    )
 
     def save(self, commit=True):
         timer = super(TimerForm, self).save(commit=False)

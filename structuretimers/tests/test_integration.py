@@ -1,6 +1,8 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from requests.exceptions import ConnectionError as NewConnectionError, HTTPError
+
 from allianceauth.tests.auth_utils import AuthUtils
 from django_webtest import WebTest
 
@@ -12,6 +14,18 @@ from django.test.utils import override_settings
 from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
+from .testdata import test_image_filename, test_data_filename
+
+
+def bytes_from_file(filename, chunksize=8192):
+    with open(filename, "rb") as f:
+        while True:
+            chunk = f.read(chunksize)
+            if chunk:
+                for b in chunk:
+                    yield b
+            else:
+                break
 
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
@@ -115,6 +129,161 @@ class TestUI(LoadTestDataMixin, WebTest):
         response = self.app.get(reverse("structuretimers:add"))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("authentication:dashboard"))
+
+    def test_add_new_timer_validation_1(self):
+        """
+        when user entered invalid day
+        then page can not be submitted and error is shown to user
+        """
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = -1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    @patch("structuretimers.forms.requests.get", spec=True)
+    def test_add_new_timer_validation_2(self, mock_get):
+        """
+        when user entered invalid day
+        then page can not be submitted and error is shown to user
+        """
+        mock_get.side_effect = NewConnectionError
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = 1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        form["details_image_url"] = "http://www.example.com/image.png"
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    @patch("structuretimers.forms.requests.get", spec=True)
+    def test_add_new_timer_validation_3(self, mock_get):
+        """
+        when user entered invalid day
+        then page can not be submitted and error is shown to user
+        """
+        mock_get.side_effect = HTTPError
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = 1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        form["details_image_url"] = "http://www.example.com/image.png"
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    @patch("structuretimers.forms.requests.get", spec=True)
+    def test_add_new_timer_validation_4(self, mock_get):
+        """
+        when user provides valid detail image link
+        then timer is created
+        """
+        image_file = bytearray(bytes_from_file(test_image_filename()))
+        mock_get.return_value.content = image_file
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = 1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        form["details_image_url"] = "http://www.example.com/image.png"
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
+        self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
+
+    @patch("structuretimers.forms.requests.get", spec=True)
+    def test_add_new_timer_validation_5(self, mock_get):
+        """
+        when user provides invalid file link
+        then page can not be submitted and error is shown to user
+        """
+        image_file = bytearray(bytes_from_file(test_data_filename()))
+        mock_get.return_value.content = image_file
+
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = 1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        form["details_image_url"] = "http://www.example.com/image.png"
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
 
     def test_edit_existing_timer(self):
         """

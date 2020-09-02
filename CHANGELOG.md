@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## 1.0.0 - 2020-08-31
+## 1.0.0b5 - 2020-09-01
+
+### Added
+
+- Now validates that the details image URL points to a valid image file [#7](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/7)
 
 ### Changed
 
 - Upgrade to new Black version
+
+### Fixed
+
+- List of timers automatically resets to first page every second [#8](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/8)
 
 ## 1.0.0b4 - 2020-08-26
 

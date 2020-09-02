@@ -47,5 +47,6 @@ setup(
         "redis-simple-mq",
         "dhooks_lite>=0.5.0",
         "django-multiselectfield",
+        "requests",
     ],
 )
