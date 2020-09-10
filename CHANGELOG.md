@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.0b6 - 2020-09-10
+
+### Added
+
+- Mobile Depots added as new structure type [#10](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/10)
+
+### Fixed
+
+- List of timers automatically scrolls to end of page if page is larger than the screen
+
 ## 1.0.0b5 - 2020-09-01
 
 ### Added

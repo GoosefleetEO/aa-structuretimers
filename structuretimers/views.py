@@ -23,6 +23,12 @@ from .app_settings import (
     STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
     STRUCTURETIMERS_PAGING_ENABLED,
 )
+from .constants import (
+    EVE_CATEGORY_ID_STRUCTURE,
+    EVE_GROUP_ID_CONTROL_TOWER,
+    EVE_GROUP_ID_MOBILE_DEPOT,
+    EVE_TYPE_ID_CUSTOMS_OFFICE,
+)
 from .forms import TimerForm
 from .models import Timer
 from .utils import (
@@ -377,9 +383,17 @@ def select2_structure_types(request):
     term = request.GET.get("term")
     if term:
         types_qs = (
-            EveType.objects.filter(eve_group__eve_category_id__in=[65], published=True)
-            | EveType.objects.filter(eve_group_id=365, published=True)
-            | EveType.objects.filter(id=2233)
+            EveType.objects.filter(
+                eve_group__eve_category_id=EVE_CATEGORY_ID_STRUCTURE, published=True
+            )
+            | EveType.objects.filter(
+                eve_group_id__in=[
+                    EVE_GROUP_ID_CONTROL_TOWER,
+                    EVE_GROUP_ID_MOBILE_DEPOT,
+                ],
+                published=True,
+            )
+            | EveType.objects.filter(id=EVE_TYPE_ID_CUSTOMS_OFFICE)
         )
         types_qs = (
             types_qs.select_related("eve_category", "eve_category__eve_group")

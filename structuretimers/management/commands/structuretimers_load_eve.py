@@ -3,6 +3,12 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from ... import __title__
+from ...constants import (
+    EVE_CATEGORY_ID_STRUCTURE,
+    EVE_GROUP_ID_CONTROL_TOWER,
+    EVE_GROUP_ID_MOBILE_DEPOT,
+    EVE_TYPE_ID_CUSTOMS_OFFICE,
+)
 from ...utils import LoggerAddTag
 
 
@@ -17,9 +23,11 @@ class Command(BaseCommand):
             "eveuniverse_load_types",
             __title__,
             "--category_id",
-            "65",
+            str(EVE_CATEGORY_ID_STRUCTURE),
             "--group_id",
-            "365",
+            str(EVE_GROUP_ID_CONTROL_TOWER),
+            "--group_id",
+            str(EVE_GROUP_ID_MOBILE_DEPOT),
             "--type_id",
-            "2233",
+            str(EVE_TYPE_ID_CUSTOMS_OFFICE),
         )
