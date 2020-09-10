@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.0.0b6 - 2020-09-10
 
+**Updating notes**
+
+After completing the normal update steps please also rerun the following management command to get the new types:
+
+```bash
+python manage.py structuretimers_load_eve
+```
+
 ### Added
 
 - Mobile Depots added as new structure type [#10](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/10)
+
+### Changed
+
+- Moved JS/CSS vendor packages locally to comply with GDPR [#9](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/9)
 
 ### Fixed
 
