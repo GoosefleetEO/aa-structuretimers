@@ -244,8 +244,7 @@ $(document).ready(function () {
                 d['local_time'] = d['date']
                 table_current
                     .row(this)
-                    .data(d)
-                    .draw(false);
+                    .data(d);
             }
         });
     }
