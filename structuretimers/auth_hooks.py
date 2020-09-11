@@ -14,7 +14,7 @@ class TimersMenuItem(MenuItemHook):
         MenuItemHook.__init__(
             self,
             _(__title__),
-            "far fa-calendar-times",
+            "far fa-calendar-times fa-fw",
             "structuretimers:timer_list",
             navactive=["structuretimers:timer_list"],
         )
