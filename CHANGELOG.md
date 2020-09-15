@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.0 - 2020-09-15
+
+### Fixed
+
+- Formatting fix for sidebar
+
+Thank you Exiom for the contribution.
+
 ## 1.0.0b6 - 2020-09-10
 
 **Updating notes**
