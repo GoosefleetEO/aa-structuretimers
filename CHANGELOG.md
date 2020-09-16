@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.1 - 2020-09-16
+
+**Updating notes**
+
+After completing the normal update steps please also rerun the following management command to get the new types:
+
+```bash
+python manage.py structuretimers_load_eve
+```
+
+### Fixed
+
+- It is now possible to create new timers for TCUs and I-Hubs
+
 ## 1.0.0 - 2020-09-15
 
 ### Fixed

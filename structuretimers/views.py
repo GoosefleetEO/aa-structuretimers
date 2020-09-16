@@ -28,6 +28,8 @@ from .constants import (
     EVE_GROUP_ID_CONTROL_TOWER,
     EVE_GROUP_ID_MOBILE_DEPOT,
     EVE_TYPE_ID_CUSTOMS_OFFICE,
+    EVE_TYPE_ID_TCU,
+    EVE_TYPE_ID_IHUB,
 )
 from .forms import TimerForm
 from .models import Timer
@@ -393,7 +395,9 @@ def select2_structure_types(request):
                 ],
                 published=True,
             )
-            | EveType.objects.filter(id=EVE_TYPE_ID_CUSTOMS_OFFICE)
+            | EveType.objects.filter(
+                id__in=[EVE_TYPE_ID_CUSTOMS_OFFICE, EVE_TYPE_ID_IHUB, EVE_TYPE_ID_TCU]
+            )
         )
         types_qs = (
             types_qs.select_related("eve_category", "eve_category__eve_group")

@@ -8,6 +8,8 @@ from ...constants import (
     EVE_GROUP_ID_CONTROL_TOWER,
     EVE_GROUP_ID_MOBILE_DEPOT,
     EVE_TYPE_ID_CUSTOMS_OFFICE,
+    EVE_TYPE_ID_TCU,
+    EVE_TYPE_ID_IHUB,
 )
 from ...utils import LoggerAddTag
 
@@ -30,4 +32,8 @@ class Command(BaseCommand):
             str(EVE_GROUP_ID_MOBILE_DEPOT),
             "--type_id",
             str(EVE_TYPE_ID_CUSTOMS_OFFICE),
+            "--type_id",
+            str(EVE_TYPE_ID_TCU),
+            "--type_id",
+            str(EVE_TYPE_ID_IHUB),
         )
