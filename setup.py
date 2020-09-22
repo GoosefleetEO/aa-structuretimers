@@ -30,7 +30,7 @@ setup(
         "Environment :: Web Environment",
         "Framework :: Django",
         "Framework :: Django :: 2.2",
-        "Intended Audience :: Developers",
+        "Intended Audience :: End Users/Desktop",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
@@ -42,11 +42,16 @@ setup(
     ],
     python_requires="~=3.6",
     install_requires=[
-        "django>=2.2,<3.0",
+        "allianceauth>=2.7.3",
         "django-eveuniverse",
         "redis-simple-mq",
         "dhooks_lite>=0.5.0",
         "django-multiselectfield",
         "requests",
     ],
+    extras_require={
+        "testing": [
+            "django-webtest",
+        ]
+    },
 )

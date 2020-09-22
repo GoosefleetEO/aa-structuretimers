@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.2 - 2020-09-22
+
+### Changed
+
+- Removed dependency conflict with Auth regarding Django 3
+
 ## 1.0.1 - 2020-09-16
 
 **Updating notes**
