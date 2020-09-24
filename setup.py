@@ -24,6 +24,7 @@ setup(
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
+    url="https://gitlab.com/ErikKalkoken/aa-structuretimers",
     author="Erik Kalkoken",
     author_email="kalkoken87@gmail.com",
     classifiers=[
