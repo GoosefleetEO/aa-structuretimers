@@ -11,7 +11,7 @@
         {% if perms.structuretimers.create_timer %}
             <a 
                 href="{% url 'structuretimers:add' %}" 
-                class="btn btn-success" 
+                class="btn btn-success btn-tabs" 
                 title="Add new timer">
                 Add Timer
             </a>
@@ -24,7 +24,7 @@
         <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
     </ul>
 
-    <div class="panel panel-default">
+    <div class="panel panel-default panel-tabs">
         <div class="panel-body">
             <div class="tab-content">            
                 <!-- current structuretimers tab -->
@@ -100,7 +100,8 @@
 
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
-    <link rel="stylesheet" href="{% static 'structuretimers/timer_list.css' %}" type="text/css" media="screen">    
+    <link rel="stylesheet" href="{% static 'structuretimers/global.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structuretimers/timer_list.css' %}" type="text/css" media="screen">
 {% endblock extra_css%}
 
 {% block extra_javascript %}

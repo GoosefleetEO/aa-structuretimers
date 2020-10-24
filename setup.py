@@ -31,7 +31,6 @@ setup(
         "Environment :: Web Environment",
         "Framework :: Django",
         "Framework :: Django :: 2.2",
-        "Framework :: Django :: 3.0",
         "Framework :: Django :: 3.1",
         "Intended Audience :: End Users/Desktop",
         "License :: OSI Approved :: MIT License",
@@ -47,7 +46,7 @@ setup(
     install_requires=[
         "allianceauth>=2.7.3",
         "django-eveuniverse",
-        "redis-simple-mq",
+        "redis-simple-mq>=0.3.1",
         "dhooks_lite>=0.5.0",
         "django-multiselectfield",
         "requests",
