@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-### Added
+## 1.0.4 - 2021-01-29
+
+### Changed
 
 - Integration with codecov
 - Pre-commit
