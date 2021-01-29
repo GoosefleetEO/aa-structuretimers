@@ -121,7 +121,7 @@ class TimerForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data["eve_solar_system_2"]:
+        if cleaned_data.get("eve_solar_system_2"):
             try:
                 solar_system = EveSolarSystem.objects.get(
                     id=cleaned_data["eve_solar_system_2"]
@@ -136,7 +136,7 @@ class TimerForm(forms.ModelForm):
                     )
                 ]
 
-        if cleaned_data["structure_type_2"]:
+        if cleaned_data.get("structure_type_2"):
             try:
                 structure_type = EveType.objects.get(
                     id=cleaned_data["structure_type_2"]
@@ -151,7 +151,7 @@ class TimerForm(forms.ModelForm):
                     )
                 ]
 
-        if cleaned_data["details_image_url"]:
+        if cleaned_data.get("details_image_url"):
             details_image_url = cleaned_data["details_image_url"]
             try:
                 r = requests.get(details_image_url, stream=True, timeout=(3.0, 10.0))

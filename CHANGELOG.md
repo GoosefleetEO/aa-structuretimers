@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Fixed
+
+- Error 500 when Structure Type remains empty [#16](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/16)
+
 ## 1.0.3 - 2020-10-24
 
 ### Changed
 
 - Improved styling
 - Updated test matrix
-
-### Changed
 
 ## 1.0.2 - 2020-09-22
 

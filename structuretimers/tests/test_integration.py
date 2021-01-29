@@ -130,12 +130,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("authentication:dashboard"))
 
-    def test_add_new_timer_validation_1(self):
-        """
-        when user entered invalid day
-        then page can not be submitted and error is shown to user
-        """
-
+    def test_should_not_allow_submitting_without_structure_type(self):
         # login
         self.app.set_user(self.user_2)
 
@@ -145,7 +140,48 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # user enters data and clicks create
         form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["days_left"] = -1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    def test_should_not_allow_submitting_without_solar_system(self):
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
+        form["structure_name"] = "Timer 4"
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["days_left"] = -1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        response = form.submit()
+
+        # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    def test_should_not_allow_entering_invalid_days(self):
+        # login
+        self.app.set_user(self.user_2)
+
+        # user clicks on "Add Timer"
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        self.assertEqual(add_timer.status_code, 200)
+
+        # user enters data and clicks create
+        form = add_timer.forms["add-timer-form"]
         form["structure_name"] = "Timer 4"
         form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
         form["structure_type_2"].force_value([str(self.type_astrahus.id)])
@@ -159,11 +195,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertIn("correct the input errors", response.text)
 
     @patch("structuretimers.forms.requests.get", spec=True)
-    def test_add_new_timer_validation_2(self, mock_get):
-        """
-        when user entered invalid day
-        then page can not be submitted and error is shown to user
-        """
+    def test_should_show_error_when_image_can_not_be_loaded_1(self, mock_get):
         mock_get.side_effect = NewConnectionError
 
         # login
@@ -175,7 +207,6 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # user enters data and clicks create
         form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
         form["structure_name"] = "Timer 4"
         form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
         form["structure_type_2"].force_value([str(self.type_astrahus.id)])
@@ -190,7 +221,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertIn("correct the input errors", response.text)
 
     @patch("structuretimers.forms.requests.get", spec=True)
-    def test_add_new_timer_validation_3(self, mock_get):
+    def test_should_show_error_when_image_can_not_be_loaded_2(self, mock_get):
         """
         when user entered invalid day
         then page can not be submitted and error is shown to user
@@ -221,11 +252,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertIn("correct the input errors", response.text)
 
     @patch("structuretimers.forms.requests.get", spec=True)
-    def test_add_new_timer_validation_4(self, mock_get):
-        """
-        when user provides valid detail image link
-        then timer is created
-        """
+    def test_should_create_timer_with_valid_details_image(self, mock_get):
         image_file = bytearray(bytes_from_file(test_image_filename()))
         mock_get.return_value.content = image_file
 
@@ -254,7 +281,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
 
     @patch("structuretimers.forms.requests.get", spec=True)
-    def test_add_new_timer_validation_5(self, mock_get):
+    def test_should_not_allow_invalid_link_for_detail_images(self, mock_get):
         """
         when user provides invalid file link
         then page can not be submitted and error is shown to user

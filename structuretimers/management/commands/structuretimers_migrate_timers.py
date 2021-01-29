@@ -199,8 +199,8 @@ class Command(BaseCommand):
             if is_test:
                 self.stdout.write("Test run - will not migrate")
 
-            user_input = get_input("Are you sure you want to proceed? (Y/n)?")
-            if user_input == "Y":
+            user_input = get_input("Are you sure you want to proceed? (y/N)?")
+            if user_input.lower() == "y":
                 self.stdout.write("Starting migrating timers. Please stand by.")
                 self._migrate_timers(auth_timers_qs, is_test=is_test)
                 self.stdout.write(self.style.SUCCESS("Migration complete!"))
