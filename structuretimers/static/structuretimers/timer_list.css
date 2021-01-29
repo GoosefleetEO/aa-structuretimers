@@ -2,7 +2,7 @@
     text-align: center
 }
 .table_timers tbody td {
-    text-align: center;    
+    text-align: center;
     word-wrap: break-word;
 }
 .table_timers tbody td:nth-child(1) { white-space: nowrap; }
@@ -16,7 +16,7 @@
 
 .flex-container {
     display: flex;
-    margin: 0 auto;    
+    margin: 0 auto;
 }
 
 .flex-container > div {

@@ -2,16 +2,16 @@
 {% load static %}
 {% load i18n %}
 
-{% block details %}                
-    <div class="col-lg-12 text-center">            
+{% block details %}
+    <div class="col-lg-12 text-center">
         <b>{% trans "Current Eve Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
     </div>
 
     <span class="pull-right">
         {% if perms.structuretimers.create_timer %}
-            <a 
-                href="{% url 'structuretimers:add' %}" 
-                class="btn btn-success btn-tabs" 
+            <a
+                href="{% url 'structuretimers:add' %}"
+                class="btn btn-success btn-tabs"
                 title="Add new timer">
                 Add Timer
             </a>
@@ -26,7 +26,7 @@
 
     <div class="panel panel-default panel-tabs">
         <div class="panel-body">
-            <div class="tab-content">            
+            <div class="tab-content">
                 <!-- current structuretimers tab -->
                 <div role="tabpanel" class="tab-pane active" id="home">
                     {% include 'structuretimers/timer_list_table.html' with tab_name='current' %}
@@ -37,7 +37,7 @@
 
                 <!-- past structuretimers tab -->
                 <div role="tabpanel" class="tab-pane" id="profile">
-                    {% include 'structuretimers/timer_list_table.html' with tab_name='past' %} 
+                    {% include 'structuretimers/timer_list_table.html' with tab_name='past' %}
                 </div>
             </div>
         </div>
@@ -53,7 +53,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
                 <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
-            </div>                
+            </div>
             <div class="modal-body">
                 <div id="modal_div_spinner">
                     <img class="center-block" src="{% static 'structuretimers/Spinner-1s-200px.gif' %}" alt="Spinner"/>
@@ -66,21 +66,21 @@
                         <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
                     </a>
                     <br>
-                    <label for="timerboardNotes">Notes</label>                    
+                    <label for="timerboardNotes">Notes</label>
                     <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
                 </div>
-            </div>                
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>                    
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 
 
     <!-- share data with JS part -->
-    <div 
-        id="dataExport" 
-        data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}" 
+    <div
+        id="dataExport"
+        data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}"
         data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}"
         data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
         data-titleSolarSystem="{% trans 'Solar System' %}"
@@ -89,13 +89,13 @@
         data-titleTimerType="{% trans 'Timer Type' %}"
         data-titleOwner="{% trans 'Owner' %}"
         data-titleObjective="{% trans 'Objective' %}"
-        data-titleVisibility="{% trans 'Visibility' %}"        
+        data-titleVisibility="{% trans 'Visibility' %}"
         data-hasPermOPSEC="{{ perms.structuretimers.opsec_access }}"
         data-dataTablesPageLength="{{ data_tables_page_length }}"
         data-dataTablesPaging="{{ data_tables_paging }}"
     >
     </div>
-    
+
 {% endblock details %}
 
 {% block extra_css %}
@@ -105,8 +105,8 @@
 {% endblock extra_css%}
 
 {% block extra_javascript %}
-    {% include 'bundles/moment-js.html' with locale=True %}            
-    {% include 'bundles/datatables-js.html' %}        
+    {% include 'bundles/moment-js.html' with locale=True %}
+    {% include 'bundles/datatables-js.html' %}
     <script type="application/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
     <script type="application/javascript" src="{% static 'structuretimers/timer_list.js' %}"></script>
 {% endblock extra_javascript %}

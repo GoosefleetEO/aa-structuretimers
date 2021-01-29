@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Added
+
+- Integration with codecov
+- Pre-commit
+
 ### Fixed
 
 - Error 500 when Structure Type remains empty [#16](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/16)

@@ -51,9 +51,4 @@ setup(
         "django-multiselectfield",
         "requests",
     ],
-    extras_require={
-        "testing": [
-            "django-webtest",
-        ]
-    },
 )

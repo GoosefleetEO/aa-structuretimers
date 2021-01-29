@@ -2,7 +2,15 @@
 
 An app for keeping track of Eve Online structure timers with Alliance Auth and Discord.
 
-![release](https://img.shields.io/pypi/v/aa-structuretimers?label=release) ![python](https://img.shields.io/pypi/pyversions/aa-structuretimers) ![django](https://img.shields.io/pypi/djversions/aa-structuretimers?label=django) ![pipeline](https://gitlab.com/ErikKalkoken/aa-structuretimers/badges/master/pipeline.svg) ![coverage](https://gitlab.com/ErikKalkoken/aa-structuretimers/badges/master/coverage.svg) ![license](https://img.shields.io/badge/license-MIT-green) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
+[![release](https://img.shields.io/pypi/v/aa-structuretimers?label=release)](https://pypi.org/project/aa-structuretimers/)
+[![python](https://img.shields.io/pypi/pyversions/aa-structuretimers)](https://pypi.org/project/aa-structuretimers/)
+[![django](https://img.shields.io/pypi/djversions/aa-structuretimers?label=django)](https://pypi.org/project/aa-structuretimers/)
+[![pipeline](https://gitlab.com/ErikKalkoken/aa-structuretimers/badges/master/pipeline.svg)](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/pipelines)
+[![codecov](https://codecov.io/gl/ErikKalkoken/aa-structuretimers/branch/master/graph/badge.svg?token=J4PKTXSOBM)](https://codecov.io/gl/ErikKalkoken/aa-structuretimers)
+[![license](https://img.shields.io/badge/license-MIT-green)](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/blob/master/LICENSE)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![chat](https://img.shields.io/discord/790364535294132234)](https://discord.gg/zmh52wnfvM)
 
 ## Contents
 

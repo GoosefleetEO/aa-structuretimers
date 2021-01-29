@@ -349,11 +349,11 @@ class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateV
     template_name_suffix = "_update_form"
 
     """
-    def form_valid(self, form):        
-        timer = self.object        
+    def form_valid(self, form):
+        timer = self.object
         messages_plus.success(
             self.request, _('Saved changes to the timer: {}.').format(timer)
-        )        
+        )
         return super().form_valid(form)
     """
 
