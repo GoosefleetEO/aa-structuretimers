@@ -100,8 +100,7 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
             )
         else:
             logger.warning(
-                "Webhook not enabled for %r. Disgarding.",
-                scheduled_notification,
+                "Webhook not enabled for %r. Discarding.", scheduled_notification
             )
 
 
