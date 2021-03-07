@@ -1,4 +1,4 @@
-from .utils import clean_setting
+from app_utils.django import clean_setting
 
 # Will not schedule notifications for timers
 # which have elapsed more than x minutes ago

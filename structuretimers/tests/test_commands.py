@@ -6,11 +6,13 @@ from django.core.management import call_command
 from django.utils.timezone import now
 
 from allianceauth.timerboard.models import Timer as AuthTimer
+
+from app_utils.django import app_labels
+from app_utils.testing import NoSocketsTestCase
 from eveuniverse.models import EveType
 
 from . import LoadTestDataMixin, create_test_user
 from ..models import Timer
-from ..utils import NoSocketsTestCase, app_labels
 
 PACKAGE_PATH = "structuretimers.management.commands"
 

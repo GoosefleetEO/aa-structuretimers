@@ -1,6 +1,5 @@
 import json
 from time import sleep
-from urllib.parse import urljoin
 from typing import Any, List, Tuple
 
 import dhooks_lite
@@ -9,7 +8,6 @@ from simple_mq import SimpleMQ
 
 from django.core.cache import cache
 from django.contrib.auth.models import User
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db import models
 
 from django.utils.translation import gettext_lazy as _
@@ -23,29 +21,22 @@ from allianceauth.eveonline.models import (
 
 from allianceauth.services.hooks import get_extension_logger
 
+from app_utils.datetime import DATETIME_FORMAT
+from app_utils.logging import LoggerAddTag
+from app_utils.json import JSONDateTimeDecoder, JSONDateTimeEncoder
+from app_utils.urls import reverse_absolute, static_file_absolute_url
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
 from .app_settings import STRUCTURETIMERS_NOTIFICATIONS_ENABLED
 from .managers import NotificationRuleManager, TimerManager
-from .utils import (
-    LoggerAddTag,
-    JSONDateTimeDecoder,
-    JSONDateTimeEncoder,
-    DATETIME_FORMAT,
-    get_site_base_url,
-    get_absolute_url,
-)
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
 def default_avatar_url() -> str:
     """avatar url for all messages"""
-    return urljoin(
-        get_site_base_url(),
-        staticfiles_storage.url("structuretimers/structuretimers_logo.png"),
-    )
+    return static_file_absolute_url("structuretimers/structuretimers_logo.png")
 
 
 class General(models.Model):
@@ -577,7 +568,7 @@ class Timer(models.Model):
 
         embed = dhooks_lite.Embed(
             title=title,
-            url=get_absolute_url("structuretimers:timer_list"),
+            url=reverse_absolute("structuretimers:timer_list"),
             description=description,
             thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
             color=color,

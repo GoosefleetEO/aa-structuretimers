@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.5 - 2021-03-07
+
+### Changed
+
+- Migrated to allianceauth-app-utils
+
 ## 1.0.4 - 2021-01-29
 
 ### Changed

@@ -33,14 +33,15 @@ from .constants import (
 )
 from .forms import TimerForm
 from .models import Timer
-from .utils import (
-    add_no_wrap_html,
-    add_bs_label_html,
-    create_fa_button_html,
-    create_link_html,
+from app_utils.messages import messages_plus
+from app_utils.views import (
+    bootstrap_label_html,
+    fontawesome_link_button_html,
+    link_html,
+    no_wrap_html,
     yesno_str,
-    messages_plus,
 )
+
 
 logger = logging.getLogger(__name__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
@@ -84,7 +85,7 @@ def timer_list_data(request, tab_name):
     data = list()
     for timer in timers_qs:
         # location
-        location = create_link_html(
+        location = link_html(
             dotlan.solar_system_url(timer.eve_solar_system.name),
             timer.eve_solar_system.name,
         )
@@ -96,7 +97,7 @@ def timer_list_data(request, tab_name):
         )
 
         # structure & timer type & fitting image
-        timer_type = add_bs_label_html(
+        timer_type = bootstrap_label_html(
             timer.get_timer_type_display(), timer.label_type_for_timer_type()
         )
         if timer.structure_type:
@@ -115,7 +116,7 @@ def timer_list_data(request, tab_name):
             "  </div>"
             "</div>",
             structure_type_icon_url,
-            mark_safe(add_bs_label_html(structure_type_name, "info")),
+            mark_safe(bootstrap_label_html(structure_type_name, "info")),
             timer_type,
         )
 
@@ -123,20 +124,20 @@ def timer_list_data(request, tab_name):
         tags = list()
         is_restricted = False
         if timer.is_opsec:
-            tags.append(add_bs_label_html("OPSEC", "danger"))
+            tags.append(bootstrap_label_html("OPSEC", "danger"))
             is_restricted = True
 
         if timer.visibility != Timer.VISIBILITY_UNRESTRICTED:
-            tags.append(add_bs_label_html(timer.get_visibility_display(), "info"))
+            tags.append(bootstrap_label_html(timer.get_visibility_display(), "info"))
             is_restricted = True
 
         if timer.is_important:
-            tags.append(add_bs_label_html("Important", "warning"))
+            tags.append(bootstrap_label_html("Important", "warning"))
 
         objective = format_html(
             "{}<br>{}",
             mark_safe(
-                add_bs_label_html(
+                bootstrap_label_html(
                     timer.get_objective_display(), timer.label_type_for_objective()
                 )
             ),
@@ -163,7 +164,7 @@ def timer_list_data(request, tab_name):
         if timer.eve_character:
             creator = format_html(
                 "{}<br>{}",
-                create_link_html(
+                link_html(
                     evewho.character_url(timer.eve_character.character_id),
                     timer.eve_character.character_name,
                 ),
@@ -208,14 +209,14 @@ def timer_list_data(request, tab_name):
 
         if timer.user_can_edit(request.user):
             actions += (
-                create_fa_button_html(
+                fontawesome_link_button_html(
                     reverse("structuretimers:delete", args=(timer.pk,)),
                     "far fa-trash-alt",
                     "danger",
                     "Delete this timer",
                 )
                 + "&nbsp;"
-                + create_fa_button_html(
+                + fontawesome_link_button_html(
                     reverse("structuretimers:edit", args=(timer.pk,)),
                     "far fa-edit",
                     "warning",
@@ -223,7 +224,7 @@ def timer_list_data(request, tab_name):
                 )
             )
 
-        actions = add_no_wrap_html(actions)
+        actions = no_wrap_html(actions)
 
         data.append(
             {

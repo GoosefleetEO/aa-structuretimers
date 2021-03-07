@@ -10,6 +10,9 @@ from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
+from app_utils.json import JSONDateTimeDecoder
+from app_utils.testing import NoSocketsTestCase
+
 from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 from ..models import (
     DiscordWebhook,
@@ -18,7 +21,6 @@ from ..models import (
     Timer,
     models,
 )
-from ..utils import JSONDateTimeDecoder, NoSocketsTestCase
 
 
 MODULE_PATH = "structuretimers.models"

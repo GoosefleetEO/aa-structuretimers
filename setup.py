@@ -50,5 +50,6 @@ setup(
         "dhooks_lite>=0.5.0",
         "django-multiselectfield",
         "requests",
+        "allianceauth-app-utils>=1.0.0",
     ],
 )

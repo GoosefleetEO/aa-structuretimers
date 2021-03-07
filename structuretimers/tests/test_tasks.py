@@ -6,6 +6,7 @@ from celery import Task
 from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
 
+from app_utils.testing import generate_invalid_pk
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import LoadTestDataMixin
@@ -18,7 +19,7 @@ from ..tasks import (
     notify_about_new_timer,
 )
 from .testdata.load_eveuniverse import load_eveuniverse
-from ..utils import generate_invalid_pk
+
 
 MODULE_PATH = "structuretimers.tasks"
 

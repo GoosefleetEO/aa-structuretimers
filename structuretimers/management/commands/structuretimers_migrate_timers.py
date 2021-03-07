@@ -2,10 +2,10 @@ from django.db import models
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 
+from app_utils.django import app_labels
 from eveuniverse.models import EveSolarSystem
 
 from ...models import Timer
-from ...utils import app_labels
 
 
 def get_input(text):
