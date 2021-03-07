@@ -1,5 +1,4 @@
 import datetime
-import logging
 import imghdr
 
 import requests
@@ -11,12 +10,15 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
+from allianceauth.services.hooks import get_extension_logger
 
+from app_utils.logging import LoggerAddTag
 from eveuniverse.models import EveSolarSystem, EveType
 
+from . import __title__
 from .models import Timer
 
-logger = logging.getLogger(__name__)
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
 class TimerForm(forms.ModelForm):

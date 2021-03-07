@@ -1,5 +1,4 @@
 from datetime import timedelta
-import logging
 
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required, permission_required
@@ -15,7 +14,17 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
 from allianceauth.eveonline.evelinks import evewho, dotlan
+from allianceauth.services.hooks import get_extension_logger
 
+from app_utils.logging import LoggerAddTag
+from app_utils.messages import messages_plus
+from app_utils.views import (
+    bootstrap_label_html,
+    fontawesome_link_button_html,
+    link_html,
+    no_wrap_html,
+    yesno_str,
+)
 from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
@@ -33,17 +42,9 @@ from .constants import (
 )
 from .forms import TimerForm
 from .models import Timer
-from app_utils.messages import messages_plus
-from app_utils.views import (
-    bootstrap_label_html,
-    fontawesome_link_button_html,
-    link_html,
-    no_wrap_html,
-    yesno_str,
-)
 
 
-logger = logging.getLogger(__name__)
+logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 MAX_HOURS_PASSED = 2
 

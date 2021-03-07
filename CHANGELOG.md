@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Migrated to allianceauth-app-utils
+- Migrated to extensions logger
 
 ## 1.0.4 - 2021-01-29
 
