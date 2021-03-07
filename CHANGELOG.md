@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Migrated to allianceauth-app-utils
 - Migrated to extensions logger
 
+### Fixed
+
+- Fix attempt: Structuretimers sometimes get stuck [#19](https://gitlab.com/ErikKalkoken/aa-structuretimers/-/issues/19)
+
 ## 1.0.4 - 2021-01-29
 
 ### Changed

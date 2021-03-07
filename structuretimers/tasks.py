@@ -11,12 +11,7 @@ from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
 
 from . import __title__
-from .models import (
-    DiscordWebhook,
-    NotificationRule,
-    ScheduledNotification,
-    Timer,
-)
+from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 from app_utils.logging import LoggerAddTag
 
 
@@ -62,52 +57,52 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
                 scheduled_notification_pk,
                 exc_info=True,
             )
+            return
+        logger.debug(
+            "Delete scheduled_notification in task_id = %s: %r",
+            self.request.id,
+            scheduled_notification,
+        )
+        scheduled_notification.delete()
+
+    timer = scheduled_notification.timer
+    notification_rule = scheduled_notification.notification_rule
+    if scheduled_notification.celery_task_id != self.request.id:
+        logger.info(
+            "Discarded outdated scheduled notification: %r",
+            scheduled_notification,
+        )
+    elif not notification_rule.is_enabled:
+        logger.info(
+            "Discarded scheduled notification based on disabled rule: %r",
+            scheduled_notification,
+        )
+    else:
+        logger.info(
+            "Sending notifications for timer '%s' and rule '%s'",
+            timer,
+            notification_rule,
+        )
+        webhook = notification_rule.webhook
+        if webhook.is_enabled:
+            minutes = round((timer.date - now()).total_seconds() / 60)
+            mod_text = "**important** " if timer.is_important else ""
+            content = (
+                f"The following {mod_text}structure timer will elapse "
+                f"in less than **{minutes:,}** minutes:"
+            )
+            timer.send_notification(
+                webhook=webhook,
+                content=notification_rule.prepend_ping_text(content),
+            )
+            send_messages_for_webhook.apply_async(
+                args=[webhook.pk], priority=TASK_PRIO_HIGH
+            )
         else:
-            logger.debug(
-                "send_scheduled_notification with task_id = %s, for %r",
-                self.request.id,
+            logger.warning(
+                "Webhook not enabled for %r. Disgarding.",
                 scheduled_notification,
             )
-            timer = scheduled_notification.timer
-            notification_rule = scheduled_notification.notification_rule
-            if scheduled_notification.celery_task_id != self.request.id:
-                logger.info(
-                    "Discarding outdated scheduled notification: %r",
-                    scheduled_notification,
-                )
-            elif not notification_rule.is_enabled:
-                logger.info(
-                    "Discarding scheduled notification based on disabled rule: %r",
-                    scheduled_notification,
-                )
-            else:
-                logger.info(
-                    "Sending notifications for timer '%s' and rule '%s'",
-                    timer,
-                    notification_rule,
-                )
-                webhook = notification_rule.webhook
-                if webhook.is_enabled:
-                    minutes = round((timer.date - now()).total_seconds() / 60)
-                    mod_text = "**important** " if timer.is_important else ""
-                    content = (
-                        f"The following {mod_text}structure timer will elapse "
-                        f"in less than **{minutes:,}** minutes:"
-                    )
-                    timer.send_notification(
-                        webhook=webhook,
-                        content=notification_rule.prepend_ping_text(content),
-                    )
-                    send_messages_for_webhook.apply_async(
-                        args=[webhook.pk], priority=TASK_PRIO_HIGH
-                    )
-                else:
-                    logger.warning(
-                        "Webhook not enabled for %r. Disgarding.",
-                        scheduled_notification,
-                    )
-
-            scheduled_notification.delete()
 
 
 @shared_task
