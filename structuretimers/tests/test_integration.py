@@ -1,20 +1,21 @@
 from datetime import timedelta
 from unittest.mock import patch
 
-from requests.exceptions import ConnectionError as NewConnectionError, HTTPError
+from requests.exceptions import ConnectionError as NewConnectionError
+from requests.exceptions import HTTPError
 
-from allianceauth.tests.auth_utils import AuthUtils
-from django_webtest import WebTest
-
-from django.urls import reverse
-from django.utils.timezone import now
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.urls import reverse
+from django.utils.timezone import now
+from django_webtest import WebTest
 
-from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
+from allianceauth.tests.auth_utils import AuthUtils
+
 from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
-from .testdata import test_image_filename, test_data_filename
+from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
+from .testdata import test_data_filename, test_image_filename
 
 
 def bytes_from_file(filename, chunksize=8192):

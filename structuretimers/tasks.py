@@ -3,17 +3,16 @@ from datetime import timedelta
 from celery import shared_task
 
 from django.contrib.auth.models import User
-from django.db import transaction, DatabaseError
+from django.db import DatabaseError, transaction
 from django.utils.timezone import now
 
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
+from app_utils.logging import LoggerAddTag
 
 from . import __title__
 from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
-from app_utils.logging import LoggerAddTag
-
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 TASK_PRIO_HIGH = 4

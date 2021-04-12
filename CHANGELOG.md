@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+- Add isort to CI
+
 ## 1.0.5 - 2021-03-07
 
 ### Changed

@@ -4,16 +4,15 @@ import imghdr
 import requests
 
 from django import forms
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django.utils.html import mark_safe
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import ugettext_lazy as _
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-
 from app_utils.logging import LoggerAddTag
-from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
 from .models import Timer

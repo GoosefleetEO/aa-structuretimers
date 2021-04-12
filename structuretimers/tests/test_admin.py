@@ -1,12 +1,11 @@
 from unittest.mock import patch
 
-from django_webtest import WebTest
-
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django_webtest import WebTest
 
-from . import LoadTestDataMixin
 from ..models import DiscordWebhook, NotificationRule, Timer
+from . import LoadTestDataMixin
 
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)

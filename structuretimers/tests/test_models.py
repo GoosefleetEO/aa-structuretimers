@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 import json
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import dhooks_lite
@@ -9,11 +9,9 @@ from django.test import TestCase
 from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
-
 from app_utils.json import JSONDateTimeDecoder
 from app_utils.testing import NoSocketsTestCase
 
-from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
 from ..models import (
     DiscordWebhook,
     NotificationRule,
@@ -21,7 +19,7 @@ from ..models import (
     Timer,
     models,
 )
-
+from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
 
 MODULE_PATH = "structuretimers.models"
 

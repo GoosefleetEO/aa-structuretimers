@@ -2,7 +2,6 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from allianceauth.services.hooks import get_extension_logger
-
 from app_utils.logging import LoggerAddTag
 
 from ... import __title__
@@ -11,10 +10,9 @@ from ...constants import (
     EVE_GROUP_ID_CONTROL_TOWER,
     EVE_GROUP_ID_MOBILE_DEPOT,
     EVE_TYPE_ID_CUSTOMS_OFFICE,
-    EVE_TYPE_ID_TCU,
     EVE_TYPE_ID_IHUB,
+    EVE_TYPE_ID_TCU,
 )
-
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 

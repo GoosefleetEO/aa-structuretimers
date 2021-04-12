@@ -1,25 +1,24 @@
 from datetime import timedelta
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 from celery import Task
 
 from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
-
-from app_utils.testing import generate_invalid_pk
 from eveuniverse.models import EveSolarSystem, EveType
 
-from . import LoadTestDataMixin
+from app_utils.testing import generate_invalid_pk
+
 from ..models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 from ..tasks import (
-    send_messages_for_webhook,
-    schedule_notifications_for_timer,
-    schedule_notifications_for_rule,
-    send_scheduled_notification,
     notify_about_new_timer,
+    schedule_notifications_for_rule,
+    schedule_notifications_for_timer,
+    send_messages_for_webhook,
+    send_scheduled_notification,
 )
+from . import LoadTestDataMixin
 from .testdata.load_eveuniverse import load_eveuniverse
-
 
 MODULE_PATH = "structuretimers.tasks"
 

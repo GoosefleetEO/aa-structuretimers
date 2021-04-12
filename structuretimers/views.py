@@ -1,21 +1,20 @@
 from datetime import timedelta
 
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
-from django.utils.html import format_html, mark_safe
-from django.shortcuts import render, reverse
-from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import now
-
-from django.views import View
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.shortcuts import render, reverse
+from django.urls import reverse_lazy
+from django.utils.html import format_html, mark_safe
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+from django.views import View
+from django.views.generic import CreateView, DeleteView, UpdateView
+from eveuniverse.models import EveSolarSystem, EveType
 
-from allianceauth.eveonline.evelinks import evewho, dotlan
+from allianceauth.eveonline.evelinks import dotlan, evewho
 from allianceauth.services.hooks import get_extension_logger
-
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
 from app_utils.views import (
@@ -25,7 +24,6 @@ from app_utils.views import (
     no_wrap_html,
     yesno_str,
 )
-from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
 from .app_settings import (
@@ -37,12 +35,11 @@ from .constants import (
     EVE_GROUP_ID_CONTROL_TOWER,
     EVE_GROUP_ID_MOBILE_DEPOT,
     EVE_TYPE_ID_CUSTOMS_OFFICE,
-    EVE_TYPE_ID_TCU,
     EVE_TYPE_ID_IHUB,
+    EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
 from .models import Timer
-
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"

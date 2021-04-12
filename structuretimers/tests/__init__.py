@@ -1,16 +1,15 @@
 """Utility functions and classes for tests"""
 
 from django.contrib.auth.models import User
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import (
+    EveAllianceInfo,
     EveCharacter,
     EveCorporationInfo,
-    EveAllianceInfo,
 )
 from allianceauth.tests.auth_utils import AuthUtils
-
-from eveuniverse.models import EveSolarSystem, EveType
 
 from .testdata.load_eveuniverse import load_eveuniverse
 

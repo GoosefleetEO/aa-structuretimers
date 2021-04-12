@@ -1,16 +1,16 @@
 from typing import Any, Dict, Optional
 
 from django import forms
-from django.core.exceptions import ValidationError
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.db.models.functions import Lower
-from django.utils.timezone import now
 from django.utils.safestring import mark_safe
+from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
-from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 from . import tasks
+from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 
 
 @admin.register(DiscordWebhook)

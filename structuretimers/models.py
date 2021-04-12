@@ -6,11 +6,11 @@ import dhooks_lite
 from multiselectfield import MultiSelectField
 from simple_mq import SimpleMQ
 
-from django.core.cache import cache
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db import models
-
 from django.utils.translation import gettext_lazy as _
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.eveonline.models import (
@@ -18,14 +18,11 @@ from allianceauth.eveonline.models import (
     EveCharacter,
     EveCorporationInfo,
 )
-
 from allianceauth.services.hooks import get_extension_logger
-
 from app_utils.datetime import DATETIME_FORMAT
-from app_utils.logging import LoggerAddTag
 from app_utils.json import JSONDateTimeDecoder, JSONDateTimeEncoder
+from app_utils.logging import LoggerAddTag
 from app_utils.urls import reverse_absolute, static_file_absolute_url
-from eveuniverse.models import EveSolarSystem, EveType
 
 from . import __title__
 from .app_settings import STRUCTURETIMERS_NOTIFICATIONS_ENABLED

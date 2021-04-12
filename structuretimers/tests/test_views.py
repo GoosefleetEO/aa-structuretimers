@@ -1,16 +1,15 @@
-from datetime import timedelta
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase, RequestFactory
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 
-from ..models import Timer
 from .. import views
-from . import LoadTestDataMixin, create_test_user, add_permission_to_user_by_name
-
+from ..models import Timer
+from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
 
 MODULE_PATH = "structures.views"
 
