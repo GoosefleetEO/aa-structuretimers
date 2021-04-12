@@ -54,7 +54,7 @@ $(document).ready(function () {
     var titleOwner = elem.getAttribute('data-titleOwner');
     var titleVisibility = elem.getAttribute('data-titleVisibility');
     var hasPermOPSEC = (elem.getAttribute('data-hasPermOPSEC') == 'True');
-    var dataTablesPageLength = elem.getAttribute('data-dataTablesPageLength');
+    var dataTablesPageLength = Number(elem.getAttribute('data-dataTablesPageLength'));
     var dataTablesPaging = (elem.getAttribute('data-dataTablesPaging') == 'True');
 
     /* Update modal with requested timer */
@@ -160,7 +160,8 @@ $(document).ready(function () {
             },
             {
                 idx: idx_start + 6,
-                title: titleOwner
+                title: titleOwner,
+                maxWidth: '12em'
             }
         ],
         bootstrap: true,

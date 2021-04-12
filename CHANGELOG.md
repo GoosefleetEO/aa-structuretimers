@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.6 - 2021-04-13
+
+### Changed
+
 - Add isort to CI
+
+### Fixed
+
+- Shows wrong page count on timers list
+- Too long owner names result in 2-lines filter row
 
 ## 1.0.5 - 2021-03-07
 
