@@ -42,6 +42,8 @@ Create timers more quickly and precisely with autocomplete for solar system and 
 Find timers more quickly with filters and full text search | - | x
 Automatic cleanup of elapsed timers | - | x
 
+>**Hint**<br>If you like to see all timers in a calendar view please consider checking out the amazing app [Allianceauth Opcalendar](https://gitlab.com/paulipa/allianceauth-opcalendar), which is fully integrated with **Structure Timers II**.
+
 ## Screenshots
 
 ### List of timers
