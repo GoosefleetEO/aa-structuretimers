@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## 1.0.7 - 2021-05-05
+
+### Fixed
+
+- Reduced load time for timers list
+- Buttons no longer wrapping
+
 ## 1.0.6 - 2021-04-13
 
 ### Changed
