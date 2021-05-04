@@ -76,6 +76,7 @@ def timer_list_data(request, tab_name):
     timers_qs = timers_qs.select_related(
         "eve_solar_system__eve_constellation__eve_region",
         "structure_type",
+        "structure_type__eve_group",
         "eve_character",
         "eve_corporation",
         "eve_alliance",
