@@ -4,7 +4,7 @@
 
 {% block details %}
     <div class="col-lg-12 text-center">
-        <b>{% trans "Current Eve Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
+        <b>{% translate "Current Eve Time:" %}</b>&nbsp;<span id="current-time">{{ current_time }}</span>
     </div>
 
     <span class="pull-right">
@@ -83,13 +83,13 @@
         data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}"
         data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}"
         data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
-        data-titleSolarSystem="{% trans 'Solar System' %}"
-        data-titleRegion="{% trans 'Region' %}"
-        data-titleStructureType="{% trans 'Structure Type' %}"
-        data-titleTimerType="{% trans 'Timer Type' %}"
-        data-titleOwner="{% trans 'Owner' %}"
-        data-titleObjective="{% trans 'Objective' %}"
-        data-titleVisibility="{% trans 'Visibility' %}"
+        data-titleSolarSystem="{% translate 'Solar System' %}"
+        data-titleRegion="{% translate 'Region' %}"
+        data-titleStructureType="{% translate 'Structure Type' %}"
+        data-titleTimerType="{% translate 'Timer Type' %}"
+        data-titleOwner="{% translate 'Owner' %}"
+        data-titleObjective="{% translate 'Objective' %}"
+        data-titleVisibility="{% translate 'Visibility' %}"
         data-hasPermOPSEC="{{ perms.structuretimers.opsec_access }}"
         data-dataTablesPageLength="{{ data_tables_page_length }}"
         data-dataTablesPaging="{{ data_tables_paging }}"
