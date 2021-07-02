@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -11,9 +12,10 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView, DeleteView, UpdateView
+from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
 
-from allianceauth.eveonline.evelinks import dotlan, evewho
+from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
@@ -28,6 +30,7 @@ from app_utils.views import (
 from . import __title__
 from .app_settings import (
     STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
+    STRUCTURETIMERS_HOME_SYSTEM_ID,
     STRUCTURETIMERS_PAGING_ENABLED,
 )
 from .constants import (
@@ -46,6 +49,17 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 MAX_HOURS_PASSED = 2
 
 
+def fetch_home_system() -> Optional[EveSolarSystem]:
+    """Current home system if defined. Else None"""
+    if STRUCTURETIMERS_HOME_SYSTEM_ID:
+        home_system, _ = EveSolarSystem.objects.get_or_create_esi(
+            id=STRUCTURETIMERS_HOME_SYSTEM_ID
+        )
+    else:
+        home_system = None
+    return home_system
+
+
 @login_required
 @permission_required("structuretimers.basic_access")
 def timer_list(request):
@@ -55,6 +69,7 @@ def timer_list(request):
         "title": __title__,
         "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
         "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
+        "home_system": fetch_home_system(),
     }
     return render(request, "structuretimers/timer_list.html", context=context)
 
@@ -81,6 +96,7 @@ def timer_list_data(request, tab_name):
         "eve_corporation",
         "eve_alliance",
     )
+    home_system = fetch_home_system()
     data = list()
     for timer in timers_qs:
         # location
@@ -94,6 +110,13 @@ def timer_list_data(request, tab_name):
         location += format_html(
             "<br>{}", timer.eve_solar_system.eve_constellation.eve_region.name
         )
+
+        # distance
+        if home_system:
+            distance_ly = meters_to_ly(timer.eve_solar_system.distance_to(home_system))
+        else:
+            distance_ly = None
+        distance = f"{distance_ly:.1f} ly" if distance_ly else "?"
 
         # structure & timer type & fitting image
         timer_type = bootstrap_label_html(
@@ -154,25 +177,25 @@ def timer_list_data(request, tab_name):
         structure_name = timer.structure_name if timer.structure_name else "-"
         name = format_html("{}<br>{}", structure_name, owner)
 
-        # creator
         if timer.eve_corporation:
             corporation_name = timer.eve_corporation.corporation_name
         else:
             corporation_name = "-"
 
-        if timer.eve_character:
-            creator = format_html(
-                "{}<br>{}",
-                link_html(
-                    evewho.character_url(timer.eve_character.character_id),
-                    timer.eve_character.character_name,
-                ),
-                corporation_name,
-            )
-        elif corporation_name:
-            creator = corporation_name
-        else:
-            creator = "-"
+        # creator
+        # if timer.eve_character:
+        #     creator = format_html(
+        #         "{}<br>{}",
+        #         link_html(
+        #             evewho.character_url(timer.eve_character.character_id),
+        #             timer.eve_character.character_name,
+        #         ),
+        #         corporation_name,
+        #     )
+        # elif corporation_name:
+        #     creator = corporation_name
+        # else:
+        #     creator = "-"
 
         # visibility
         visibility = ""
@@ -234,7 +257,8 @@ def timer_list_data(request, tab_name):
                 "structure_details": structure,
                 "name_objective": name,
                 "owner": objective,
-                "creator": creator,
+                # "creator": creator,
+                "distance": distance,
                 "actions": actions,
                 "timer_type_name": timer.get_timer_type_display(),
                 "objective_name": timer.get_objective_display(),

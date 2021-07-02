@@ -25,3 +25,8 @@ STRUCTURETIMERS_DEFAULT_PAGE_LENGTH = clean_setting(
 
 # Wether paging is enabled on the timerboard
 STRUCTURETIMERS_PAGING_ENABLED = clean_setting("STRUCTURETIMERS_PAGING_ENABLED", True)
+
+# Eve ID of the home solar system. Distances will be calculated from that system.
+STRUCTURETIMERS_HOME_SYSTEM_ID = clean_setting(
+    "STRUCTURETIMERS_HOME_SYSTEM_ID", default_value=None, required_type=int
+)

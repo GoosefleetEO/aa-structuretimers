@@ -156,6 +156,7 @@ Name | Description | Default
 `STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS`| Minimum age in days for a timer to be considered obsolete. Obsolete timers will automatically be deleted. If you want to keep all timers, set to `None` | `30`
 `STRUCTURETIMERS_DEFAULT_PAGE_LENGTH`| Default page size for timerboard. Must be an integer value from the available options in the app. | `10`
 `STRUCTURETIMERS_PAGING_ENABLED`| Wether paging is enabled on the timerboard. | `True`
+`STRUCTURETIMERS_HOME_SYSTEM_ID`| Eve ID of the home system. Distances will be calculated from that system. | `None`
 
 ## Notification Rules
 

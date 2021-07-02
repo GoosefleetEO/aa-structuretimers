@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Added
+
+- Shows distance in ly from home system for every timer
+
+### Changed
+
+- Removed creator column
+
 ## 1.0.7 - 2021-05-05
 
 ### Fixed

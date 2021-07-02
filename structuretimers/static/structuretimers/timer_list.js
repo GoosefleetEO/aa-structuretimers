@@ -115,10 +115,10 @@ $(document).ready(function () {
         { data: 'date' },
         { data: 'local_time' },
         { data: 'location' },
+        { data: 'distance' },
         { data: 'structure_details' },
         { data: 'owner' },
         { data: 'name_objective' },
-        { data: 'creator' },
         { data: 'actions' },
 
         /* hidden columns */
