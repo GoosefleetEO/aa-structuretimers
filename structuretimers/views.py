@@ -285,21 +285,22 @@ def timer_list_data(request, tab_name):
 @permission_required("structuretimers.basic_access")
 def get_timer_data(request, pk: str):
     """returns data for a timer"""
-    timers_qs = Timer.objects.filter(pk=pk).visible_to_user(request.user)
-    if timers_qs.exists():
-        timer = timers_qs.first()
-        data = {
-            "display_name": str(timer),
-            "structure_display_name": timer.structure_display_name,
-            "date": timer.date.strftime(DATETIME_FORMAT),
-            "details_image_url": timer.details_image_url
-            if timer.details_image_url
-            else "",
-            "notes": timer.details_notes if timer.details_notes else "",
-        }
-        return JsonResponse(data, safe=False)
-    else:
+    try:
+        timer = (
+            Timer.objects.visible_to_user(request.user)
+            .select_related("structure_type", "eve_solar_system")
+            .get(pk=pk)
+        )
+    except Timer.DoesNotExist:
         return HttpResponseForbidden()
+    data = {
+        "display_name": str(timer),
+        "structure_display_name": timer.structure_display_name,
+        "date": timer.date.strftime(DATETIME_FORMAT),
+        "details_image_url": timer.details_image_url if timer.details_image_url else "",
+        "notes": timer.details_notes if timer.details_notes else "",
+    }
+    return JsonResponse(data, safe=False)
 
 
 class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):

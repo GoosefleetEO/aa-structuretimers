@@ -18,9 +18,13 @@ class NotificationRuleQuerySet(models.QuerySet):
         return self.filter(pk__in=matching_rule_pks)
 
 
-class NotificationRuleManager(models.Manager):
-    def get_queryset(self):
-        return NotificationRuleQuerySet(self.model, using=self._db)
+class NotificationRuleManagerBase(models.Manager):
+    pass
+
+
+NotificationRuleManager = NotificationRuleManagerBase.from_queryset(
+    NotificationRuleQuerySet
+)
 
 
 class TimerQuerySet(models.QuerySet):
@@ -65,10 +69,7 @@ class TimerQuerySet(models.QuerySet):
         return timers_qs
 
 
-class TimerManager(models.Manager):
-    def get_queryset(self):
-        return TimerQuerySet(self.model, using=self._db)
-
+class TimerManagerBase(models.Manager):
     def delete_obsolete(self) -> int:
         """delete all timers that are considered obsolete"""
         if STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS:
@@ -81,3 +82,6 @@ class TimerManager(models.Manager):
             return deleted_count
         else:
             return 0
+
+
+TimerManager = TimerManagerBase.from_queryset(TimerQuerySet)
