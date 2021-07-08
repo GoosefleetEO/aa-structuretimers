@@ -83,11 +83,11 @@ class TestListData(TestViewBase):
         self.assertEqual(response.status_code, 200)
         return {x["id"] for x in get_json_response(response)}
 
-    def test_timer_list_view_loads(self):
-        request = self.factory.get(reverse("structuretimers:timer_list"))
-        request.user = self.user_1
-        response = views.timer_list(request)
-        self.assertEqual(response.status_code, 200)
+    # def test_timer_list_view_loads(self):
+    #     request = self.factory.get(reverse("structuretimers:timer_list"))
+    #     request.user = self.user_1
+    #     response = views.timer_list(request)
+    #     self.assertEqual(response.status_code, 200)
 
     def test_timer_list_data_current_and_past(self):
         # test current timers

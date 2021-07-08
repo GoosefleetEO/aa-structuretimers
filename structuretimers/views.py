@@ -5,13 +5,13 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.shortcuts import render, reverse
+from django.shortcuts import reverse
 from django.urls import reverse_lazy
 from django.utils.html import format_html, mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
 from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
 
@@ -60,18 +60,22 @@ def fetch_home_system() -> Optional[EveSolarSystem]:
     return home_system
 
 
-@login_required
-@permission_required("structuretimers.basic_access")
-def timer_list(request):
-    context = {
-        "current_time": now().strftime("%Y-%m-%d %H:%M:%S"),
-        "max_hours_expired": MAX_HOURS_PASSED,
-        "title": __title__,
-        "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
-        "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
-        "home_system": fetch_home_system(),
-    }
-    return render(request, "structuretimers/timer_list.html", context=context)
+class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "structuretimers/timer_list.html"
+    permission_required = ("structuretimers.basic_access",)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "current_time": now().strftime("%Y-%m-%d %H:%M:%S"),
+                "max_hours_expired": MAX_HOURS_PASSED,
+                "title": __title__,
+                "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
+                "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
+                "home_system": fetch_home_system(),
+            }
+        )
 
 
 @login_required
