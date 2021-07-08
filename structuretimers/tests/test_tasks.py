@@ -31,7 +31,7 @@ class TestCaseBase(LoadTestDataMixin, TestCase):
         )
         self.webhook.clear_queue()
         self.rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_15,
             webhook=self.webhook,
         )
@@ -128,7 +128,7 @@ class TestScheduleNotificationForTimer(TestCaseBase):
         self.rule.is_enabled = False
         self.rule.save()
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED, webhook=self.webhook
+            trigger=NotificationRule.Trigger.NEW_TIMER_CREATED, webhook=self.webhook
         )
         schedule_notifications_for_timer(timer_pk=self.timer.pk, is_new=True)
 
@@ -212,7 +212,7 @@ class TestSendScheduledNotification(TransactionTestCase):
         )
         self.webhook.clear_queue()
         self.rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_15,
             webhook=self.webhook,
         )
@@ -297,7 +297,7 @@ class TestSendNotificationForTimer(TestCaseBase):
     def setUp(self) -> None:
         super().setUp()
         self.rule_2 = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED, webhook=self.webhook
+            trigger=NotificationRule.Trigger.NEW_TIMER_CREATED, webhook=self.webhook
         )
 
     def test_normal(self, mock_send_messages_for_webhook):

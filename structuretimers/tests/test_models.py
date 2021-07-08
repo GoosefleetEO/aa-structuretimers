@@ -386,7 +386,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains only conforming timer
         """
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
@@ -402,7 +402,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs is empty
         """
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
@@ -418,7 +418,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         then qs contains all timers
         """
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             require_objectives=[Timer.Objective.FRIENDLY],
             webhook=self.webhook,
@@ -626,7 +626,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
             date=now(),
         )
         self.rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_15,
             webhook=self.webhook,
         )
@@ -772,13 +772,13 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.rule_1 = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=10,
             require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
         self.rule_2 = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=15,
             require_objectives=[Timer.Objective.FRIENDLY],
             webhook=self.webhook,
@@ -863,7 +863,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
         then schedule notifications
         """
         rule = NotificationRule(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
@@ -878,7 +878,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
         then do not schedule notifications
         """
         rule = NotificationRule(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
@@ -893,7 +893,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
         then do not schedule notifications
         """
         rule = NotificationRule(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
             is_enabled=False,
@@ -908,7 +908,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
         then delete all scheduled notifications based on same rule
         """
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
@@ -923,7 +923,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
             timer_date=timer.date,
             notification_date=timer.date - timedelta(minutes=10),
         )
-        rule.trigger = NotificationRule.TRIGGER_NEW_TIMER_CREATED
+        rule.trigger = NotificationRule.Trigger.NEW_TIMER_CREATED
         rule.scheduled_time = None
         rule.save()
 

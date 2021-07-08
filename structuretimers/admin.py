@@ -94,7 +94,7 @@ class NotificationRuleAdminForm(forms.ModelForm):
             "exclude_alliances",
         )
         if (
-            cleaned_data["trigger"] == NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED
+            cleaned_data["trigger"] == NotificationRule.Trigger.SCHEDULED_TIME_REACHED
             and cleaned_data["scheduled_time"] is None
         ):
             raise ValidationError(
@@ -106,7 +106,7 @@ class NotificationRuleAdminForm(forms.ModelForm):
                 }
             )
 
-        if cleaned_data["trigger"] == NotificationRule.TRIGGER_NEW_TIMER_CREATED:
+        if cleaned_data["trigger"] == NotificationRule.Trigger.NEW_TIMER_CREATED:
             cleaned_data["scheduled_time"] = None
 
         return cleaned_data

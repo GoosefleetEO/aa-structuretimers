@@ -180,7 +180,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                     NotificationRule.objects.select_related("webhook")
                     .filter(
                         is_enabled=True,
-                        trigger=NotificationRule.TRIGGER_NEW_TIMER_CREATED,
+                        trigger=NotificationRule.Trigger.NEW_TIMER_CREATED,
                         webhook__is_enabled=True,
                     )
                     .conforms_with_timer(timer)
@@ -206,7 +206,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                 # schedule new notifications
                 for notification_rule in NotificationRule.objects.filter(
                     is_enabled=True,
-                    trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+                    trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
                 ).conforms_with_timer(timer):
                     _schedule_notification_for_timer(
                         timer=timer, notification_rule=notification_rule
@@ -228,7 +228,7 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
             notification_rule_pk,
         )
     else:
-        if notification_rule.trigger == NotificationRule.TRIGGER_NEW_TIMER_CREATED:
+        if notification_rule.trigger == NotificationRule.Trigger.NEW_TIMER_CREATED:
             logger.error(
                 "NotificationRule with pk = %s has the wrong trigger. Aborting.",
                 notification_rule_pk,

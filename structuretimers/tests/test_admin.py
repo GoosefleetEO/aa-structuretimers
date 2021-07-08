@@ -23,24 +23,24 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
     @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
         NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
         rule = NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
         rule.require_corporations.add(self.corporation_1)
         NotificationRule.objects.create(
-            trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
+            trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             is_important=NotificationRule.Clause.EXCLUDED,
             webhook=self.webhook,
@@ -84,7 +84,7 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
         add_page = self.app.get(self.url_add)
         self.assertEqual(add_page.status_code, 200)
         form = add_page.form
-        form["trigger"] = NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED
+        form["trigger"] = NotificationRule.Trigger.SCHEDULED_TIME_REACHED
         form["scheduled_time"] = NotificationRule.MINUTES_10
         form["webhook"] = self.webhook.pk
         return form

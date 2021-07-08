@@ -553,12 +553,9 @@ class Timer(models.Model):
 class NotificationRule(models.Model):
 
     # Trigger choices
-    TRIGGER_NEW_TIMER_CREATED = "TC"
-    TRIGGER_SCHEDULED_TIME_REACHED = "TR"
-    TRIGGER_CHOICES = (
-        (TRIGGER_NEW_TIMER_CREATED, _("New timer created")),
-        (TRIGGER_SCHEDULED_TIME_REACHED, _("Scheduled time reached")),
-    )
+    class Trigger(models.TextChoices):
+        NEW_TIMER_CREATED = "TC", _("New timer created")
+        SCHEDULED_TIME_REACHED = "TR", _("Scheduled time reached")
 
     # Minutes choices
     MINUTES_0 = 0
@@ -595,7 +592,7 @@ class NotificationRule(models.Model):
 
     trigger = models.CharField(
         max_length=2,
-        choices=TRIGGER_CHOICES,
+        choices=Trigger.choices,
         help_text="Trigger for sending a notification",
     )
     scheduled_time = models.PositiveIntegerField(
@@ -715,13 +712,13 @@ class NotificationRule(models.Model):
         if (
             STRUCTURETIMERS_NOTIFICATIONS_ENABLED
             and self.is_enabled
-            and self.trigger == self.TRIGGER_SCHEDULED_TIME_REACHED
+            and self.trigger == self.Trigger.SCHEDULED_TIME_REACHED
         ):
             self._import_schedule_notifications_for_rule().apply_async(
                 kwargs={"notification_rule_pk": self.pk}, priority=4
             )
 
-        if self.trigger == self.TRIGGER_NEW_TIMER_CREATED:
+        if self.trigger == self.Trigger.NEW_TIMER_CREATED:
             ScheduledNotification.objects.filter(notification_rule=self).delete()
 
     @staticmethod
