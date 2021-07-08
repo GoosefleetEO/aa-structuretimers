@@ -96,7 +96,7 @@ class TimerForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     timer_type = forms.ChoiceField(
-        choices=Timer.TYPE_CHOICES,
+        choices=Timer.Type.choices,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     visibility = forms.ChoiceField(

@@ -122,19 +122,19 @@ class Command(BaseCommand):
 
             details_lower = auth_timer.details.lower()
             if "Moon Mining Cycle" in auth_timer.structure:
-                timer_type = Timer.TYPE_MOONMINING
+                timer_type = Timer.Type.MOONMINING
             elif "armor" in details_lower:
-                timer_type = Timer.TYPE_ARMOR
+                timer_type = Timer.Type.ARMOR
             elif "hull" in details_lower:
-                timer_type = Timer.TYPE_HULL
+                timer_type = Timer.Type.HULL
             elif "final" in details_lower:
-                timer_type = Timer.TYPE_FINAL
+                timer_type = Timer.Type.FINAL
             elif "unanchor" in details_lower:
-                timer_type = Timer.TYPE_UNANCHORING
+                timer_type = Timer.Type.UNANCHORING
             elif "anchor" in details_lower:
-                timer_type = Timer.TYPE_ANCHORING
+                timer_type = Timer.Type.ANCHORING
             else:
-                timer_type = Timer.TYPE_NONE
+                timer_type = Timer.Type.NONE
 
             if not is_test:
                 try:

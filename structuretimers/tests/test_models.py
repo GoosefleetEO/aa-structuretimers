@@ -28,7 +28,7 @@ class TestTimer(LoadTestDataMixin, TestCase):
     def test_str(self):
         timer = Timer(
             structure_name="Test",
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=datetime(2020, 8, 6, 13, 25),
@@ -38,7 +38,7 @@ class TestTimer(LoadTestDataMixin, TestCase):
 
     def test_structure_display_name_1(self):
         timer = Timer(
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=datetime(2020, 8, 6, 13, 25),
@@ -48,7 +48,7 @@ class TestTimer(LoadTestDataMixin, TestCase):
 
     def test_structure_display_name_2(self):
         timer = Timer(
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             location_details="P5-M3",
@@ -60,7 +60,7 @@ class TestTimer(LoadTestDataMixin, TestCase):
     def test_structure_display_name_3(self):
         timer = Timer(
             structure_name="Big Boy",
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=datetime(2020, 8, 6, 13, 25),
@@ -72,10 +72,10 @@ class TestTimer(LoadTestDataMixin, TestCase):
         timer = Timer(date=now())
         self.assertEqual(timer.label_type_for_timer_type(), "default")
 
-        timer.timer_type = timer.TYPE_ARMOR
+        timer.timer_type = Timer.Type.ARMOR
         self.assertEqual(timer.label_type_for_timer_type(), "danger")
 
-        timer.timer_type = timer.TYPE_HULL
+        timer.timer_type = Timer.Type.HULL
         self.assertEqual(timer.label_type_for_timer_type(), "danger")
 
     def test_label_type_for_objective(self):
@@ -275,13 +275,13 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
 class TestTimerManger(LoadTestDataMixin, TestCase):
     def test_delete_old_timer(self):
         timer_1 = Timer.objects.create(
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             date=now(),
         )
         timer_2 = Timer.objects.create(
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now() - timedelta(days=1, seconds=1),
@@ -314,7 +314,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
     def test_with_content(self, mock_send_message):
         timer = Timer(
             structure_name="Test",
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
@@ -328,7 +328,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
     def test_timer_with_options_1(self, mock_send_message):
         timer = Timer(
             structure_name="Test",
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
@@ -341,7 +341,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
     def test_timer_with_options_2(self, mock_send_message):
         timer = Timer(
             structure_name="Test",
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
@@ -363,7 +363,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
         self.timer_2 = Timer.objects.create(
@@ -373,7 +373,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            timer_type=Timer.TYPE_HULL,
+            timer_type=Timer.Type.HULL,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
         self.timer_qs = Timer.objects.all()
@@ -388,7 +388,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         rule = NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
-            require_timer_types=[Timer.TYPE_ARMOR],
+            require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
@@ -633,20 +633,20 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_require_timer_types(self):
         # do not process if it does not match
-        self.rule.require_timer_types = [Timer.TYPE_ARMOR]
+        self.rule.require_timer_types = [Timer.Type.ARMOR]
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
         # process if it does match
-        self.timer.timer_type = Timer.TYPE_ARMOR
+        self.timer.timer_type = Timer.Type.ARMOR
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
     def test_exclude_timer_types(self):
         # process if it does match
-        self.rule.exclude_timer_types = [Timer.TYPE_ARMOR]
+        self.rule.exclude_timer_types = [Timer.Type.ARMOR]
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
         # do not process if it does not match
-        self.timer.timer_type = Timer.TYPE_ARMOR
+        self.timer.timer_type = Timer.Type.ARMOR
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
     def test_require_objectives(self):
@@ -774,7 +774,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         self.rule_1 = NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=10,
-            require_timer_types=[Timer.TYPE_ARMOR],
+            require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
         self.rule_2 = NotificationRule.objects.create(
@@ -798,7 +798,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             objective=Timer.OBJECTIVE_HOSTILE,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)
@@ -818,7 +818,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            timer_type=Timer.TYPE_HULL,
+            timer_type=Timer.Type.HULL,
             objective=Timer.OBJECTIVE_HOSTILE,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)
@@ -838,7 +838,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            timer_type=Timer.TYPE_ARMOR,
+            timer_type=Timer.Type.ARMOR,
             objective=Timer.OBJECTIVE_FRIENDLY,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)

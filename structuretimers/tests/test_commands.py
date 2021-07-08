@@ -52,7 +52,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         new_timer = Timer.objects.first()
         self.assertEqual(new_timer.eve_solar_system, self.system_abune)
         self.assertEqual(new_timer.structure_type, self.type_astrahus)
-        self.assertEqual(new_timer.timer_type, Timer.TYPE_ARMOR)
+        self.assertEqual(new_timer.timer_type, Timer.Type.ARMOR)
         self.assertEqual(new_timer.details_notes, "Armor timer")
         self.assertEqual(new_timer.objective, Timer.OBJECTIVE_FRIENDLY)
         self.assertEqual(new_timer.date, self.auth_timer.eve_time)
@@ -69,7 +69,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         call_command("structuretimers_migrate_timers", stdout=self.out)
 
         new_timer = Timer.objects.first()
-        self.assertEqual(new_timer.timer_type, Timer.TYPE_HULL)
+        self.assertEqual(new_timer.timer_type, Timer.Type.HULL)
         self.assertEqual(new_timer.objective, Timer.OBJECTIVE_HOSTILE)
 
     def test_anchoring(self, mock_get_input):
@@ -81,7 +81,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         call_command("structuretimers_migrate_timers", stdout=self.out)
 
         new_timer = Timer.objects.first()
-        self.assertEqual(new_timer.timer_type, Timer.TYPE_ANCHORING)
+        self.assertEqual(new_timer.timer_type, Timer.Type.ANCHORING)
         self.assertEqual(new_timer.objective, Timer.OBJECTIVE_NEUTRAL)
 
     def test_final_corp_timer(self, mock_get_input):
@@ -93,7 +93,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         call_command("structuretimers_migrate_timers", stdout=self.out)
 
         new_timer = Timer.objects.first()
-        self.assertEqual(new_timer.timer_type, Timer.TYPE_FINAL)
+        self.assertEqual(new_timer.timer_type, Timer.Type.FINAL)
         self.assertEqual(new_timer.visibility, Timer.VISIBILITY_CORPORATION)
 
     def test_moon_mining(self, mock_get_input):
@@ -104,7 +104,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         call_command("structuretimers_migrate_timers", stdout=self.out)
 
         new_timer = Timer.objects.first()
-        self.assertEqual(new_timer.timer_type, Timer.TYPE_MOONMINING)
+        self.assertEqual(new_timer.timer_type, Timer.Type.MOONMINING)
         self.assertEqual(new_timer.structure_type, EveType.objects.get(id=35835))
 
     def test_abort_on_unknown_solar_system(self, mock_get_input):

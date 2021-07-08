@@ -249,24 +249,14 @@ class DiscordWebhook(models.Model):
 class Timer(models.Model):
     """A structure timer"""
 
-    # timer type
-    TYPE_NONE = "NO"
-    TYPE_ARMOR = "AR"
-    TYPE_HULL = "HL"
-    TYPE_FINAL = "FI"
-    TYPE_ANCHORING = "AN"
-    TYPE_UNANCHORING = "UA"
-    TYPE_MOONMINING = "MM"
-
-    TYPE_CHOICES = (
-        (TYPE_NONE, _("Unspecified")),
-        (TYPE_ARMOR, _("Armor")),
-        (TYPE_HULL, _("Hull")),
-        (TYPE_FINAL, _("Final")),
-        (TYPE_ANCHORING, _("Anchoring")),
-        (TYPE_UNANCHORING, _("Unanchoring")),
-        (TYPE_MOONMINING, _("Moon Mining")),
-    )
+    class Type(models.TextChoices):
+        NONE = "NO", _("Unspecified")
+        ARMOR = "AR", _("Armor")
+        HULL = "HL", _("Hull")
+        FINAL = "FI", _("Final")
+        ANCHORING = "AN", _("Anchoring")
+        UNANCHORING = "UA", _("Unanchoring")
+        MOONMINING = "MM", _("Moon Mining")
 
     # objective
     OBJECTIVE_UNDEFINED = "UN"
@@ -292,7 +282,7 @@ class Timer(models.Model):
         (VISIBILITY_CORPORATION, _("Corporation only")),
     ]
 
-    timer_type = models.CharField(max_length=2, choices=TYPE_CHOICES, default=TYPE_NONE)
+    timer_type = models.CharField(max_length=2, choices=Type.choices, default=Type.NONE)
     eve_solar_system = models.ForeignKey(
         EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
     )
@@ -503,13 +493,13 @@ class Timer(models.Model):
     def label_type_for_timer_type(self) -> str:
         """returns the Boostrap label type for a timer_type"""
         label_types_map = {
-            self.TYPE_NONE: "default",
-            self.TYPE_ARMOR: "danger",
-            self.TYPE_HULL: "danger",
-            self.TYPE_FINAL: "danger",
-            self.TYPE_ANCHORING: "warning",
-            self.TYPE_UNANCHORING: "warning",
-            self.TYPE_MOONMINING: "success",
+            self.Type.NONE: "default",
+            self.Type.ARMOR: "danger",
+            self.Type.HULL: "danger",
+            self.Type.FINAL: "danger",
+            self.Type.ANCHORING: "warning",
+            self.Type.UNANCHORING: "warning",
+            self.Type.MOONMINING: "success",
         }
         if self.timer_type in label_types_map:
             label_type = label_types_map[self.timer_type]
@@ -663,7 +653,7 @@ class NotificationRule(models.Model):
         help_text="whether this rule is currently active",
     )
     require_timer_types = MultiSelectField(
-        choices=Timer.TYPE_CHOICES,
+        choices=Timer.Type.choices,
         blank=True,
         help_text=(
             "Timer must have one of the given timer types "
@@ -671,7 +661,7 @@ class NotificationRule(models.Model):
         ),
     )
     exclude_timer_types = MultiSelectField(
-        choices=Timer.TYPE_CHOICES,
+        choices=Timer.Type.choices,
         blank=True,
         help_text="Timer must NOT have one of the given timer types",
     )
@@ -835,7 +825,7 @@ class NotificationRule(models.Model):
 
     @classmethod
     def get_timer_type_display(cls, value: Any) -> str:
-        return cls.get_multiselect_display(value, Timer.TYPE_CHOICES)
+        return cls.get_multiselect_display(value, Timer.Type.choices)
 
     @classmethod
     def get_objectives_display(cls, value: Any) -> str:

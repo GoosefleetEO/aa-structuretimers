@@ -65,7 +65,7 @@ class NotificationRuleAdminForm(forms.ModelForm):
             cleaned_data,
             "require_timer_types",
             "exclude_timer_types",
-            lambda x: NotificationRule.get_multiselect_display(x, Timer.TYPE_CHOICES),
+            lambda x: NotificationRule.get_multiselect_display(x, Timer.Type.choices),
         )
         self._validate_not_same_options_chosen(
             cleaned_data,
@@ -157,8 +157,8 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     def _timer_clauses(self, obj) -> list:
         clauses = list()
         for field, func, choices in [
-            ("require_timer_types", self._add_to_clauses_1, Timer.TYPE_CHOICES),
-            ("exclude_timer_types", self._add_to_clauses_1, Timer.TYPE_CHOICES),
+            ("require_timer_types", self._add_to_clauses_1, Timer.Type.choices),
+            ("exclude_timer_types", self._add_to_clauses_1, Timer.Type.choices),
             ("require_objectives", self._add_to_clauses_1, Timer.OBJECTIVE_CHOICES),
             ("exclude_objectives", self._add_to_clauses_1, Timer.OBJECTIVE_CHOICES),
             ("require_visibility", self._add_to_clauses_1, Timer.VISIBILITY_CHOICES),

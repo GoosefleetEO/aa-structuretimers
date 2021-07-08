@@ -30,7 +30,7 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
         NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
-            require_timer_types=[Timer.TYPE_ARMOR],
+            require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
         rule = NotificationRule.objects.create(
@@ -100,8 +100,8 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
 
     def test_can_not_have_same_options_timer_types(self):
         form = self._open_page()
-        form["require_timer_types"] = [Timer.TYPE_ANCHORING, Timer.TYPE_HULL]
-        form["exclude_timer_types"] = [Timer.TYPE_ANCHORING, Timer.TYPE_ARMOR]
+        form["require_timer_types"] = [Timer.Type.ANCHORING, Timer.Type.HULL]
+        form["exclude_timer_types"] = [Timer.Type.ANCHORING, Timer.Type.ARMOR]
         response = form.submit()
 
         # assert results

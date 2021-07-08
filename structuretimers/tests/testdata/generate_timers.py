@@ -40,7 +40,7 @@ eve_solar_system_ids = EveSolarSystem.objects.values_list("id", flat=True)
 owner_names = EveCorporationInfo.objects.values_list("corporation_name", flat=True)
 for _ in range(MAX_TIMERS):
     Timer.objects.create(
-        timer_type=random.choice([elem[0] for elem in Timer.TYPE_CHOICES]),
+        timer_type=random.choice([elem[0] for elem in Timer.Type.choices]),
         eve_solar_system_id=random.choice(eve_solar_system_ids),
         structure_type_id=random.choice(structure_type_ids),
         date=now()
