@@ -583,15 +583,10 @@ class NotificationRule(models.Model):
         (MINUTES_120, _("T - 120 minutes")),
     )
 
-    # Ping type choices
-    PING_TYPE_NONE = "PN"
-    PING_TYPE_HERE = "PH"
-    PING_TYPE_EVERYONE = "PE"
-    PING_TYPE_CHOICES = (
-        (PING_TYPE_NONE, "(no ping)"),
-        (PING_TYPE_HERE, "@here"),
-        (PING_TYPE_EVERYONE, "@everyone"),
-    )
+    class PingType(models.TextChoices):
+        NONE = "PN", "(no ping)"
+        HERE = "PH", "@here"
+        EVERYONE = "PE", "@everyone"
 
     # Clause choices
     CLAUSE_ANY = "AN"
@@ -626,8 +621,8 @@ class NotificationRule(models.Model):
     )
     ping_type = models.CharField(
         max_length=2,
-        choices=PING_TYPE_CHOICES,
-        default=PING_TYPE_NONE,
+        choices=PingType.choices,
+        default=PingType.NONE,
         help_text="Options for pinging on notification",
     )
     is_enabled = models.BooleanField(
@@ -799,9 +794,9 @@ class NotificationRule(models.Model):
     def ping_type_to_text(cls, ping_type: str) -> str:
         """returns the text for creating the given ping on Discord"""
         my_map = {
-            NotificationRule.PING_TYPE_NONE: "",
-            NotificationRule.PING_TYPE_HERE: "@here",
-            NotificationRule.PING_TYPE_EVERYONE: "@everyone",
+            NotificationRule.PingType.NONE: "",
+            NotificationRule.PingType.HERE: "@here",
+            NotificationRule.PingType.EVERYONE: "@everyone",
         }
         return my_map[ping_type] if ping_type in my_map else ""
 
