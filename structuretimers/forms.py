@@ -91,8 +91,8 @@ class TimerForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2-structure-types"}),
     )
     objective = forms.ChoiceField(
-        initial=Timer.OBJECTIVE_UNDEFINED,
-        choices=Timer.OBJECTIVE_CHOICES,
+        initial=Timer.Objective.UNDEFINED,
+        choices=Timer.Objective.choices,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     timer_type = forms.ChoiceField(

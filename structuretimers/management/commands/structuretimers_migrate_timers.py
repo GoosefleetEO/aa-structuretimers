@@ -15,10 +15,10 @@ def get_input(text):
 
 # objectives
 OBJECTIVE_CHOICES = [
-    (Timer.OBJECTIVE_HOSTILE, "Hostile"),
-    (Timer.OBJECTIVE_FRIENDLY, "Friendly"),
-    (Timer.OBJECTIVE_NEUTRAL, "Neutral"),
-    (Timer.OBJECTIVE_UNDEFINED, "Undefined"),
+    (Timer.Objective.HOSTILE, "Hostile"),
+    (Timer.Objective.FRIENDLY, "Friendly"),
+    (Timer.Objective.NEUTRAL, "Neutral"),
+    (Timer.Objective.UNDEFINED, "Undefined"),
 ]
 
 # structure types
@@ -113,7 +113,7 @@ class Command(BaseCommand):
             if auth_timer.objective in objective_map:
                 objective = objective_map[auth_timer.objective]
             else:
-                objective = Timer.OBJECTIVE_UNDEFINED
+                objective = Timer.Objective.UNDEFINED
 
             if auth_timer.corp_timer:
                 visibility = Timer.VISIBILITY_CORPORATION

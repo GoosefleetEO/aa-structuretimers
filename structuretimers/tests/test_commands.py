@@ -54,7 +54,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
         self.assertEqual(new_timer.structure_type, self.type_astrahus)
         self.assertEqual(new_timer.timer_type, Timer.Type.ARMOR)
         self.assertEqual(new_timer.details_notes, "Armor timer")
-        self.assertEqual(new_timer.objective, Timer.OBJECTIVE_FRIENDLY)
+        self.assertEqual(new_timer.objective, Timer.Objective.FRIENDLY)
         self.assertEqual(new_timer.date, self.auth_timer.eve_time)
         self.assertEqual(new_timer.eve_character, self.character_1)
         self.assertEqual(new_timer.eve_corporation, self.corporation_1)
@@ -70,7 +70,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
 
         new_timer = Timer.objects.first()
         self.assertEqual(new_timer.timer_type, Timer.Type.HULL)
-        self.assertEqual(new_timer.objective, Timer.OBJECTIVE_HOSTILE)
+        self.assertEqual(new_timer.objective, Timer.Objective.HOSTILE)
 
     def test_anchoring(self, mock_get_input):
         mock_get_input.return_value = "Y"
@@ -82,7 +82,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
 
         new_timer = Timer.objects.first()
         self.assertEqual(new_timer.timer_type, Timer.Type.ANCHORING)
-        self.assertEqual(new_timer.objective, Timer.OBJECTIVE_NEUTRAL)
+        self.assertEqual(new_timer.objective, Timer.Objective.NEUTRAL)
 
     def test_final_corp_timer(self, mock_get_input):
         mock_get_input.return_value = "Y"

@@ -46,7 +46,7 @@ for _ in range(MAX_TIMERS):
         date=now()
         + dt.timedelta(days=random.randint(1, 100), hours=random.randint(0, 59)),
         structure_name=f"Generated Timer",
-        objective=random.choice([elem[0] for elem in Timer.OBJECTIVE_CHOICES]),
+        objective=random.choice([elem[0] for elem in Timer.Objective.choices]),
         owner_name=random.choice(owner_names),
     )
 

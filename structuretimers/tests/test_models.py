@@ -82,10 +82,10 @@ class TestTimer(LoadTestDataMixin, TestCase):
         timer = Timer(date=now())
         self.assertEqual(timer.label_type_for_objective(), "default")
 
-        timer.objective = Timer.OBJECTIVE_HOSTILE
+        timer.objective = Timer.Objective.HOSTILE
         self.assertEqual(timer.label_type_for_objective(), "danger")
 
-        timer.objective = Timer.OBJECTIVE_FRIENDLY
+        timer.objective = Timer.Objective.FRIENDLY
         self.assertEqual(timer.label_type_for_objective(), "primary")
 
 
@@ -332,7 +332,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
-            objective=Timer.OBJECTIVE_FRIENDLY,
+            objective=Timer.Objective.FRIENDLY,
         )
         timer.send_notification(self.webhook)
 
@@ -345,7 +345,7 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
-            objective=Timer.OBJECTIVE_HOSTILE,
+            objective=Timer.Objective.HOSTILE,
         )
         timer.send_notification(self.webhook)
 
@@ -364,7 +364,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             timer_type=Timer.Type.ARMOR,
-            objective=Timer.OBJECTIVE_FRIENDLY,
+            objective=Timer.Objective.FRIENDLY,
         )
         self.timer_2 = Timer.objects.create(
             structure_name="Timer 2",
@@ -374,7 +374,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             timer_type=Timer.Type.HULL,
-            objective=Timer.OBJECTIVE_FRIENDLY,
+            objective=Timer.Objective.FRIENDLY,
         )
         self.timer_qs = Timer.objects.all()
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
@@ -420,7 +420,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
         rule = NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
-            require_objectives=[Timer.OBJECTIVE_FRIENDLY],
+            require_objectives=[Timer.Objective.FRIENDLY],
             webhook=self.webhook,
         )
         new_qs = self.timer_qs.conforms_with_notification_rule(rule)
@@ -651,20 +651,20 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_require_objectives(self):
         # do not process if it does not match
-        self.rule.require_objectives = [Timer.OBJECTIVE_HOSTILE]
+        self.rule.require_objectives = [Timer.Objective.HOSTILE]
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
         # process if it does match
-        self.timer.objective = Timer.OBJECTIVE_HOSTILE
+        self.timer.objective = Timer.Objective.HOSTILE
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
     def test_exclude_objectives(self):
         # process if it does match
-        self.rule.exclude_objectives = [Timer.OBJECTIVE_HOSTILE]
+        self.rule.exclude_objectives = [Timer.Objective.HOSTILE]
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
         # do not process if it does not match
-        self.timer.objective = Timer.OBJECTIVE_HOSTILE
+        self.timer.objective = Timer.Objective.HOSTILE
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
     def test_require_corporations(self):
@@ -780,7 +780,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         self.rule_2 = NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=15,
-            require_objectives=[Timer.OBJECTIVE_FRIENDLY],
+            require_objectives=[Timer.Objective.FRIENDLY],
             webhook=self.webhook,
         )
         self.rule_qs = NotificationRule.objects.all()
@@ -799,7 +799,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             timer_type=Timer.Type.ARMOR,
-            objective=Timer.OBJECTIVE_HOSTILE,
+            objective=Timer.Objective.HOSTILE,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)
@@ -819,7 +819,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             timer_type=Timer.Type.HULL,
-            objective=Timer.OBJECTIVE_HOSTILE,
+            objective=Timer.Objective.HOSTILE,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)
@@ -839,7 +839,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             timer_type=Timer.Type.ARMOR,
-            objective=Timer.OBJECTIVE_FRIENDLY,
+            objective=Timer.Objective.FRIENDLY,
         )
         new_qs = self.rule_qs.conforms_with_timer(timer)
         self.assertIsInstance(new_qs, models.QuerySet)

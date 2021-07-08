@@ -111,8 +111,8 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
 
     def test_can_not_have_same_options_objectives(self):
         form = self._open_page()
-        form["require_objectives"] = [Timer.OBJECTIVE_FRIENDLY, Timer.OBJECTIVE_HOSTILE]
-        form["exclude_objectives"] = [Timer.OBJECTIVE_FRIENDLY, Timer.OBJECTIVE_NEUTRAL]
+        form["require_objectives"] = [Timer.Objective.FRIENDLY, Timer.Objective.HOSTILE]
+        form["exclude_objectives"] = [Timer.Objective.FRIENDLY, Timer.Objective.NEUTRAL]
         response = form.submit()
 
         # assert results

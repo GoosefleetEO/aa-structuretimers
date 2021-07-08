@@ -258,18 +258,11 @@ class Timer(models.Model):
         UNANCHORING = "UA", _("Unanchoring")
         MOONMINING = "MM", _("Moon Mining")
 
-    # objective
-    OBJECTIVE_UNDEFINED = "UN"
-    OBJECTIVE_HOSTILE = "HO"
-    OBJECTIVE_FRIENDLY = "FR"
-    OBJECTIVE_NEUTRAL = "NE"
-
-    OBJECTIVE_CHOICES = [
-        (OBJECTIVE_UNDEFINED, _("undefined")),
-        (OBJECTIVE_HOSTILE, _("hostile")),
-        (OBJECTIVE_FRIENDLY, _("friendly")),
-        (OBJECTIVE_NEUTRAL, _("neutral")),
-    ]
+    class Objective(models.TextChoices):
+        UNDEFINED = "UN", _("undefined")
+        HOSTILE = "HO", _("hostile")
+        FRIENDLY = "FR", _("friendly")
+        NEUTRAL = "NE", _("neutral")
 
     # visibility
     VISIBILITY_UNRESTRICTED = "UN"
@@ -295,15 +288,10 @@ class Timer(models.Model):
             "e.g. name of nearby planet / moon / gate"
         ),
     )
-    structure_type = models.ForeignKey(
-        EveType,
-        on_delete=models.CASCADE,
-    )
+    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE)
     structure_name = models.CharField(max_length=254, default="", blank=True)
     objective = models.CharField(
-        max_length=2,
-        choices=OBJECTIVE_CHOICES,
-        default=OBJECTIVE_UNDEFINED,
+        max_length=2, choices=Objective.choices, default=Objective.UNDEFINED
     )
     date = models.DateTimeField(
         db_index=True,
@@ -510,10 +498,10 @@ class Timer(models.Model):
     def label_type_for_objective(self) -> str:
         """returns the Boostrap label type for objective"""
         label_types_map = {
-            self.OBJECTIVE_FRIENDLY: "primary",
-            self.OBJECTIVE_HOSTILE: "danger",
-            self.OBJECTIVE_NEUTRAL: "info",
-            self.OBJECTIVE_UNDEFINED: "default",
+            self.Objective.FRIENDLY: "primary",
+            self.Objective.HOSTILE: "danger",
+            self.Objective.NEUTRAL: "info",
+            self.Objective.UNDEFINED: "default",
         }
         if self.objective in label_types_map:
             label_type = label_types_map[self.objective]
@@ -546,9 +534,9 @@ class Timer(models.Model):
             f"Our stance is: **{self.get_objective_display()}**."
         )
         structure_icon_url = self.structure_type.icon_url(size=128)
-        if self.objective == self.OBJECTIVE_FRIENDLY:
+        if self.objective == self.Objective.FRIENDLY:
             color = int("0x375a7f", 16)
-        elif self.objective == self.OBJECTIVE_HOSTILE:
+        elif self.objective == self.Objective.HOSTILE:
             color = int("0xd9534f", 16)
         else:
             color = None
@@ -666,7 +654,7 @@ class NotificationRule(models.Model):
         help_text="Timer must NOT have one of the given timer types",
     )
     require_objectives = MultiSelectField(
-        choices=Timer.OBJECTIVE_CHOICES,
+        choices=Timer.Objective.choices,
         blank=True,
         help_text=(
             "Timer must have one of the given objectives "
@@ -674,7 +662,7 @@ class NotificationRule(models.Model):
         ),
     )
     exclude_objectives = MultiSelectField(
-        choices=Timer.OBJECTIVE_CHOICES,
+        choices=Timer.Objective.choices,
         blank=True,
         help_text="Timer must NOT have one of the given objectives",
     )
@@ -829,7 +817,7 @@ class NotificationRule(models.Model):
 
     @classmethod
     def get_objectives_display(cls, value: Any) -> str:
-        return cls.get_multiselect_display(value, Timer.OBJECTIVE_CHOICES)
+        return cls.get_multiselect_display(value, Timer.Objective.choices)
 
     @staticmethod
     def get_multiselect_display(value: Any, choices: List[Tuple[Any, str]]) -> str:
