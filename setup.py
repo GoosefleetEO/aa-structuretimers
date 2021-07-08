@@ -44,12 +44,12 @@ setup(
     ],
     python_requires="~=3.6",
     install_requires=[
-        "allianceauth>=2.8.0",
-        "django-eveuniverse",
+        "allianceauth>=2.8",
+        "django-eveuniverse>=0.8",
         "redis-simple-mq>=0.3.1",
-        "dhooks_lite>=0.5.0",
+        "dhooks_lite>=0.5",
         "django-multiselectfield",
         "requests",
-        "allianceauth-app-utils>=1.0.0",
+        "allianceauth-app-utils>=1.7",
     ],
 )

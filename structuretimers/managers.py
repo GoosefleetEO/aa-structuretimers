@@ -83,5 +83,14 @@ class TimerManagerBase(models.Manager):
         else:
             return 0
 
+    def recalc_distances(self) -> None:
+        from .models import Settings
+
+        settings = Settings.load()
+        timers = self.in_bulk().values()
+        for timer in timers:
+            timer.update_distances(settings)
+        self.bulk_update(timers, fields=["distance_from_staging", "jumps_from_staging"])
+
 
 TimerManager = TimerManagerBase.from_queryset(TimerQuerySet)

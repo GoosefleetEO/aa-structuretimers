@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Optional
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -9,10 +8,9 @@ from django.shortcuts import reverse
 from django.urls import reverse_lazy
 from django.utils.html import format_html, mark_safe
 from django.utils.timezone import now
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
-from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
@@ -30,7 +28,6 @@ from app_utils.views import (
 from . import __title__
 from .app_settings import (
     STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
-    STRUCTURETIMERS_HOME_SYSTEM_ID,
     STRUCTURETIMERS_PAGING_ENABLED,
 )
 from .constants import (
@@ -42,22 +39,11 @@ from .constants import (
     EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
-from .models import Timer
+from .models import Settings, Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 MAX_HOURS_PASSED = 2
-
-
-def fetch_home_system() -> Optional[EveSolarSystem]:
-    """Current home system if defined. Else None"""
-    if STRUCTURETIMERS_HOME_SYSTEM_ID:
-        home_system, _ = EveSolarSystem.objects.get_or_create_esi(
-            id=STRUCTURETIMERS_HOME_SYSTEM_ID
-        )
-    else:
-        home_system = None
-    return home_system
 
 
 class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
@@ -65,6 +51,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     permission_required = ("structuretimers.basic_access",)
 
     def get_context_data(self, **kwargs):
+        settings = Settings.load()
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -73,9 +60,10 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "title": __title__,
                 "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
                 "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
-                "home_system": fetch_home_system(),
+                "home_system": settings.staging_system,
             }
         )
+        return context
 
 
 @login_required
@@ -100,7 +88,6 @@ def timer_list_data(request, tab_name):
         "eve_corporation",
         "eve_alliance",
     )
-    home_system = fetch_home_system()
     data = list()
     for timer in timers_qs:
         # location
@@ -116,11 +103,13 @@ def timer_list_data(request, tab_name):
         )
 
         # distance
-        if home_system:
-            distance_ly = meters_to_ly(timer.eve_solar_system.distance_to(home_system))
-        else:
-            distance_ly = None
-        distance = f"{distance_ly:.1f} ly" if distance_ly else "?"
+        distance_ly = (
+            f"{timer.distance_from_staging:.1f} ly"
+            if timer.distance_from_staging
+            else "?"
+        )
+        jumps = f"{timer.jumps_from_staging} jumps" if timer.jumps_from_staging else "?"
+        distance = format_html("{}<br>{}", distance_ly, jumps)
 
         # structure & timer type & fitting image
         timer_type = bootstrap_label_html(

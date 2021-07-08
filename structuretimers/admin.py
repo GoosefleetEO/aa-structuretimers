@@ -10,7 +10,13 @@ from django.utils.timezone import now
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
 from . import tasks
-from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
+from .models import (
+    DiscordWebhook,
+    NotificationRule,
+    ScheduledNotification,
+    Settings,
+    Timer,
+)
 
 
 @admin.register(DiscordWebhook)
@@ -334,3 +340,11 @@ class TimerAdmin(admin.ModelAdmin):
     send_test_notification.short_description = (
         "Send test notification for selected timers to all enabled webhooks"
     )
+
+
+@admin.register(Settings)
+class SettingsAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["staging_system"]
+
+    def has_delete_permission(self, request, obj=None):
+        return False

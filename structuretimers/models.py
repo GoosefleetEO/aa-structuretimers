@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
@@ -269,46 +270,34 @@ class Timer(models.Model):
         ALLIANCE = "AL", _("Alliance only")
         CORPORATION = "CO", _("Corporation only")
 
-    timer_type = models.CharField(max_length=2, choices=Type.choices, default=Type.NONE)
-    eve_solar_system = models.ForeignKey(
-        EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
-    )
-    location_details = models.CharField(
-        max_length=254,
-        default="",
-        blank=True,
-        help_text=(
-            "Additional information about the location of this structure, "
-            "e.g. name of nearby planet / moon / gate"
-        ),
-    )
-    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE)
-    structure_name = models.CharField(max_length=254, default="", blank=True)
-    objective = models.CharField(
-        max_length=2, choices=Objective.choices, default=Objective.UNDEFINED
-    )
     date = models.DateTimeField(
         db_index=True,
         help_text="Date when this timer happens",
     )
-    is_important = models.BooleanField(
-        default=False,
-        help_text="Mark this timer as is_important",
-    )
-    owner_name = models.CharField(
-        max_length=254,
+    details_image_url = models.CharField(
+        max_length=1024,
         default=None,
         blank=True,
         null=True,
-        help_text="Name of the corporation owning the structure",
-    )
-    is_opsec = models.BooleanField(
-        default=False,
-        db_index=True,
         help_text=(
-            "Limit access to users with OPSEC clearance. "
-            "Can be combined with visibility."
+            "URL for details like a screenshot of the structure's fitting, "
+            "e.g. https://www.example.com/route/image.jpg"
         ),
+    )
+    details_notes = models.TextField(
+        default="",
+        blank=True,
+        help_text="Notes with additional information about this timer",
+    )
+    distance_from_staging = models.FloatField(null=True, default=None, blank=True)
+    eve_alliance = models.ForeignKey(
+        EveAllianceInfo,
+        on_delete=models.SET_DEFAULT,
+        default=None,
+        null=True,
+        blank=True,
+        related_name="Timers",
+        help_text="Alliance of the user who created this timer",
     )
     eve_character = models.ForeignKey(
         EveCharacter,
@@ -328,14 +317,58 @@ class Timer(models.Model):
         related_name="Timers",
         help_text="Corporation of the user who created this timer",
     )
-    eve_alliance = models.ForeignKey(
-        EveAllianceInfo,
-        on_delete=models.SET_DEFAULT,
+    eve_solar_system = models.ForeignKey(
+        EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
+    )
+    jumps_from_staging = models.PositiveIntegerField(
+        null=True, default=None, blank=True
+    )
+    is_important = models.BooleanField(
+        default=False,
+        help_text="Mark this timer as is_important",
+    )
+    is_opsec = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text=(
+            "Limit access to users with OPSEC clearance. "
+            "Can be combined with visibility."
+        ),
+    )
+    location_details = models.CharField(
+        max_length=254,
+        default="",
+        blank=True,
+        help_text=(
+            "Additional information about the location of this structure, "
+            "e.g. name of nearby planet / moon / gate"
+        ),
+    )
+    notification_rules = models.ManyToManyField(
+        "NotificationRule",
+        through="ScheduledNotification",
+        through_fields=("timer", "notification_rule"),
+        help_text="Notification rules conforming with this timer",
+    )
+    objective = models.CharField(
+        max_length=2, choices=Objective.choices, default=Objective.UNDEFINED
+    )
+    owner_name = models.CharField(
+        max_length=254,
         default=None,
+        blank=True,
         null=True,
+        help_text="Name of the corporation owning the structure",
+    )
+    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE)
+    structure_name = models.CharField(max_length=254, default="", blank=True)
+    timer_type = models.CharField(max_length=2, choices=Type.choices, default=Type.NONE)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
         blank=True,
         related_name="Timers",
-        help_text="Alliance of the user who created this timer",
     )
     visibility = models.CharField(
         max_length=2,
@@ -346,34 +379,6 @@ class Timer(models.Model):
             "The visibility of this timer can be limited to members"
             " of your organization"
         ),
-    )
-    user = models.ForeignKey(
-        User,
-        null=True,
-        on_delete=models.SET_NULL,
-        blank=True,
-        related_name="Timers",
-    )
-    details_image_url = models.CharField(
-        max_length=1024,
-        default=None,
-        blank=True,
-        null=True,
-        help_text=(
-            "URL for details like a screenshot of the structure's fitting, "
-            "e.g. https://www.example.com/route/image.jpg"
-        ),
-    )
-    details_notes = models.TextField(
-        default="",
-        blank=True,
-        help_text="Notes with additional information about this timer",
-    )
-    notification_rules = models.ManyToManyField(
-        "NotificationRule",
-        through="ScheduledNotification",
-        through_fields=("timer", "notification_rule"),
-        help_text="Notification rules conforming with this timer",
     )
 
     objects = TimerManager()
@@ -407,6 +412,7 @@ class Timer(models.Model):
             except Timer.DoesNotExist:
                 pass
 
+        self.update_distances()
         super().save(*args, **kwargs)
         if notification_enabled and (is_new or date_changed):
             self._import_schedule_notifications_for_timer().apply_async(
@@ -471,6 +477,20 @@ class Timer(models.Model):
 
         return True
     """
+
+    def update_distances(self, settings=None):
+        if not settings:
+            settings = Settings.load()
+        if settings.staging_system:
+            self.distance_from_staging = meters_to_ly(
+                self.eve_solar_system.distance_to(settings.staging_system)
+            )
+            self.jumps_from_staging = self.eve_solar_system.jumps_to(
+                settings.staging_system
+            )
+        else:
+            self.distance_from_staging = None
+            self.jumps_from_staging = None
 
     def label_type_for_timer_type(self) -> str:
         """returns the Boostrap label type for a timer_type"""
@@ -584,6 +604,14 @@ class NotificationRule(models.Model):
         NONE = "PN", "(no ping)"
         HERE = "PH", "@here"
         EVERYONE = "PE", "@everyone"
+
+        def to_text(self) -> str:
+            """returns the text for creating the given ping on Discord"""
+            my_map = {self.NONE: "", self.HERE: "@here", self.EVERYONE: "@everyone"}
+            try:
+                return my_map[self]
+            except KeyError:
+                return ""
 
     class Clause(models.TextChoices):
         ANY = "AN", "any"
@@ -729,7 +757,7 @@ class NotificationRule(models.Model):
 
     @property
     def ping_type_text(self) -> str:
-        return self.ping_type_to_text(self.ping_type)
+        return self.PingType(self.ping_type).to_text()
 
     def prepend_ping_text(self, text: str) -> str:
         """prepends ping text to given text and returns it as new text string"""
@@ -782,24 +810,6 @@ class NotificationRule(models.Model):
 
         return is_matching
 
-    @classmethod
-    def ping_type_to_text(cls, ping_type: str) -> str:
-        """returns the text for creating the given ping on Discord"""
-        my_map = {
-            NotificationRule.PingType.NONE: "",
-            NotificationRule.PingType.HERE: "@here",
-            NotificationRule.PingType.EVERYONE: "@everyone",
-        }
-        return my_map[ping_type] if ping_type in my_map else ""
-
-    @classmethod
-    def get_timer_type_display(cls, value: Any) -> str:
-        return cls.get_multiselect_display(value, Timer.Type.choices)
-
-    @classmethod
-    def get_objectives_display(cls, value: Any) -> str:
-        return cls.get_multiselect_display(value, Timer.Objective.choices)
-
     @staticmethod
     def get_multiselect_display(value: Any, choices: List[Tuple[Any, str]]) -> str:
         for choice, text in choices:
@@ -834,3 +844,41 @@ class ScheduledNotification(models.Model):
             f"timer_date='{self.timer_date}', "
             f"notification_date='{self.notification_date}')"
         )
+
+
+class Settings(models.Model):
+    staging_system = models.ForeignKey(
+        EveSolarSystem,
+        on_delete=models.SET_DEFAULT,
+        default=None,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "settings"
+        verbose_name_plural = "settings"
+
+    def __str__(self) -> str:
+        return "SETTINGS"
+
+    def save(self, *args, **kwargs):
+        try:
+            old_instance = Settings.objects.get(pk=1)
+        except Settings.DoesNotExist:
+            needs_timer_update = True
+        else:
+            needs_timer_update = old_instance.staging_system != self.staging_system
+        self.pk = 1
+        super().save(*args, **kwargs)
+        if needs_timer_update:
+            Timer.objects.recalc_distances()
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.select_related("staging_system").get_or_create(pk=1)
+        return obj

@@ -297,3 +297,18 @@ def housekeeping() -> None:
     logger.info("Performing housekeeping")
     deleted_count = Timer.objects.delete_obsolete()
     logger.info(f"Deleted {deleted_count:,} obsolete timers.")
+
+
+# @shared_task
+# def recalc_all_timer_distances() -> None:
+#     """Recald distances from staging for all timers."""
+#     for timer_pk in Timer.objects.values_list("pk", flat=True):
+#         recalc_time_distances(timer_pk).delay()
+
+
+# @shared_task
+# def recalc_time_distances(timer_pk: int) -> None:
+#     """Recald distances from staging for a timer."""
+#     timer = Timer.objective.get(pk=timer_pk)
+#     timer.update_distances()
+#     timer.save()
