@@ -116,9 +116,9 @@ class Command(BaseCommand):
                 objective = Timer.Objective.UNDEFINED
 
             if auth_timer.corp_timer:
-                visibility = Timer.VISIBILITY_CORPORATION
+                visibility = Timer.Visibility.CORPORATION
             else:
-                visibility = Timer.VISIBILITY_UNRESTRICTED
+                visibility = Timer.Visibility.UNRESTRICTED
 
             details_lower = auth_timer.details.lower()
             if "Moon Mining Cycle" in auth_timer.structure:

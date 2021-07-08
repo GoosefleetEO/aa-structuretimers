@@ -55,14 +55,14 @@ class TimerQuerySet(models.QuerySet):
             timers_qs = timers_qs.exclude(is_opsec=True)
 
         timers_qs = (
-            timers_qs.filter(visibility=self.model.VISIBILITY_UNRESTRICTED)
+            timers_qs.filter(visibility=self.model.Visibility.UNRESTRICTED)
             | timers_qs.filter(user=user)
             | timers_qs.filter(
-                visibility=self.model.VISIBILITY_CORPORATION,
+                visibility=self.model.Visibility.CORPORATION,
                 eve_corporation__corporation_id__in=user_corporation_ids,
             )
             | timers_qs.filter(
-                visibility=self.model.VISIBILITY_ALLIANCE,
+                visibility=self.model.Visibility.ALLIANCE,
                 eve_alliance__alliance_id__in=user_alliance_ids,
             )
         )

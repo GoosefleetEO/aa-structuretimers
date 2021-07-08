@@ -264,16 +264,10 @@ class Timer(models.Model):
         FRIENDLY = "FR", _("friendly")
         NEUTRAL = "NE", _("neutral")
 
-    # visibility
-    VISIBILITY_UNRESTRICTED = "UN"
-    VISIBILITY_ALLIANCE = "AL"
-    VISIBILITY_CORPORATION = "CO"
-
-    VISIBILITY_CHOICES = [
-        (VISIBILITY_UNRESTRICTED, _("unrestricted")),
-        (VISIBILITY_ALLIANCE, _("Alliance only")),
-        (VISIBILITY_CORPORATION, _("Corporation only")),
-    ]
+    class Visibility(models.TextChoices):
+        UNRESTRICTED = "UN", _("unrestricted")
+        ALLIANCE = "AL", _("Alliance only")
+        CORPORATION = "CO", _("Corporation only")
 
     timer_type = models.CharField(max_length=2, choices=Type.choices, default=Type.NONE)
     eve_solar_system = models.ForeignKey(
@@ -345,8 +339,8 @@ class Timer(models.Model):
     )
     visibility = models.CharField(
         max_length=2,
-        choices=VISIBILITY_CHOICES,
-        default=VISIBILITY_UNRESTRICTED,
+        choices=Visibility.choices,
+        default=Visibility.UNRESTRICTED,
         db_index=True,
         help_text=(
             "The visibility of this timer can be limited to members"
@@ -450,7 +444,7 @@ class Timer(models.Model):
             return False
 
         if (
-            self.visibility == self.VISIBILITY_CORPORATION
+            self.visibility == self.Visibility.CORPORATION
             and self.eve_corporation
             and (
                 not user.profile.main_character
@@ -463,7 +457,7 @@ class Timer(models.Model):
             return False
 
         if (
-            self.visibility == self.VISIBILITY_ALLIANCE
+            self.visibility == self.Visibility.ALLIANCE
             and self.eve_alliance
             and (
                 not user.profile.main_character
@@ -697,14 +691,14 @@ class NotificationRule(models.Model):
         help_text="Timer must NOT be created by one of the given alliances",
     )
     require_visibility = MultiSelectField(
-        choices=Timer.VISIBILITY_CHOICES,
+        choices=Timer.Visibility.choices,
         blank=True,
         help_text=(
             "Visibility must be one of the selected or leave blank to match any."
         ),
     )
     exclude_visibility = MultiSelectField(
-        choices=Timer.VISIBILITY_CHOICES,
+        choices=Timer.Visibility.choices,
         blank=True,
         help_text="Visibility must NOT be one of the selected",
     )

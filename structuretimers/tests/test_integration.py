@@ -414,7 +414,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         from another corp
         then he is redirected back to dashboard
         """
-        self.timer_3.visibility = Timer.VISIBILITY_CORPORATION
+        self.timer_3.visibility = Timer.Visibility.CORPORATION
         self.timer_3.save()
 
         # login

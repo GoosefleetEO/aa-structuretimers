@@ -122,8 +122,8 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
 
     def test_can_not_have_same_options_visibility(self):
         form = self._open_page()
-        form["require_visibility"] = [Timer.VISIBILITY_CORPORATION]
-        form["exclude_visibility"] = [Timer.VISIBILITY_CORPORATION]
+        form["require_visibility"] = [Timer.Visibility.CORPORATION]
+        form["exclude_visibility"] = [Timer.Visibility.CORPORATION]
         response = form.submit()
 
         # assert results

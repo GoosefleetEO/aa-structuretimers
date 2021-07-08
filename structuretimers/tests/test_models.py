@@ -221,7 +221,7 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_corporation=self.corporation_1,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
             user=self.user_1,
         )
         self.assertFalse(timer.user_can_view(self.user_3))
@@ -232,7 +232,7 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_corporation=self.corporation_1,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
             user=self.user_1,
         )
         self.assertTrue(timer.user_can_view(self.user_2))
@@ -243,7 +243,7 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_alliance=self.alliance_1,
-            visibility=Timer.VISIBILITY_ALLIANCE,
+            visibility=Timer.Visibility.ALLIANCE,
             user=self.user_1,
         )
         self.assertFalse(timer.user_can_view(self.user_3))
@@ -713,20 +713,20 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_require_visibility(self):
         # do not process if it does not match
-        self.rule.require_visibility = [Timer.VISIBILITY_CORPORATION]
+        self.rule.require_visibility = [Timer.Visibility.CORPORATION]
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
         # process if it does match
-        self.timer.visibility = Timer.VISIBILITY_CORPORATION
+        self.timer.visibility = Timer.Visibility.CORPORATION
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
     def test_exclude_visibility(self):
         # process if it does match
-        self.rule.exclude_visibility = [Timer.VISIBILITY_CORPORATION]
+        self.rule.exclude_visibility = [Timer.Visibility.CORPORATION]
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
         # do not process if it does not match
-        self.timer.visibility = Timer.VISIBILITY_CORPORATION
+        self.timer.visibility = Timer.Visibility.CORPORATION
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
     def test_require_important(self):

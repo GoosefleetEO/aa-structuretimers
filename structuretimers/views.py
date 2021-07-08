@@ -153,7 +153,7 @@ def timer_list_data(request, tab_name):
             tags.append(bootstrap_label_html("OPSEC", "danger"))
             is_restricted = True
 
-        if timer.visibility != Timer.VISIBILITY_UNRESTRICTED:
+        if timer.visibility != Timer.Visibility.UNRESTRICTED:
             tags.append(bootstrap_label_html(timer.get_visibility_display(), "info"))
             is_restricted = True
 
@@ -203,9 +203,9 @@ def timer_list_data(request, tab_name):
 
         # visibility
         visibility = ""
-        if timer.visibility == Timer.VISIBILITY_ALLIANCE and timer.eve_alliance:
+        if timer.visibility == Timer.Visibility.ALLIANCE and timer.eve_alliance:
             visibility = timer.eve_alliance.alliance_name
-        elif timer.visibility == Timer.VISIBILITY_CORPORATION:
+        elif timer.visibility == Timer.Visibility.CORPORATION:
             visibility = corporation_name
 
         # actions

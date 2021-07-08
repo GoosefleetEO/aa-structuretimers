@@ -80,7 +80,7 @@ class NotificationRuleAdminForm(forms.ModelForm):
             "require_visibility",
             "exclude_visibility",
             lambda x: NotificationRule.get_multiselect_display(
-                x, Timer.VISIBILITY_CHOICES
+                x, Timer.Visibility.choices
             ),
         )
         self._validate_not_same_options_chosen(
@@ -161,8 +161,8 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             ("exclude_timer_types", self._add_to_clauses_1, Timer.Type.choices),
             ("require_objectives", self._add_to_clauses_1, Timer.Objective.choices),
             ("exclude_objectives", self._add_to_clauses_1, Timer.Objective.choices),
-            ("require_visibility", self._add_to_clauses_1, Timer.VISIBILITY_CHOICES),
-            ("exclude_visibility", self._add_to_clauses_1, Timer.VISIBILITY_CHOICES),
+            ("require_visibility", self._add_to_clauses_1, Timer.Visibility.choices),
+            ("exclude_visibility", self._add_to_clauses_1, Timer.Visibility.choices),
             ("require_corporations", self._add_to_clauses_2, None),
             ("exclude_corporations", self._add_to_clauses_2, None),
             ("require_alliances", self._add_to_clauses_2, None),

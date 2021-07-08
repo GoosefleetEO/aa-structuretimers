@@ -100,7 +100,7 @@ class TimerForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     visibility = forms.ChoiceField(
-        choices=Timer.VISIBILITY_CHOICES,
+        choices=Timer.Visibility.choices,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     days_left = forms.IntegerField(

@@ -109,7 +109,7 @@ class TestListData(TestViewBase):
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             user=self.user_2,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
         )
         timer_4.save()
         timer_ids = self._send_request()
@@ -125,7 +125,7 @@ class TestListData(TestViewBase):
             eve_character=self.character_3,
             eve_corporation=self.corporation_3,
             user=self.user_3,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
         )
         timer.save()
         timer_ids = self._send_request()
@@ -142,7 +142,7 @@ class TestListData(TestViewBase):
             eve_corporation=self.corporation_1,
             eve_alliance=self.alliance_1,
             user=self.user_2,
-            visibility=Timer.VISIBILITY_ALLIANCE,
+            visibility=Timer.Visibility.ALLIANCE,
         )
         timer_4.save()
         timer_ids = self._send_request()
@@ -159,7 +159,7 @@ class TestListData(TestViewBase):
             eve_corporation=self.corporation_3,
             eve_alliance=self.alliance_3,
             user=self.user_3,
-            visibility=Timer.VISIBILITY_ALLIANCE,
+            visibility=Timer.Visibility.ALLIANCE,
         )
         timer.save()
         timer_ids = self._send_request()
@@ -214,7 +214,7 @@ class TestListData(TestViewBase):
             eve_corporation=self.corporation_3,
             user=self.user_3,
             is_opsec=True,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
         )
         timer.save()
         timer_ids = self._send_request()
@@ -229,7 +229,7 @@ class TestListData(TestViewBase):
             date=now() + timedelta(hours=8),
             eve_character=self.character_3,
             eve_corporation=self.corporation_3,
-            visibility=Timer.VISIBILITY_CORPORATION,
+            visibility=Timer.Visibility.CORPORATION,
             user=self.user_1,
         )
         timer_ids = self._send_request()
@@ -245,7 +245,7 @@ class TestListData(TestViewBase):
             eve_character=self.character_3,
             eve_alliance=self.alliance_3,
             eve_corporation=self.corporation_3,
-            visibility=Timer.VISIBILITY_ALLIANCE,
+            visibility=Timer.Visibility.ALLIANCE,
             user=self.user_1,
         )
         timer_ids = self._send_request()

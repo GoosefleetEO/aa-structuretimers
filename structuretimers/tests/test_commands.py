@@ -94,7 +94,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
 
         new_timer = Timer.objects.first()
         self.assertEqual(new_timer.timer_type, Timer.Type.FINAL)
-        self.assertEqual(new_timer.visibility, Timer.VISIBILITY_CORPORATION)
+        self.assertEqual(new_timer.visibility, Timer.Visibility.CORPORATION)
 
     def test_moon_mining(self, mock_get_input):
         mock_get_input.return_value = "Y"
