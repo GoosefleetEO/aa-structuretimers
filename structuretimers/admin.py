@@ -193,7 +193,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             self._append_field_to_clauses(clauses, field, text)
 
     def _add_to_clauses_3(self, clauses, obj, field, choices=None):
-        if getattr(obj, field) != NotificationRule.CLAUSE_ANY:
+        if getattr(obj, field) != NotificationRule.Clause.ANY:
             text = getattr(obj, f"get_{field}_display")()
             self._append_field_to_clauses(clauses, field, text)
 

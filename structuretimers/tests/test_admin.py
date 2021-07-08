@@ -42,7 +42,7 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
         NotificationRule.objects.create(
             trigger=NotificationRule.TRIGGER_SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
-            is_important=NotificationRule.CLAUSE_EXCLUDED,
+            is_important=NotificationRule.Clause.EXCLUDED,
             webhook=self.webhook,
         )
 

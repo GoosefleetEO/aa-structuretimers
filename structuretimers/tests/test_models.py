@@ -731,7 +731,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_require_important(self):
         # do not process if it does not match
-        self.rule.is_important = NotificationRule.CLAUSE_REQUIRED
+        self.rule.is_important = NotificationRule.Clause.REQUIRED
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
         # process if it does match
@@ -740,7 +740,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_exclude_important(self):
         # process if it does match
-        self.rule.is_important = NotificationRule.CLAUSE_EXCLUDED
+        self.rule.is_important = NotificationRule.Clause.EXCLUDED
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
         # do not process if it does not match
@@ -749,7 +749,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_require_opsec(self):
         # do not process if it does not match
-        self.rule.is_opsec = NotificationRule.CLAUSE_REQUIRED
+        self.rule.is_opsec = NotificationRule.Clause.REQUIRED
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
         # process if it does match
@@ -758,7 +758,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
     def test_exclude_opsec(self):
         # process if it does match
-        self.rule.is_opsec = NotificationRule.CLAUSE_EXCLUDED
+        self.rule.is_opsec = NotificationRule.Clause.EXCLUDED
         self.assertTrue(self.rule.is_matching_timer(self.timer))
 
         # do not process if it does not match

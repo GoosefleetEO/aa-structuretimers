@@ -588,15 +588,10 @@ class NotificationRule(models.Model):
         HERE = "PH", "@here"
         EVERYONE = "PE", "@everyone"
 
-    # Clause choices
-    CLAUSE_ANY = "AN"
-    CLAUSE_REQUIRED = "RQ"
-    CLAUSE_EXCLUDED = "EX"
-    CLAUSE_CHOICES = (
-        (CLAUSE_ANY, "any"),
-        (CLAUSE_REQUIRED, "required"),
-        (CLAUSE_EXCLUDED, "excluded"),
-    )
+    class Clause(models.TextChoices):
+        ANY = "AN", "any"
+        REQUIRED = "RQ", "required"
+        EXCLUDED = "EX", "excluded"
 
     trigger = models.CharField(
         max_length=2,
@@ -699,14 +694,14 @@ class NotificationRule(models.Model):
     )
     is_important = models.CharField(
         max_length=2,
-        choices=CLAUSE_CHOICES,
-        default=CLAUSE_ANY,
+        choices=Clause.choices,
+        default=Clause.ANY,
         help_text="Wether the timer must be important",
     )
     is_opsec = models.CharField(
         max_length=2,
-        choices=CLAUSE_CHOICES,
-        default=CLAUSE_ANY,
+        choices=Clause.choices,
+        default=Clause.ANY,
         help_text="Wether the timer must be OPSEC",
     )
 
@@ -746,16 +741,16 @@ class NotificationRule(models.Model):
     def is_matching_timer(self, timer: "Timer") -> bool:
         """returns True if notification rule is matching the given timer, else False"""
         is_matching = True
-        if is_matching and self.is_important == self.CLAUSE_REQUIRED:
+        if is_matching and self.is_important == self.Clause.REQUIRED:
             is_matching = timer.is_important
 
-        if is_matching and self.is_important == self.CLAUSE_EXCLUDED:
+        if is_matching and self.is_important == self.Clause.EXCLUDED:
             is_matching = not timer.is_important
 
-        if is_matching and self.is_opsec == self.CLAUSE_REQUIRED:
+        if is_matching and self.is_opsec == self.Clause.REQUIRED:
             is_matching = timer.is_opsec
 
-        if is_matching and self.is_opsec == self.CLAUSE_EXCLUDED:
+        if is_matching and self.is_opsec == self.Clause.EXCLUDED:
             is_matching = not timer.is_opsec
 
         if is_matching and self.require_visibility:
