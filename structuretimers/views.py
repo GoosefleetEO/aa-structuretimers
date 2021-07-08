@@ -283,7 +283,7 @@ def timer_list_data(request, tab_name):
 
 @login_required
 @permission_required("structuretimers.basic_access")
-def get_timer_data(request, pk):
+def get_timer_data(request, pk: str):
     """returns data for a timer"""
     timers_qs = Timer.objects.filter(pk=pk).visible_to_user(request.user)
     if timers_qs.exists():
