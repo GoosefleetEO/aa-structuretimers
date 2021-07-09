@@ -74,7 +74,7 @@
             </div>
             <div class="modal-body">
                 <div id="modal_div_spinner">
-                    <img class="center-block" src="{% static 'structuretimers/Spinner-1s-200px.gif' %}" alt="Spinner"/>
+                    <img class="center-block" src="{% static 'structuretimers/img/Spinner-1s-200px.gif' %}" alt="Spinner"/>
                 </div>
                 <div id="modal_div_data" style="display: none">
                     <label for="timerboardTimer">Timer</label>
@@ -118,13 +118,13 @@
 
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
-    <link rel="stylesheet" href="{% static 'structuretimers/global.css' %}" type="text/css" media="screen">
-    <link rel="stylesheet" href="{% static 'structuretimers/timer_list.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structuretimers/css/global.css' %}" type="text/css" media="screen">
+    <link rel="stylesheet" href="{% static 'structuretimers/css/timer_list.css' %}" type="text/css" media="screen">
 {% endblock extra_css%}
 
 {% block extra_javascript %}
     {% include 'bundles/moment-js.html' with locale=True %}
     {% include 'bundles/datatables-js.html' %}
     <script type="application/javascript" src="{% static 'js/filterDropDown/filterDropDown.min.js' %}"></script>
-    <script type="application/javascript" src="{% static 'structuretimers/timer_list.js' %}"></script>
+    <script type="application/javascript" src="{% static 'structuretimers/js/timer_list.js' %}"></script>
 {% endblock extra_javascript %}

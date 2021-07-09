@@ -34,7 +34,7 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 def default_avatar_url() -> str:
     """avatar url for all messages"""
-    return static_file_absolute_url("structuretimers/structuretimers_logo.png")
+    return static_file_absolute_url("structuretimers/img/structuretimers_logo.png")
 
 
 def _task_calc_staging_system():
