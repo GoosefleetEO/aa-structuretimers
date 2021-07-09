@@ -9,7 +9,12 @@ from django.utils.timezone import now
 
 from .. import views
 from ..models import Timer
-from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
+from . import (
+    LoadTestDataMixin,
+    add_permission_to_user_by_name,
+    create_fake_timer,
+    create_test_user,
+)
 
 MODULE_PATH = "structures.views"
 
@@ -222,7 +227,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_corp_timer_to_creator_of_different_corp(self):
-        timer_4 = Timer.objects.create(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -237,7 +242,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_alliance_timer_to_creator_of_different_alliance(self):
-        timer_4 = Timer.objects.create(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -253,7 +258,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_can_show_timers_without_user_character_corporation_or_alliance(self):
-        timer_4 = Timer.objects.create(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,

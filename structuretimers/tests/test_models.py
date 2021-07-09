@@ -1,11 +1,12 @@
 import json
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import dhooks_lite
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.db import models
+from django.test import TestCase, override_settings
 from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
@@ -16,15 +17,20 @@ from ..models import (
     DiscordWebhook,
     NotificationRule,
     ScheduledNotification,
+    StagingSystem,
     Timer,
-    models,
 )
-from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
+from . import (
+    LoadTestDataMixin,
+    add_permission_to_user_by_name,
+    create_fake_timer,
+    create_test_user,
+)
 
 MODULE_PATH = "structuretimers.models"
 
 
-class TestTimer(LoadTestDataMixin, TestCase):
+class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
     def test_str(self):
         timer = Timer(
             structure_name="Test",
@@ -89,7 +95,8 @@ class TestTimer(LoadTestDataMixin, TestCase):
         self.assertEqual(timer.label_type_for_objective(), "primary")
 
 
-class TestTimerSave(LoadTestDataMixin, TestCase):
+@patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
+class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -97,9 +104,9 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
             name="Dummy", url="http://www.example.com"
         )
 
-    @patch(MODULE_PATH + ".Timer._import_schedule_notifications_for_timer")
+    @patch(MODULE_PATH + ".Timer._task_schedule_notifications_for_timer")
     def test_schedule_notifications_for_new_timers(self, mock_import_func):
-        timer = Timer.objects.create(
+        timer = create_fake_timer(
             date=now() + timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -108,7 +115,7 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
         _, kwargs = mock_import_func.return_value.apply_async.call_args
         self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
 
-    @patch(MODULE_PATH + ".Timer._import_schedule_notifications_for_timer")
+    @patch(MODULE_PATH + ".Timer._task_schedule_notifications_for_timer")
     def test_dont_schedule_notifications_for_new_timers_when_turned_off(
         self, mock_import_func
     ):
@@ -122,16 +129,16 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
 
     def test_schedule_notifications_when_date_changed(self):
         with patch(
-            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
         ) as mock_import_func:
-            timer = Timer.objects.create(
+            timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
                 eve_solar_system=self.system_abune,
                 structure_type=self.type_astrahus,
             )
 
         with patch(
-            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer.date = now() + timedelta(hours=3)
             timer.save()
@@ -141,16 +148,16 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
 
     def test_dont_schedule_notifications_else(self):
         with patch(
-            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
         ) as mock_import_func:
-            timer = Timer.objects.create(
+            timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
                 eve_solar_system=self.system_abune,
                 structure_type=self.type_astrahus,
             )
 
         with patch(
-            MODULE_PATH + ".Timer._import_schedule_notifications_for_timer"
+            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer.date = now() + timedelta(hours=3)
             timer.structure_name = "Some fancy name"
@@ -158,7 +165,7 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-class TestTimerAccess(LoadTestDataMixin, TestCase):
+class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -272,15 +279,15 @@ class TestTimerAccess(LoadTestDataMixin, TestCase):
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 @patch("structuretimers.managers.STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS", 1)
-class TestTimerManger(LoadTestDataMixin, TestCase):
+class TestTimerManger(LoadTestDataMixin, NoSocketsTestCase):
     def test_delete_old_timer(self):
-        timer_1 = Timer.objects.create(
+        timer_1 = create_fake_timer(
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             date=now(),
         )
-        timer_2 = Timer.objects.create(
+        timer_2 = create_fake_timer(
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
@@ -293,7 +300,7 @@ class TestTimerManger(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".DiscordWebhook.send_message", spec=True)
-class TestTimerSendNotification(LoadTestDataMixin, TestCase):
+class TestTimerSendNotification(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -353,10 +360,10 @@ class TestTimerSendNotification(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-class TestTimerQuerySet(LoadTestDataMixin, TestCase):
+class TestTimerQuerySet(LoadTestDataMixin, NoSocketsTestCase):
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = Timer.objects.create(
+        self.timer_1 = create_fake_timer(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -366,7 +373,7 @@ class TestTimerQuerySet(LoadTestDataMixin, TestCase):
             timer_type=Timer.Type.ARMOR,
             objective=Timer.Objective.FRIENDLY,
         )
-        self.timer_2 = Timer.objects.create(
+        self.timer_2 = create_fake_timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -614,12 +621,13 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
         self.assertTrue(mock_logger.warning.called)
 
 
+@patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
+class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
-        self.timer = Timer.objects.create(
+        self.timer = create_fake_timer(
             structure_name="Test",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
@@ -767,7 +775,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
+class TestNotificationRuleQuerySet(LoadTestDataMixin, NoSocketsTestCase):
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
@@ -791,7 +799,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when one rule conforms with timer
         then qs contains only conforming rule
         """
-        timer = Timer.objects.create(
+        timer = create_fake_timer(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -811,7 +819,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when no rule conforms with timer
         then qs is empty
         """
-        timer = Timer.objects.create(
+        timer = create_fake_timer(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -831,7 +839,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
         when one rule conforms with timer
         then qs contains only conforming rule
         """
-        timer = Timer.objects.create(
+        timer = create_fake_timer(
             structure_name="Test Timer",
             date=now() + timedelta(hours=4),
             eve_character=self.character_1,
@@ -849,7 +857,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, TestCase):
 
 
 @patch(MODULE_PATH + ".NotificationRule._import_schedule_notifications_for_rule")
-class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
+class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -912,7 +920,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
-        timer = Timer.objects.create(
+        timer = create_fake_timer(
             date=now() + timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -930,7 +938,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, TestCase):
         self.assertFalse(ScheduledNotification.objects.filter(pk=obj.pk).exists())
 
 
-class TestNotificationRuleMultiselectDisplay(TestCase):
+class TestNotificationRuleMultiselectDisplay(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -950,3 +958,30 @@ class TestNotificationRuleMultiselectDisplay(TestCase):
     def test_raises_exception_if_not_found(self):
         with self.assertRaises(ValueError):
             NotificationRule.get_multiselect_display(3, self.choices)
+
+
+@patch(
+    "structuretimers.models.EveSolarSystem.distance_to",
+    lambda *args, **kwargs: 4.257e16,
+)
+@patch("structuretimers.models.EveSolarSystem.jumps_to", lambda *args, **kwargs: 3)
+@override_settings(CELERY_ALWAYS_EAGER=True)
+class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
+    def test_should_calc_distances(self):
+        # given
+        timer = create_fake_timer(
+            structure_name="Test",
+            timer_type=Timer.Type.ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=datetime(2020, 8, 6, 13, 25),
+        )
+        # when
+        staging_system = StagingSystem.objects.create(
+            eve_solar_system=self.system_enaluri
+        )
+        # then
+        obj = timer.distances.first()
+        self.assertEqual(obj.staging_system, staging_system)
+        self.assertAlmostEqual(obj.light_years, 4.5, delta=0.1)
+        self.assertEqual(obj.jumps, 3)

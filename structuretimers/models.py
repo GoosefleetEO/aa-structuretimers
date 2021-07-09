@@ -27,7 +27,7 @@ from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from . import __title__
 from .app_settings import STRUCTURETIMERS_NOTIFICATIONS_ENABLED
-from .managers import NotificationRuleManager, TimerManager
+from .managers import DistancesFromStagingManager, NotificationRuleManager, TimerManager
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -35,6 +35,18 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 def default_avatar_url() -> str:
     """avatar url for all messages"""
     return static_file_absolute_url("structuretimers/structuretimers_logo.png")
+
+
+def _task_calc_staging_system():
+    from .tasks import calc_staging_system
+
+    return calc_staging_system
+
+
+def _task_calc_timer_distances_for_all_staging_systems():
+    from .tasks import calc_timer_distances_for_all_staging_systems
+
+    return calc_timer_distances_for_all_staging_systems
 
 
 class General(models.Model):
@@ -289,7 +301,6 @@ class Timer(models.Model):
         blank=True,
         help_text="Notes with additional information about this timer",
     )
-    distance_from_staging = models.FloatField(null=True, default=None, blank=True)
     eve_alliance = models.ForeignKey(
         EveAllianceInfo,
         on_delete=models.SET_DEFAULT,
@@ -319,9 +330,6 @@ class Timer(models.Model):
     )
     eve_solar_system = models.ForeignKey(
         EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
-    )
-    jumps_from_staging = models.PositiveIntegerField(
-        null=True, default=None, blank=True
     )
     is_important = models.BooleanField(
         default=False,
@@ -412,15 +420,18 @@ class Timer(models.Model):
             except Timer.DoesNotExist:
                 pass
 
-        self.update_distances()
         super().save(*args, **kwargs)
+        self.distances.all().delete()
+        _task_calc_timer_distances_for_all_staging_systems().apply_async(
+            args=[self.pk], priority=4
+        )
         if notification_enabled and (is_new or date_changed):
-            self._import_schedule_notifications_for_timer().apply_async(
+            self._task_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
             )
 
     @staticmethod
-    def _import_schedule_notifications_for_timer() -> object:
+    def _task_schedule_notifications_for_timer() -> object:
         from .tasks import schedule_notifications_for_timer
 
         return schedule_notifications_for_timer
@@ -477,20 +488,6 @@ class Timer(models.Model):
 
         return True
     """
-
-    def update_distances(self, settings=None):
-        if not settings:
-            settings = Settings.load()
-        if settings.staging_system:
-            self.distance_from_staging = meters_to_ly(
-                self.eve_solar_system.distance_to(settings.staging_system)
-            )
-            self.jumps_from_staging = self.eve_solar_system.jumps_to(
-                settings.staging_system
-            )
-        else:
-            self.distance_from_staging = None
-            self.jumps_from_staging = None
 
     def label_type_for_timer_type(self) -> str:
         """returns the Boostrap label type for a timer_type"""
@@ -824,6 +821,7 @@ class ScheduledNotification(models.Model):
 
     timer = models.ForeignKey(Timer, on_delete=models.CASCADE)
     notification_rule = models.ForeignKey(NotificationRule, on_delete=models.CASCADE)
+
     timer_date = models.DateTimeField(db_index=True)
     notification_date = models.DateTimeField(db_index=True)
     celery_task_id = models.CharField(max_length=765, default="")
@@ -846,8 +844,10 @@ class ScheduledNotification(models.Model):
         )
 
 
-class Settings(models.Model):
-    staging_system = models.ForeignKey(
+class StagingSystem(models.Model):
+    """A staging system."""
+
+    eve_solar_system = models.ForeignKey(
         EveSolarSystem,
         on_delete=models.SET_DEFAULT,
         default=None,
@@ -855,30 +855,39 @@ class Settings(models.Model):
         blank=True,
         related_name="+",
     )
-
-    class Meta:
-        verbose_name = "settings"
-        verbose_name_plural = "settings"
+    is_main = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return "SETTINGS"
+        return str(self.eve_solar_system)
 
-    def save(self, *args, **kwargs):
-        try:
-            old_instance = Settings.objects.get(pk=1)
-        except Settings.DoesNotExist:
-            needs_timer_update = True
-        else:
-            needs_timer_update = old_instance.staging_system != self.staging_system
-        self.pk = 1
+    def save(self, *args, **kwargs) -> None:
+
         super().save(*args, **kwargs)
-        if needs_timer_update:
-            Timer.objects.recalc_distances()
+        _task_calc_staging_system().delay(self.pk)
 
-    def delete(self, *args, **kwargs):
-        pass
 
-    @classmethod
-    def load(cls):
-        obj, _ = cls.objects.select_related("staging_system").get_or_create(pk=1)
-        return obj
+class DistancesFromStaging(models.Model):
+    timer = models.ForeignKey(Timer, on_delete=models.CASCADE, related_name="distances")
+    staging_system = models.ForeignKey(
+        StagingSystem, on_delete=models.CASCADE, related_name="distances"
+    )
+
+    light_years = models.FloatField(null=True, default=None, blank=True)
+    jumps = models.PositiveIntegerField(null=True, default=None, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = DistancesFromStagingManager()
+
+    def __str__(self) -> str:
+        return f"{self.timer}-{self.staging_system}"
+
+    def calculate(self):
+        """Calculate all distances."""
+        self.light_years = meters_to_ly(
+            self.staging_system.eve_solar_system.distance_to(
+                self.timer.eve_solar_system
+            )
+        )
+        self.jumps = self.staging_system.eve_solar_system.jumps_to(
+            self.timer.eve_solar_system
+        )

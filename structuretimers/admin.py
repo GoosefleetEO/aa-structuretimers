@@ -14,7 +14,7 @@ from .models import (
     DiscordWebhook,
     NotificationRule,
     ScheduledNotification,
-    Settings,
+    StagingSystem,
     Timer,
 )
 
@@ -342,9 +342,17 @@ class TimerAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Settings)
-class SettingsAdmin(admin.ModelAdmin):
-    autocomplete_fields = ["staging_system"]
+@admin.register(StagingSystem)
+class StagingSystemAdmin(admin.ModelAdmin):
+    list_display = ("eve_solar_system", "_region", "is_main")
+    list_select_related = (
+        "eve_solar_system",
+        "eve_solar_system__eve_constellation__eve_region",
+    )
+    autocomplete_fields = ["eve_solar_system"]
+    ordering = ("eve_solar_system__name",)
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    def _region(self, obj) -> str:
+        return obj.eve_solar_system.eve_constellation.eve_region.name
+
+    _region.admin_order_field = "eve_solar_system__eve_constellation__eve_region"

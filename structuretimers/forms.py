@@ -192,7 +192,7 @@ class TimerForm(forms.ModelForm):
                     )
 
     def save(self, commit=True):
-        timer = super(TimerForm, self).save(commit=False)
+        timer = super().save(commit=False)
 
         # character / corporation / alliance
         if self.is_new:

@@ -14,8 +14,17 @@ from allianceauth.tests.auth_utils import AuthUtils
 
 from ..models import DiscordWebhook, Timer
 from ..tasks import send_test_message_to_webhook
-from . import LoadTestDataMixin, add_permission_to_user_by_name, create_test_user
+from . import (
+    LoadTestDataMixin,
+    add_permission_to_user_by_name,
+    create_fake_timer,
+    create_test_user,
+)
 from .testdata import test_data_filename, test_image_filename
+
+MODELS_PATH = "structuretimers.models"
+FORMS_PATH = "structuretimers.forms"
+TASKS_PATH = "structuretimers.tasks"
 
 
 def bytes_from_file(filename, chunksize=8192):
@@ -29,7 +38,7 @@ def bytes_from_file(filename, chunksize=8192):
                 break
 
 
-@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+@patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestUI(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
@@ -44,9 +53,9 @@ class TestUI(LoadTestDataMixin, WebTest):
             "structuretimers.create_timer", cls.user_2
         )
 
-    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+    @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = Timer.objects.create(
+        self.timer_1 = create_fake_timer(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_2,
@@ -55,7 +64,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
-        self.timer_2 = Timer.objects.create(
+        self.timer_2 = create_fake_timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -64,7 +73,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
         )
-        self.timer_3 = Timer.objects.create(
+        self.timer_3 = create_fake_timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -195,7 +204,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn("correct the input errors", response.text)
 
-    @patch("structuretimers.forms.requests.get", spec=True)
+    @patch(FORMS_PATH + ".requests.get", spec=True)
     def test_should_show_error_when_image_can_not_be_loaded_1(self, mock_get):
         mock_get.side_effect = NewConnectionError
 
@@ -221,7 +230,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn("correct the input errors", response.text)
 
-    @patch("structuretimers.forms.requests.get", spec=True)
+    @patch(FORMS_PATH + ".requests.get", spec=True)
     def test_should_show_error_when_image_can_not_be_loaded_2(self, mock_get):
         """
         when user entered invalid day
@@ -252,7 +261,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn("correct the input errors", response.text)
 
-    @patch("structuretimers.forms.requests.get", spec=True)
+    @patch(FORMS_PATH + ".requests.get", spec=True)
     def test_should_create_timer_with_valid_details_image(self, mock_get):
         image_file = bytearray(bytes_from_file(test_image_filename()))
         mock_get.return_value.content = image_file
@@ -281,7 +290,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
         self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
 
-    @patch("structuretimers.forms.requests.get", spec=True)
+    @patch(FORMS_PATH + ".requests.get", spec=True)
     def test_should_not_allow_invalid_link_for_detail_images(self, mock_get):
         """
         when user provides invalid file link
@@ -528,8 +537,8 @@ class TestUI(LoadTestDataMixin, WebTest):
 
 
 """
-@patch("structuretimers.models.sleep", new=lambda x: x)
-@patch("structuretimers.models.dhooks_lite.Webhook.execute")
+@patch(MODELS_PATH+ ".sleep", new=lambda x: x)
+@patch(MODELS_PATH+ ".dhooks_lite.Webhook.execute")
 class TestSendNotifications(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(
@@ -539,7 +548,7 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
         self.rule.webhooks.add(self.webhook)
 
     def test_normal(self, mock_execute):
-        Timer.objects.create(
+        create_fake_timer(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
@@ -551,9 +560,9 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
 
 
 @override_settings(CELERY_ALWAYS_EAGER=True)
-@patch("structuretimers.models.sleep", new=lambda x: x)
-@patch("structuretimers.tasks.notify", spec=True)
-@patch("structuretimers.models.dhooks_lite.Webhook.execute", spec=True)
+@patch(MODELS_PATH + ".sleep", new=lambda x: x)
+@patch(TASKS_PATH + ".notify", spec=True)
+@patch(MODELS_PATH + ".dhooks_lite.Webhook.execute", spec=True)
 class TestTestMessageToWebhook(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
         self.webhook = DiscordWebhook.objects.create(

@@ -12,7 +12,14 @@ from allianceauth.services.tasks import QueueOnce
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
-from .models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
+from .models import (
+    DiscordWebhook,
+    DistancesFromStaging,
+    NotificationRule,
+    ScheduledNotification,
+    StagingSystem,
+    Timer,
+)
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 TASK_PRIO_HIGH = 4
@@ -299,16 +306,39 @@ def housekeeping() -> None:
     logger.info(f"Deleted {deleted_count:,} obsolete timers.")
 
 
-# @shared_task
-# def recalc_all_timer_distances() -> None:
-#     """Recald distances from staging for all timers."""
-#     for timer_pk in Timer.objects.values_list("pk", flat=True):
-#         recalc_time_distances(timer_pk).delay()
+@shared_task
+def calc_staging_system(staging_system_pk: int, force_update: bool = False) -> None:
+    """Recalc distances from a staging system for all timers."""
+    for timer_pk in Timer.objects.values_list("pk", flat=True):
+        calc_timer_distances_for_staging_system.delay(
+            timer_pk, staging_system_pk, force_update
+        )
 
 
-# @shared_task
-# def recalc_time_distances(timer_pk: int) -> None:
-#     """Recald distances from staging for a timer."""
-#     timer = Timer.objective.get(pk=timer_pk)
-#     timer.update_distances()
-#     timer.save()
+@shared_task
+def calc_timer_distances_for_all_staging_systems(
+    timer_pk: int, force_update: bool = False
+) -> None:
+    """Recalc distances for a timer from a staging system."""
+    timer = Timer.objects.get(pk=timer_pk)
+    for staging_system_pk in StagingSystem.objects.values_list("pk", flat=True):
+        calc_timer_distances_for_staging_system.apply_async(
+            kwargs={
+                "timer_pk": timer.pk,
+                "staging_system_pk": staging_system_pk,
+                "force_update": force_update,
+            },
+            priority=TASK_PRIO_HIGH,
+        )
+
+
+@shared_task
+def calc_timer_distances_for_staging_system(
+    timer_pk: int, staging_system_pk: int, force_update: bool = False
+) -> None:
+    """Calc distances for a timer from a staging system."""
+    timer = Timer.objects.get(pk=timer_pk)
+    staging_system = StagingSystem.objects.get(pk=staging_system_pk)
+    DistancesFromStaging.objects.calc_timer_for_staging_system(
+        timer=timer, staging_system=staging_system, force_update=force_update
+    )

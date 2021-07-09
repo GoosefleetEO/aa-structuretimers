@@ -83,14 +83,19 @@ class TimerManagerBase(models.Manager):
         else:
             return 0
 
-    def recalc_distances(self) -> None:
-        from .models import Settings
-
-        settings = Settings.load()
-        timers = self.in_bulk().values()
-        for timer in timers:
-            timer.update_distances(settings)
-        self.bulk_update(timers, fields=["distance_from_staging", "jumps_from_staging"])
-
 
 TimerManager = TimerManagerBase.from_queryset(TimerQuerySet)
+
+
+class DistancesFromStagingManager(models.Manager):
+    def calc_timer_for_staging_system(
+        self,
+        timer: models.Model,
+        staging_system: models.Model,
+        force_update: bool = False,
+    ):
+        """Calculate distances for a timer from a staging system."""
+        obj, created = self.get_or_create(timer=timer, staging_system=staging_system)
+        if force_update or created:
+            obj.calculate()
+            obj.save()

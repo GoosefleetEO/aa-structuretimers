@@ -1,6 +1,6 @@
 from datetime import timedelta
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.core.management import call_command
 from django.utils.timezone import now
@@ -14,9 +14,11 @@ from ..models import Timer
 from . import LoadTestDataMixin, create_test_user
 
 PACKAGE_PATH = "structuretimers.management.commands"
+MODELS_PATH = "structuretimers.models"
 
 
-@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+@patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
+@patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 @patch(PACKAGE_PATH + ".structuretimers_migrate_timers.get_input")
 class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod

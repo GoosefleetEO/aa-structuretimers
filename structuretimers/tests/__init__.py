@@ -1,5 +1,7 @@
 """Utility functions and classes for tests"""
 
+from unittest.mock import Mock, patch
+
 from django.contrib.auth.models import User
 from eveuniverse.models import EveSolarSystem, EveType
 
@@ -11,6 +13,7 @@ from allianceauth.eveonline.models import (
 )
 from allianceauth.tests.auth_utils import AuthUtils
 
+from ..models import Timer
 from .testdata.load_eveuniverse import load_eveuniverse
 
 
@@ -97,3 +100,11 @@ class LoadTestDataMixin:
             alliance_name=cls.character_3.alliance_name,
             executor_corp_id=cls.corporation_3.corporation_id,
         )
+
+
+def create_fake_timer(*args, **kwargs):
+    with patch(
+        "structuretimers.models._task_calc_timer_distances_for_all_staging_systems",
+        Mock(),
+    ):
+        return Timer.objects.create(*args, **kwargs)

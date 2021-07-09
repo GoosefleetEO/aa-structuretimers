@@ -41,14 +41,16 @@
                     {% include 'structuretimers/timer_list_table.html' with tab_name='past' %}
                 </div>
             </div>
-            {% if home_system %}
-                <p class="text-muted">
-                    *: Distance from staging system:
-                    <a href="{{ home_system|dotlan_solar_system_url }}" target="_blank">
-                        {{ home_system }}
+            <p class="text-muted">
+                *: Distance from selected staging system:
+                {% if selected_staging_system %}
+                    <a href="{{ selected_staging_system|dotlan_solar_system_url }}" target="_blank">
+                        {{ selected_staging_system }}
                     </a>
-                </p>
-            {% endif %}
+                {% else %}
+                    ?
+                {% endif %}
+            </p>
         </div>
     </div>
 </div>

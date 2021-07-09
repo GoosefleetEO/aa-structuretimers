@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import reverse
 from django.urls import reverse_lazy
@@ -39,7 +39,7 @@ from .constants import (
     EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
-from .models import Settings, Timer
+from .models import StagingSystem, Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
@@ -51,7 +51,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     permission_required = ("structuretimers.basic_access",)
 
     def get_context_data(self, **kwargs):
-        settings = Settings.load()
+        selected_staging_system = StagingSystem.objects.filter(is_main=True).first()
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -60,7 +60,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "title": __title__,
                 "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
                 "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
-                "home_system": settings.staging_system,
+                "selected_staging_system": selected_staging_system,
             }
         )
         return context
@@ -89,6 +89,7 @@ def timer_list_data(request, tab_name):
         "eve_alliance",
     )
     data = list()
+    staging_system = StagingSystem.objects.filter(is_main=True).first()
     for timer in timers_qs:
         # location
         location = link_html(
@@ -103,13 +104,16 @@ def timer_list_data(request, tab_name):
         )
 
         # distance
-        distance_ly = (
-            f"{timer.distance_from_staging:.1f} ly"
-            if timer.distance_from_staging
-            else "?"
-        )
-        jumps = f"{timer.jumps_from_staging} jumps" if timer.jumps_from_staging else "?"
-        distance = format_html("{}<br>{}", distance_ly, jumps)
+        try:
+            distances = timer.distances.get(staging_system=staging_system)
+        except ObjectDoesNotExist:
+            distance_text = "?"
+        else:
+            light_years_text = (
+                f"{distances.light_years:.1f} ly" if distances.light_years else "N/A"
+            )
+            jumps_text = f"{distances.jumps} jumps" if distances.jumps else "N/A"
+            distance_text = format_html("{}<br>{}", light_years_text, jumps_text)
 
         # structure & timer type & fitting image
         timer_type = bootstrap_label_html(
@@ -251,7 +255,7 @@ def timer_list_data(request, tab_name):
                 "name_objective": name,
                 "owner": objective,
                 # "creator": creator,
-                "distance": distance,
+                "distance": distance_text,
                 "actions": actions,
                 "timer_type_name": timer.get_timer_type_display(),
                 "objective_name": timer.get_objective_display(),
