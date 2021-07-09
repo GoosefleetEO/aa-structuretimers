@@ -861,9 +861,17 @@ class StagingSystem(models.Model):
         return str(self.eve_solar_system)
 
     def save(self, *args, **kwargs) -> None:
-
+        try:
+            old_instance = StagingSystem.objects.get(pk=self.pk)
+        except (StagingSystem.DoesNotExist, ValueError):
+            needs_recalc = True
+        else:
+            needs_recalc = old_instance.eve_solar_system != self.eve_solar_system
+        if self.is_main:
+            StagingSystem.objects.update(is_main=False)
         super().save(*args, **kwargs)
-        _task_calc_staging_system().delay(self.pk)
+        if needs_recalc:
+            _task_calc_staging_system().delay(self.pk)
 
 
 class DistancesFromStaging(models.Model):

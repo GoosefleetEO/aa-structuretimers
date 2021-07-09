@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.test import TestCase
 from django.urls import reverse
 from django_webtest import WebTest
 
-from ..models import DiscordWebhook, NotificationRule, Timer
-from . import LoadTestDataMixin
+from ..models import DiscordWebhook, NotificationRule, StagingSystem, Timer
+from . import LoadTestDataMixin, create_fake_staging_system
 
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
@@ -72,9 +73,6 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
         cls.url_changelist = reverse(
             "admin:structuretimers_notificationrule_changelist"
         )
-
-    def setUp(self) -> None:
-        NotificationRule.objects.all().delete()
 
     def _open_page(self) -> object:
         # login
@@ -152,3 +150,41 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Please correct the error below", response.text)
         self.assertEqual(NotificationRule.objects.count(), 0)
+
+
+class TestStagingSystemAdmin(LoadTestDataMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_superuser("Bruce Wayne")
+        cls.url_add = reverse("admin:structuretimers_stagingsystem_add")
+
+    def test_should_create_new_staging_system(self):
+        # given
+        self.client.force_login(self.user)
+        # when
+        res = self.client.post(
+            self.url_add, data={"eve_solar_system": self.system_abune.pk}
+        )
+        # then
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(StagingSystem.objects.count(), 1)
+        obj = StagingSystem.objects.first()
+        self.assertEqual(obj.eve_solar_system, self.system_abune)
+        self.assertFalse(obj.is_main)
+
+    def test_should_ensure_only_one_obj_is_main(self):
+        # given
+        self.client.force_login(self.user)
+        create_fake_staging_system(eve_solar_system=self.system_enaluri, is_main=True)
+        # when
+        res = self.client.post(
+            self.url_add,
+            data={"eve_solar_system": self.system_abune.pk, "is_main": True},
+        )
+        # then
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(
+            StagingSystem.objects.filter(is_main=True).get().eve_solar_system,
+            self.system_abune,
+        )

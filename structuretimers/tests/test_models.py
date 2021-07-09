@@ -19,10 +19,12 @@ from ..models import (
     ScheduledNotification,
     StagingSystem,
     Timer,
+    _task_calc_staging_system,
 )
 from . import (
     LoadTestDataMixin,
     add_permission_to_user_by_name,
+    create_fake_staging_system,
     create_fake_timer,
     create_test_user,
 )
@@ -961,14 +963,12 @@ class TestNotificationRuleMultiselectDisplay(NoSocketsTestCase):
             NotificationRule.get_multiselect_display(3, self.choices)
 
 
-@patch(
-    "structuretimers.models.EveSolarSystem.distance_to",
-    lambda *args, **kwargs: 4.257e16,
-)
-@patch("structuretimers.models.EveSolarSystem.jumps_to", lambda *args, **kwargs: 3)
+@patch(MODULE_PATH + ".EveSolarSystem.distance_to", lambda *args, **kwargs: 4.257e16)
+@patch(MODULE_PATH + ".EveSolarSystem.jumps_to", lambda *args, **kwargs: 3)
+@patch(MODULE_PATH + "._task_calc_staging_system", wraps=_task_calc_staging_system)
 @override_settings(CELERY_ALWAYS_EAGER=True)
 class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
-    def test_should_calc_distances(self):
+    def test_should_calc_distances(self, spy_task_calc_staging_system):
         # given
         timer = create_fake_timer(
             structure_name="Test",
@@ -986,3 +986,23 @@ class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
         self.assertEqual(obj.staging_system, staging_system)
         self.assertAlmostEqual(obj.light_years, 4.5, delta=0.1)
         self.assertEqual(obj.jumps, 3)
+        self.assertTrue(spy_task_calc_staging_system.called)
+
+    def test_should_not_update_distances_when_solar_system_not_changed(
+        self, spy_task_calc_staging_system
+    ):
+        # given
+        create_fake_timer(
+            structure_name="Test",
+            timer_type=Timer.Type.ARMOR,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=datetime(2020, 8, 6, 13, 25),
+        )
+        staging_system = create_fake_staging_system(
+            eve_solar_system=self.system_enaluri
+        )
+        # when
+        staging_system.save()
+        # then
+        self.assertFalse(spy_task_calc_staging_system.called)
