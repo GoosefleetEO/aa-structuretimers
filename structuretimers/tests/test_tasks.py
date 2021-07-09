@@ -83,9 +83,7 @@ class TestScheduleNotificationForTimer(TestCaseBase):
 
         self.assertTrue(mock_send_notification.apply_async.called)
         self.assertTrue(
-            ScheduledNotification.objects.filter(
-                timer=self.timer, notification_rule=self.rule
-            )
+            self.timer.scheduled_notifications.filter(notification_rule=self.rule)
         )
 
     def test_remove_old_notifications(
@@ -109,9 +107,9 @@ class TestScheduleNotificationForTimer(TestCaseBase):
 
         self.assertTrue(mock_send_notification.apply_async.called)
         self.assertTrue(
-            ScheduledNotification.objects.filter(
-                timer=self.timer, notification_rule=self.rule
-            )
+            self.timer.scheduled_notifications.filter(
+                notification_rule=self.rule
+            ).exists()
         )
         self.assertFalse(
             ScheduledNotification.objects.filter(pk=notification_old.pk).exists()
@@ -166,9 +164,9 @@ class TestScheduleNotificationForRule(TestCaseBase):
 
         self.assertTrue(mock_send_notification.apply_async.called)
         self.assertTrue(
-            ScheduledNotification.objects.filter(
-                timer=self.timer, notification_rule=self.rule
-            )
+            self.timer.scheduled_notifications.filter(
+                notification_rule=self.rule
+            ).exists()
         )
 
     def test_remove_old_notifications(self, mock_send_notification):
@@ -190,9 +188,9 @@ class TestScheduleNotificationForRule(TestCaseBase):
 
         self.assertTrue(mock_send_notification.apply_async.called)
         self.assertTrue(
-            ScheduledNotification.objects.filter(
-                timer=self.timer, notification_rule=self.rule
-            )
+            self.timer.scheduled_notifications.filter(
+                notification_rule=self.rule
+            ).exists()
         )
         self.assertFalse(
             ScheduledNotification.objects.filter(pk=notification_old.pk).exists()

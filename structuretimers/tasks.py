@@ -207,9 +207,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
             # trigger: timer elapses soon
             with transaction.atomic():
                 # remove existing scheduled notifications if date has changed
-                for obj in ScheduledNotification.objects.filter(timer=timer).exclude(
-                    timer_date=timer.date
-                ):
+                for obj in timer.scheduled_notifications.exclude(timer_date=timer.date):
                     _revoke_notification_for_timer(scheduled_notification=obj)
 
                 # schedule new notifications
@@ -248,7 +246,7 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
                 notification_rule,
             )
             with transaction.atomic():
-                for obj in notification_rule.schedulednotification_set.filter(
+                for obj in notification_rule.scheduled_notifications.filter(
                     timer_date__gt=now()
                 ):
                     _revoke_notification_for_timer(scheduled_notification=obj)

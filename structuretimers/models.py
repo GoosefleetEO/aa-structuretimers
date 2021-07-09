@@ -751,7 +751,7 @@ class NotificationRule(models.Model):
             )
 
         if self.trigger == self.Trigger.NEW_TIMER_CREATED:
-            ScheduledNotification.objects.filter(notification_rule=self).delete()
+            self.scheduled_notifications.all().delete()
 
     @staticmethod
     def _import_schedule_notifications_for_rule() -> object:
@@ -826,8 +826,14 @@ class NotificationRule(models.Model):
 class ScheduledNotification(models.Model):
     """A scheduled notification task"""
 
-    timer = models.ForeignKey(Timer, on_delete=models.CASCADE)
-    notification_rule = models.ForeignKey(NotificationRule, on_delete=models.CASCADE)
+    timer = models.ForeignKey(
+        Timer, on_delete=models.CASCADE, related_name="scheduled_notifications"
+    )
+    notification_rule = models.ForeignKey(
+        NotificationRule,
+        on_delete=models.CASCADE,
+        related_name="scheduled_notifications",
+    )
 
     timer_date = models.DateTimeField(db_index=True)
     notification_date = models.DateTimeField(db_index=True)
