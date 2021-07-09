@@ -1,3 +1,4 @@
+import random
 from datetime import timedelta
 
 from celery import shared_task
@@ -9,6 +10,7 @@ from django.utils.timezone import now
 from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from allianceauth.services.tasks import QueueOnce
+from app_utils.esi import EsiErrorLimitExceeded, EsiOffline, fetch_esi_status
 from app_utils.logging import LoggerAddTag
 
 from . import __title__
@@ -332,13 +334,37 @@ def calc_timer_distances_for_all_staging_systems(
         )
 
 
-@shared_task
+@shared_task(
+    bind=True,
+    max_retries=3,
+    autoretry_for=(OSError,),
+    retry_kwargs={"max_retries": 3},
+    retry_backoff=30,
+)
 def calc_timer_distances_for_staging_system(
-    timer_pk: int, staging_system_pk: int, force_update: bool = False
+    self, timer_pk: int, staging_system_pk: int, force_update: bool = False
 ) -> None:
     """Calc distances for a timer from a staging system."""
+    _retry_if_esi_is_down(self)
     timer = Timer.objects.get(pk=timer_pk)
     staging_system = StagingSystem.objects.get(pk=staging_system_pk)
     DistancesFromStaging.objects.calc_timer_for_staging_system(
         timer=timer, staging_system=staging_system, force_update=force_update
     )
+
+
+def _retry_if_esi_is_down(self):
+    """Retries the task if ESI is not online or not within the error threshold."""
+    try:
+        fetch_esi_status().raise_for_status()
+    except EsiOffline as ex:
+        countdown = (10 + int(random.uniform(1, 10))) * 60
+        logger.warning(
+            "ESI appears to be offline. Trying again in %d minutes.", countdown
+        )
+        raise self.retry(countdown=countdown) from ex
+    except EsiErrorLimitExceeded as ex:
+        logger.warning(
+            "ESI error limit threshold reached. Trying again in %s seconds", ex.retry_in
+        )
+        raise self.retry(countdown=ex.retry_in) from ex
