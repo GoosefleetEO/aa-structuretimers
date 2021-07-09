@@ -421,16 +421,11 @@ class Timer(models.Model):
             old_instance = Timer.objects.get(pk=self.pk)
         except (Timer.DoesNotExist, ValueError):
             needs_recalc = True
+            date_changed = False
         else:
-            needs_recalc = old_instance.eve_solar_system != self.eve_solar_system
+            needs_recalc = self.eve_solar_system != old_instance.eve_solar_system
+            date_changed = self.date != old_instance.date
         is_new = self.pk is None
-        date_changed = False
-        if notification_enabled and not is_new:
-            try:
-                date_changed = self.date != Timer.objects.get(pk=self.pk).date
-            except Timer.DoesNotExist:
-                pass
-
         super().save(*args, **kwargs)
         if needs_recalc:
             self.distances.all().delete()
@@ -853,7 +848,7 @@ class ScheduledNotification(models.Model):
 class StagingSystem(models.Model):
     """A staging system."""
 
-    eve_solar_system = models.ForeignKey(
+    eve_solar_system = models.OneToOneField(
         EveSolarSystem,
         on_delete=models.SET_DEFAULT,
         default=None,

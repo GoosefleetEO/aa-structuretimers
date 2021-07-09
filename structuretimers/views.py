@@ -120,7 +120,6 @@ def timer_list_data(request, tab_name: str):
         location += format_html(
             "<br>{}", timer.eve_solar_system.eve_constellation.eve_region.name
         )
-
         # distance
         try:
             distances = distances_map[timer.id]
@@ -130,10 +129,12 @@ def timer_list_data(request, tab_name: str):
         else:
             light_years_text = (
                 f"{math.ceil(distances.light_years * 10) / 10} ly"
-                if distances.light_years
+                if distances.light_years is not None
                 else "N/A"
             )
-            jumps_text = f"{distances.jumps} jumps" if distances.jumps else "N/A"
+            jumps_text = (
+                f"{distances.jumps} jumps" if distances.jumps is not None else "N/A"
+            )
             distance_text = format_html("{}<br>{}", light_years_text, jumps_text)
 
         # structure & timer type & fitting image
