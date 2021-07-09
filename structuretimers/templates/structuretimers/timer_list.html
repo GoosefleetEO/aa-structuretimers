@@ -23,6 +23,19 @@
     <ul class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Current Timers</a></li>
         <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                Staging: {{ selected_staging_system|default:"?" }} <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                {% for staging_system in stageing_systems %}
+                    <li><a href="{% url 'structuretimers:timer_list' %}?staging={{ staging_system.pk }}">
+                        {{ staging_system }} ({{ staging_system.eve_solar_system.eve_constellation.eve_region }})
+                        {% if staging_system.is_main %} [MAIN] {% endif %}
+                    </a></li>
+                {% endfor %}
+            </ul>
+        </li>
     </ul>
 
     <div class="panel panel-default panel-tabs">
@@ -42,14 +55,8 @@
                 </div>
             </div>
             <p class="text-muted">
-                *: Distance from selected staging system:
-                {% if selected_staging_system %}
-                    <a href="{{ selected_staging_system|dotlan_solar_system_url }}" target="_blank">
-                        {{ selected_staging_system }}
-                    </a>
-                {% else %}
-                    ?
-                {% endif %}
+                *: Distance from selected staging system {{ selected_staging_system }}
+                ({{ selected_staging_system.eve_solar_system.eve_constellation.eve_region }})
             </p>
         </div>
     </div>
@@ -91,7 +98,7 @@
     <!-- share data with JS part -->
     <div
         id="dataExport"
-        data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}"
+        data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}?staging={{ selected_staging_system.pk }}"
         data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}"
         data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
         data-titleSolarSystem="{% translate 'Solar System' %}"

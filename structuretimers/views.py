@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import reverse
 from django.urls import reverse_lazy
@@ -39,7 +39,7 @@ from .constants import (
     EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
-from .models import StagingSystem, Timer
+from .models import DistancesFromStaging, StagingSystem, Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
@@ -51,7 +51,16 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     permission_required = ("structuretimers.basic_access",)
 
     def get_context_data(self, **kwargs):
-        selected_staging_system = StagingSystem.objects.filter(is_main=True).first()
+        staging_systems_qs = StagingSystem.objects.select_related(
+            "eve_solar_system", "eve_solar_system__eve_constellation__eve_region"
+        )
+        try:
+            selected_staging_system = staging_systems_qs.get(
+                pk=self.request.GET.get("staging")
+            )
+        except (StagingSystem.DoesNotExist, ValueError):
+            selected_staging_system = staging_systems_qs.filter(is_main=True).first()
+        stageing_systems = staging_systems_qs.order_by("eve_solar_system__name")
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -61,6 +70,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "data_tables_page_length": STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
                 "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
                 "selected_staging_system": selected_staging_system,
+                "stageing_systems": stageing_systems,
             }
         )
         return context
@@ -68,11 +78,9 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
 
 @login_required
 @permission_required("structuretimers.basic_access")
-def timer_list_data(request, tab_name):
+def timer_list_data(request, tab_name: str):
     """returns timer list in JSON for AJAX call in timer_list view"""
-
-    timers_qs = Timer.objects.all().visible_to_user(request.user)
-
+    timers_qs = Timer.objects.visible_to_user(request.user)
     if tab_name == "current":
         timers_qs = timers_qs.filter(
             date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
@@ -88,8 +96,17 @@ def timer_list_data(request, tab_name):
         "eve_corporation",
         "eve_alliance",
     )
+    staging_system_pk = request.GET.get("staging")
+    if staging_system_pk:
+        distances_map = {
+            obj.timer_id: obj
+            for obj in DistancesFromStaging.objects.filter(
+                staging_system__pk=staging_system_pk
+            ).all()
+        }
+    else:
+        distances_map = dict()
     data = list()
-    staging_system = StagingSystem.objects.filter(is_main=True).first()
     for timer in timers_qs:
         # location
         location = link_html(
@@ -105,8 +122,8 @@ def timer_list_data(request, tab_name):
 
         # distance
         try:
-            distances = timer.distances.get(staging_system=staging_system)
-        except ObjectDoesNotExist:
+            distances = distances_map[timer.id]
+        except KeyError:
             distance_text = "?"
         else:
             light_years_text = (

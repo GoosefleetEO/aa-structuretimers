@@ -265,12 +265,12 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """overriding this formfield to have sorted lists in the form"""
         if db_field.name in {"require_alliances", "exclude_alliances"}:
-            kwargs["queryset"] = EveAllianceInfo.objects.all().order_by(
+            kwargs["queryset"] = EveAllianceInfo.objects.order_by(
                 Lower("alliance_name")
             )
 
         elif db_field.name in {"require_corporations", "exclude_corporations"}:
-            kwargs["queryset"] = EveCorporationInfo.objects.all().order_by(
+            kwargs["queryset"] = EveCorporationInfo.objects.order_by(
                 Lower("corporation_name")
             )
 
