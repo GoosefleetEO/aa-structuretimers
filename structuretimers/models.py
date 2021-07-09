@@ -414,10 +414,15 @@ class Timer(models.Model):
             disable_notifications = kwargs.pop("disable_notifications")
         except KeyError:
             disable_notifications = False
-
         notification_enabled = (
             STRUCTURETIMERS_NOTIFICATIONS_ENABLED and not disable_notifications
         )
+        try:
+            old_instance = Timer.objects.get(pk=self.pk)
+        except (Timer.DoesNotExist, ValueError):
+            needs_recalc = True
+        else:
+            needs_recalc = old_instance.eve_solar_system != self.eve_solar_system
         is_new = self.pk is None
         date_changed = False
         if notification_enabled and not is_new:
@@ -427,10 +432,11 @@ class Timer(models.Model):
                 pass
 
         super().save(*args, **kwargs)
-        self.distances.all().delete()
-        _task_calc_timer_distances_for_all_staging_systems().apply_async(
-            args=[self.pk], priority=4
-        )
+        if needs_recalc:
+            self.distances.all().delete()
+            _task_calc_timer_distances_for_all_staging_systems().apply_async(
+                args=[self.pk], priority=4
+            )
         if notification_enabled and (is_new or date_changed):
             _task_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
@@ -871,6 +877,7 @@ class StagingSystem(models.Model):
             StagingSystem.objects.update(is_main=False)
         super().save(*args, **kwargs)
         if needs_recalc:
+            self.distances.all().delete()
             _task_calc_staging_system().delay(self.pk)
 
 

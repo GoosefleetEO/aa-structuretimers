@@ -98,7 +98,7 @@ class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
 
 
 @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
-class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
+class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -107,20 +107,20 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
         )
 
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
-    def test_schedule_notifications_for_new_timers(self, mock_import_func):
+    def test_schedule_notifications_for_new_timers(self, mock_schedule_notifications):
         timer = create_fake_timer(
             date=now() + timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             enabled_notifications=True,
         )
-        self.assertTrue(mock_import_func.called)
-        _, kwargs = mock_import_func.return_value.apply_async.call_args
+        self.assertTrue(mock_schedule_notifications.called)
+        _, kwargs = mock_schedule_notifications.return_value.apply_async.call_args
         self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
 
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
     def test_dont_schedule_notifications_for_new_timers_when_turned_off(
-        self, mock_import_func
+        self, mock_schedule_notifications
     ):
         timer = Timer(
             date=now() + timedelta(hours=4),
@@ -128,12 +128,12 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
             structure_type=self.type_astrahus,
         )
         timer.save(disable_notifications=True)
-        self.assertFalse(mock_import_func.called)
+        self.assertFalse(mock_schedule_notifications.called)
 
     def test_schedule_notifications_when_date_changed(self):
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
-        ) as mock_import_func:
+        ) as mock_schedule_notifications:
             timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
                 eve_solar_system=self.system_abune,
@@ -142,17 +142,17 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
 
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
-        ) as mock_import_func:
+        ) as mock_schedule_notifications:
             timer.date = now() + timedelta(hours=3)
             timer.save()
-            self.assertTrue(mock_import_func.called)
-            _, kwargs = mock_import_func.return_value.apply_async.call_args
+            self.assertTrue(mock_schedule_notifications.called)
+            _, kwargs = mock_schedule_notifications.return_value.apply_async.call_args
             self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
 
     def test_dont_schedule_notifications_else(self):
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
-        ) as mock_import_func:
+        ) as mock_schedule_notifications:
             timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
                 eve_solar_system=self.system_abune,
@@ -161,10 +161,63 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
 
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
-        ) as mock_import_func:
+        ) as mock_schedule_notifications:
             timer.date = now() + timedelta(hours=3)
             timer.structure_name = "Some fancy name"
-            self.assertFalse(mock_import_func.called)
+            self.assertFalse(mock_schedule_notifications.called)
+
+
+@patch(MODULE_PATH + "._task_schedule_notifications_for_timer", Mock)
+class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(
+            name="Dummy", url="http://www.example.com"
+        )
+
+    @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems")
+    def test_should_calc_distances_when_created(self, mock_calc_distances):
+        # when
+        timer = Timer.objects.create(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        # then
+        self.assertTrue(mock_calc_distances.called)
+        _, kwargs = mock_calc_distances.return_value.apply_async.call_args
+        self.assertEqual(kwargs["args"][0], timer.pk)
+
+    @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems")
+    def test_should_recalc_distances_when_solar_system_has_changed(
+        self, mock_calc_distances
+    ):
+        timer = create_fake_timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        # when
+        timer.eve_solar_system = self.system_enaluri
+        timer.save()
+        # then
+        self.assertTrue(mock_calc_distances.called)
+
+    @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems")
+    def test_should_not_recalc_distances_when_solar_system_unchanged(
+        self, mock_calc_distances
+    ):
+        timer = create_fake_timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+        )
+        # when
+        timer.structure_type = self.type_raitaru
+        timer.save()
+        # then
+        self.assertFalse(mock_calc_distances.called)
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
@@ -867,7 +920,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
         cls.webhook = DiscordWebhook.objects.create(name="dummy", url="dummy-url")
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", True)
-    def test_scheduled_normal(self, mock_import_func):
+    def test_scheduled_normal(self, mock_schedule_notifications):
         """
         given notifications are enabled
         when trigger is scheduled and enabled
@@ -879,10 +932,10 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             webhook=self.webhook,
         )
         rule.save()
-        self.assertTrue(mock_import_func.called)
+        self.assertTrue(mock_schedule_notifications.called)
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-    def test_scheduled_disabled_1(self, mock_import_func):
+    def test_scheduled_disabled_1(self, mock_schedule_notifications):
         """
         given notifications are disabled
         when trigger is scheduled and enabled
@@ -894,10 +947,10 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             webhook=self.webhook,
         )
         rule.save()
-        self.assertFalse(mock_import_func.called)
+        self.assertFalse(mock_schedule_notifications.called)
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", True)
-    def test_scheduled_disabled_2(self, mock_import_func):
+    def test_scheduled_disabled_2(self, mock_schedule_notifications):
         """
         given notifications are enabled
         when trigger is scheduled and disabled
@@ -910,10 +963,10 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             is_enabled=False,
         )
         rule.save()
-        self.assertFalse(mock_import_func.called)
+        self.assertFalse(mock_schedule_notifications.called)
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-    def test_created_trigger(self, mock_import_func):
+    def test_created_trigger(self, mock_schedule_notifications):
         """
         when trigger is created
         then delete all scheduled notifications based on same rule
