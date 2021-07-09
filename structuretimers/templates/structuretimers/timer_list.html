@@ -74,7 +74,11 @@
             </div>
             <div class="modal-body">
                 <div id="modal_div_spinner">
-                    <img class="center-block" src="{% static 'structuretimers/img/Spinner-1s-200px.gif' %}" alt="Spinner"/>
+                    {% if NIGHT_MODE %}
+                        <img src="{% static 'moonmining/img/Spinner-1s-64px-dark.gif' %}" alt="Spinner"/>
+                    {% else %}
+                        <img src="{% static 'moonmining/img/Spinner-1s-64px-light.gif' %}" alt="Spinner"/>
+                    {% endif %}
                 </div>
                 <div id="modal_div_data" style="display: none">
                     <label for="timerboardTimer">Timer</label>
