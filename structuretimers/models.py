@@ -313,7 +313,7 @@ class Timer(models.Model):
         default=None,
         null=True,
         blank=True,
-        related_name="Timers",
+        related_name="+",
         help_text="Alliance of the user who created this timer",
     )
     eve_character = models.ForeignKey(
@@ -322,7 +322,7 @@ class Timer(models.Model):
         default=None,
         null=True,
         blank=True,
-        related_name="Timers",
+        related_name="+",
         help_text="Main character of the user who created this timer",
     )
     eve_corporation = models.ForeignKey(
@@ -331,11 +331,15 @@ class Timer(models.Model):
         default=None,
         null=True,
         blank=True,
-        related_name="Timers",
+        related_name="+",
         help_text="Corporation of the user who created this timer",
     )
     eve_solar_system = models.ForeignKey(
-        EveSolarSystem, on_delete=models.CASCADE, default=None, null=True
+        EveSolarSystem,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        related_name="+",
     )
     is_important = models.BooleanField(
         default=False,
@@ -374,7 +378,9 @@ class Timer(models.Model):
         null=True,
         help_text="Name of the corporation owning the structure",
     )
-    structure_type = models.ForeignKey(EveType, on_delete=models.CASCADE)
+    structure_type = models.ForeignKey(
+        EveType, on_delete=models.CASCADE, related_name="+"
+    )
     structure_name = models.CharField(max_length=254, default="", blank=True)
     timer_type = models.CharField(max_length=2, choices=Type.choices, default=Type.NONE)
     user = models.ForeignKey(
@@ -382,7 +388,7 @@ class Timer(models.Model):
         null=True,
         on_delete=models.SET_NULL,
         blank=True,
-        related_name="Timers",
+        related_name="+",
     )
     visibility = models.CharField(
         max_length=2,
