@@ -1,3 +1,4 @@
+import math
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -125,9 +126,12 @@ def timer_list_data(request, tab_name: str):
             distances = distances_map[timer.id]
         except KeyError:
             distance_text = "?"
+            distances = None
         else:
             light_years_text = (
-                f"{distances.light_years:.1f} ly" if distances.light_years else "N/A"
+                f"{math.ceil(distances.light_years * 10) / 10} ly"
+                if distances.light_years
+                else "N/A"
             )
             jumps_text = f"{distances.jumps} jumps" if distances.jumps else "N/A"
             distance_text = format_html("{}<br>{}", light_years_text, jumps_text)
@@ -273,6 +277,8 @@ def timer_list_data(request, tab_name: str):
                 "owner": objective,
                 # "creator": creator,
                 "distance": distance_text,
+                "distance_light_years": distances.light_years if distances else None,
+                "distance_jumps": distances.jumps if distances else None,
                 "actions": actions,
                 "timer_type_name": timer.get_timer_type_display(),
                 "objective_name": timer.get_objective_display(),

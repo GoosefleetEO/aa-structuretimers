@@ -49,6 +49,12 @@ def _task_calc_timer_distances_for_all_staging_systems():
     return calc_timer_distances_for_all_staging_systems
 
 
+def _task_schedule_notifications_for_timer():
+    from .tasks import schedule_notifications_for_timer
+
+    return schedule_notifications_for_timer
+
+
 class General(models.Model):
     """Meta model for app permissions"""
 
@@ -426,15 +432,9 @@ class Timer(models.Model):
             args=[self.pk], priority=4
         )
         if notification_enabled and (is_new or date_changed):
-            self._task_schedule_notifications_for_timer().apply_async(
+            _task_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
             )
-
-    @staticmethod
-    def _task_schedule_notifications_for_timer() -> object:
-        from .tasks import schedule_notifications_for_timer
-
-        return schedule_notifications_for_timer
 
     @property
     def structure_display_name(self):

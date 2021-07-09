@@ -1,5 +1,5 @@
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from requests.exceptions import ConnectionError as NewConnectionError
 from requests.exceptions import HTTPError
@@ -38,6 +38,7 @@ def bytes_from_file(filename, chunksize=8192):
                 break
 
 
+@patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestUI(LoadTestDataMixin, WebTest):
     @classmethod
@@ -82,7 +83,6 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_enaluri,
             structure_type=self.type_astrahus,
         )
-        self.timer_3.save()
 
     def test_add_new_timer(self):
         """

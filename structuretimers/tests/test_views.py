@@ -1,31 +1,29 @@
-import json
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 
+from app_utils.testing import json_response_to_dict, json_response_to_python
+
 from .. import views
 from ..models import Timer
 from . import (
     LoadTestDataMixin,
     add_permission_to_user_by_name,
+    create_fake_staging_system,
     create_fake_timer,
     create_test_user,
 )
 
-MODULE_PATH = "structures.views"
+MODELS_PATH = "structuretimers.models"
 
 
-def get_json_response(response: object):
-    return json.loads(response.content.decode("utf-8"))
-
-
-@patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+@patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestViewBase(LoadTestDataMixin, TestCase):
-    @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
+    @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -38,7 +36,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
         self.user_3 = create_test_user(self.character_3)
 
         # timers
-        self.timer_1 = Timer(
+        self.timer_1 = create_fake_timer(
             structure_name="Timer 1",
             location_details="Near the star",
             date=now() + timedelta(hours=4),
@@ -51,8 +49,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             details_image_url="http://www.example.com/dummy.png",
             details_notes="Some notes",
         )
-        self.timer_1.save()
-        self.timer_2 = Timer(
+        self.timer_2 = create_fake_timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -62,8 +59,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             structure_type=self.type_raitaru,
             is_important=True,
         )
-        self.timer_2.save()
-        self.timer_3 = Timer(
+        self.timer_3 = create_fake_timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -72,21 +68,22 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_enaluri,
             structure_type=self.type_astrahus,
         )
-        self.timer_3.save()
 
 
 class TestListData(TestViewBase):
-    def _send_request(self, tab_name: str = "current", user: User = None) -> set:
+    def _timer_list_data(self, tab_name: str = "current", user: User = None):
         if not user:
             user = self.user_1
-
         request = self.factory.get(
             reverse("structuretimers:timer_list_data", args=[tab_name])
         )
         request.user = user
-        response = views.timer_list_data(request, tab_name)
+        return views.timer_list_data(request, tab_name)
+
+    def _timer_list_data_ids(self, tab_name: str = "current", user: User = None) -> set:
+        response = self._timer_list_data(tab_name, user)
         self.assertEqual(response.status_code, 200)
-        return {x["id"] for x in get_json_response(response)}
+        return set(json_response_to_dict(response).keys())
 
     # def test_timer_list_view_loads(self):
     #     request = self.factory.get(reverse("structuretimers:timer_list"))
@@ -96,17 +93,17 @@ class TestListData(TestViewBase):
 
     def test_timer_list_data_current_and_past(self):
         # test current timers
-        timer_ids = self._send_request("current")
+        timer_ids = self._timer_list_data_ids("current")
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
         # test past timers
-        timer_ids = self._send_request("past")
+        timer_ids = self._timer_list_data_ids("past")
         expected = {self.timer_2.id, self.timer_3.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_corp_restricted_to_corp_member(self):
-        timer_4 = Timer(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -116,13 +113,12 @@ class TestListData(TestViewBase):
             user=self.user_2,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer_4.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_corp_restricted_to_non_corp_member(self):
-        timer = Timer(
+        create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -132,13 +128,12 @@ class TestListData(TestViewBase):
             user=self.user_3,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_alliance_restricted_to_alliance_member(self):
-        timer_4 = Timer(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -149,13 +144,12 @@ class TestListData(TestViewBase):
             user=self.user_2,
             visibility=Timer.Visibility.ALLIANCE,
         )
-        timer_4.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_alliance_restricted_to_non_alliance_member(self):
-        timer = Timer(
+        create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -166,8 +160,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             visibility=Timer.Visibility.ALLIANCE,
         )
-        timer.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -175,7 +168,7 @@ class TestListData(TestViewBase):
         self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
-        timer_4 = Timer(
+        timer_4 = create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -185,13 +178,12 @@ class TestListData(TestViewBase):
             user=self.user_3,
             is_opsec=True,
         )
-        timer_4.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_opsec_restricted_to_non_opsec_member(self):
-        timer = Timer(
+        create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -201,8 +193,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             is_opsec=True,
         )
-        timer.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -210,7 +201,7 @@ class TestListData(TestViewBase):
         self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
-        timer = Timer(
+        create_fake_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -221,8 +212,7 @@ class TestListData(TestViewBase):
             is_opsec=True,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer.save()
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -237,7 +227,7 @@ class TestListData(TestViewBase):
             visibility=Timer.Visibility.CORPORATION,
             user=self.user_1,
         )
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -253,7 +243,7 @@ class TestListData(TestViewBase):
             visibility=Timer.Visibility.ALLIANCE,
             user=self.user_1,
         )
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -264,16 +254,76 @@ class TestListData(TestViewBase):
             structure_type=self.type_astrahus,
             date=now() + timedelta(hours=8),
         )
-        timer_ids = self._send_request()
+        timer_ids = self._timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_list_for_manager(self):
-        timer_ids = self._send_request(user=self.user_2)
+        timer_ids = self._timer_list_data_ids(user=self.user_2)
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
+    def test_should_include_distances(self):
+        # given
+        timer = create_fake_timer(
+            structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now() + timedelta(hours=8),
+            eve_character=self.character_3,
+            eve_alliance=self.alliance_3,
+            eve_corporation=self.corporation_3,
+            user=self.user_1,
+        )
+        staging_system = create_fake_staging_system(
+            eve_solar_system=self.system_enaluri,
+            light_years=1.2,
+            jumps=3,
+        )
+        # when
+        request = self.factory.get(
+            reverse("structuretimers:timer_list_data", args=["current"])
+            + f"?staging={staging_system.pk}"
+        )
+        request.user = self.user_1
+        response = views.timer_list_data(request, "current")
+        data = json_response_to_dict(response)
+        # then
+        obj = data[timer.id]
+        self.assertEqual(obj["distance_light_years"], 1.2)
+        self.assertEqual(obj["distance_jumps"], 3)
+        self.assertTrue(obj["distance"])
 
+    def test_should_not_include_distances(self):
+        # given
+        timer = create_fake_timer(
+            structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now() + timedelta(hours=8),
+            eve_character=self.character_3,
+            eve_alliance=self.alliance_3,
+            eve_corporation=self.corporation_3,
+            user=self.user_1,
+        )
+        staging_system = create_fake_staging_system(
+            eve_solar_system=self.system_enaluri
+        )
+        # when
+        request = self.factory.get(
+            reverse("structuretimers:timer_list_data", args=["current"])
+            + f"?staging={staging_system.pk}"
+        )
+        request.user = self.user_1
+        response = views.timer_list_data(request, "current")
+        data = json_response_to_dict(response)
+        # then
+        obj = data[timer.id]
+        self.assertIsNone(obj["distance_light_years"])
+        self.assertIsNone(obj["distance_jumps"])
+
+
+@patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 class TestGetTimerData(TestViewBase):
     def test_normal(self):
         request = self.factory.get(
@@ -308,7 +358,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         request.user = self.user_1
         response = views.select2_solar_systems(request)
         self.assertEqual(response.status_code, 200)
-        data = get_json_response(response)
+        data = json_response_to_python(response)
         self.assertEqual(data, {"results": [{"id": 30004984, "text": "Abune"}]})
 
     def test_select2_solar_systems_empty(self):
@@ -316,7 +366,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         request.user = self.user_1
         response = views.select2_solar_systems(request)
         self.assertEqual(response.status_code, 200)
-        data = get_json_response(response)
+        data = json_response_to_python(response)
         self.assertEqual(data, {"results": None})
 
     def test_select2_structure_types_normal(self):
@@ -326,7 +376,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         request.user = self.user_1
         response = views.select2_structure_types(request)
         self.assertEqual(response.status_code, 200)
-        data = get_json_response(response)
+        data = json_response_to_python(response)
         self.assertEqual(data, {"results": [{"id": 35832, "text": "Astrahus"}]})
 
     def test_select2_structure_types_empty(self):
@@ -334,5 +384,5 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         request.user = self.user_1
         response = views.select2_structure_types(request)
         self.assertEqual(response.status_code, 200)
-        data = get_json_response(response)
+        data = json_response_to_python(response)
         self.assertEqual(data, {"results": None})

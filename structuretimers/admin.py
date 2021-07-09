@@ -294,52 +294,52 @@ class ScheduledNotificationAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(Timer)
-class TimerAdmin(admin.ModelAdmin):
-    list_select_related = ("eve_solar_system", "structure_type", "user")
-    list_filter = (
-        "timer_type",
-        ("eve_solar_system", admin.RelatedOnlyFieldListFilter),
-        ("structure_type", admin.RelatedOnlyFieldListFilter),
-        "objective",
-        "owner_name",
-        ("user", admin.RelatedOnlyFieldListFilter),
-        "is_opsec",
-    )
-    ordering = ("-date",)
-    autocomplete_fields = ["eve_solar_system", "structure_type"]
+# @admin.register(Timer)
+# class TimerAdmin(admin.ModelAdmin):
+#     list_select_related = ("eve_solar_system", "structure_type", "user")
+#     list_filter = (
+#         "timer_type",
+#         ("eve_solar_system", admin.RelatedOnlyFieldListFilter),
+#         ("structure_type", admin.RelatedOnlyFieldListFilter),
+#         "objective",
+#         "owner_name",
+#         ("user", admin.RelatedOnlyFieldListFilter),
+#         "is_opsec",
+#     )
+#     ordering = ("-date",)
+#     autocomplete_fields = ["eve_solar_system", "structure_type"]
 
-    """
-    def _scheduled_notifications(self, obj):
-        return sorted(
-            [
-                x["notification_date"].strftime(DATETIME_FORMAT)
-                for x in ScheduledNotification.objects.filter(
-                    timer=obj, notification_date__gt=now()
-                ).values("notification_date", "notification_rule_id")
-            ]
-        )
-    """
-    actions = ["send_test_notification"]
+#     """
+#     def _scheduled_notifications(self, obj):
+#         return sorted(
+#             [
+#                 x["notification_date"].strftime(DATETIME_FORMAT)
+#                 for x in ScheduledNotification.objects.filter(
+#                     timer=obj, notification_date__gt=now()
+#                 ).values("notification_date", "notification_rule_id")
+#             ]
+#         )
+#     """
+#     actions = ["send_test_notification"]
 
-    def send_test_notification(self, request, queryset):
-        for timer in queryset:
-            for webhook in DiscordWebhook.objects.filter(is_enabled=True):
-                timer.send_notification(
-                    webhook=webhook,
-                    content=f"Test notification sent by **{request.user}**",
-                )
+#     def send_test_notification(self, request, queryset):
+#         for timer in queryset:
+#             for webhook in DiscordWebhook.objects.filter(is_enabled=True):
+#                 timer.send_notification(
+#                     webhook=webhook,
+#                     content=f"Test notification sent by **{request.user}**",
+#                 )
 
-            self.message_user(
-                request, f"Initiated sending test notification for timer: {timer}"
-            )
+#             self.message_user(
+#                 request, f"Initiated sending test notification for timer: {timer}"
+#             )
 
-        for webhook in DiscordWebhook.objects.filter(is_enabled=True):
-            tasks.send_messages_for_webhook.delay(webhook.pk)
+#         for webhook in DiscordWebhook.objects.filter(is_enabled=True):
+#             tasks.send_messages_for_webhook.delay(webhook.pk)
 
-    send_test_notification.short_description = (
-        "Send test notification for selected timers to all enabled webhooks"
-    )
+#     send_test_notification.short_description = (
+#         "Send test notification for selected timers to all enabled webhooks"
+#     )
 
 
 @admin.register(StagingSystem)
@@ -356,3 +356,14 @@ class StagingSystemAdmin(admin.ModelAdmin):
         return obj.eve_solar_system.eve_constellation.eve_region.name
 
     _region.admin_order_field = "eve_solar_system__eve_constellation__eve_region"
+
+    actions = ["_recalc_timers"]
+
+    def _recalc_timers(self, request, queryset):
+        for obj in queryset:
+            tasks.calc_staging_system.delay(obj.pk, force_update=True)
+            self.message_user(
+                request, f"{obj}: Started to update timers for staging system..."
+            )
+
+    _recalc_timers.short_description = "Recalc timers for selected staging system"

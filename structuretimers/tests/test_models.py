@@ -104,18 +104,19 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
             name="Dummy", url="http://www.example.com"
         )
 
-    @patch(MODULE_PATH + ".Timer._task_schedule_notifications_for_timer")
+    @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
     def test_schedule_notifications_for_new_timers(self, mock_import_func):
         timer = create_fake_timer(
             date=now() + timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
+            enabled_notifications=True,
         )
         self.assertTrue(mock_import_func.called)
         _, kwargs = mock_import_func.return_value.apply_async.call_args
         self.assertEqual(kwargs["kwargs"]["timer_pk"], timer.pk)
 
-    @patch(MODULE_PATH + ".Timer._task_schedule_notifications_for_timer")
+    @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
     def test_dont_schedule_notifications_for_new_timers_when_turned_off(
         self, mock_import_func
     ):
@@ -129,7 +130,7 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_schedule_notifications_when_date_changed(self):
         with patch(
-            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
+            MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
@@ -138,7 +139,7 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
             )
 
         with patch(
-            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
+            MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer.date = now() + timedelta(hours=3)
             timer.save()
@@ -148,7 +149,7 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_dont_schedule_notifications_else(self):
         with patch(
-            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
+            MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer = create_fake_timer(
                 date=now() + timedelta(hours=4),
@@ -157,7 +158,7 @@ class TestTimerSave(LoadTestDataMixin, NoSocketsTestCase):
             )
 
         with patch(
-            MODULE_PATH + ".Timer._task_schedule_notifications_for_timer"
+            MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_import_func:
             timer.date = now() + timedelta(hours=3)
             timer.structure_name = "Some fancy name"

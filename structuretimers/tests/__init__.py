@@ -13,7 +13,7 @@ from allianceauth.eveonline.models import (
 )
 from allianceauth.tests.auth_utils import AuthUtils
 
-from ..models import Timer
+from ..models import DistancesFromStaging, StagingSystem, Timer
 from .testdata.load_eveuniverse import load_eveuniverse
 
 
@@ -107,4 +107,48 @@ def create_fake_timer(*args, **kwargs):
         "structuretimers.models._task_calc_timer_distances_for_all_staging_systems",
         Mock(),
     ):
-        return Timer.objects.create(*args, **kwargs)
+        if "light_years" in kwargs:
+            light_years = kwargs.pop("light_years")
+        else:
+            light_years = None
+        if "jumps" in kwargs:
+            jumps = kwargs.pop("jumps")
+        else:
+            jumps = None
+        if "enabled_notifications" in kwargs:
+            kwargs.pop("enabled_notifications")
+            timer = Timer.objects.create(*args, **kwargs)
+        else:
+            with patch(
+                "structuretimers.models._task_schedule_notifications_for_timer", Mock()
+            ):
+                timer = Timer.objects.create(*args, **kwargs)
+        if light_years or jumps:
+            for staging_system in StagingSystem.objects.all():
+                DistancesFromStaging.objects.update_or_create(
+                    staging_system=staging_system,
+                    timer=timer,
+                    defaults={"light_years": light_years, "jumps": jumps},
+                )
+        return timer
+
+
+def create_fake_staging_system(*args, **kwargs):
+    if "light_years" in kwargs:
+        light_years = kwargs.pop("light_years")
+    else:
+        light_years = None
+    if "jumps" in kwargs:
+        jumps = kwargs.pop("jumps")
+    else:
+        jumps = None
+    with patch("structuretimers.models._task_calc_staging_system", Mock()):
+        staging_system = StagingSystem.objects.create(*args, **kwargs)
+        if light_years or jumps:
+            for timer in Timer.objects.all():
+                DistancesFromStaging.objects.update_or_create(
+                    staging_system=staging_system,
+                    timer=timer,
+                    defaults={"light_years": light_years, "jumps": jumps},
+                )
+        return staging_system
