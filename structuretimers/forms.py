@@ -4,6 +4,7 @@ import imghdr
 import requests
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django.utils.html import mark_safe
@@ -14,7 +15,7 @@ from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
-from . import __title__
+from . import __title__, constants
 from .models import Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -151,6 +152,17 @@ class TimerForm(forms.ModelForm):
                         structure_type.name,
                     )
                 ]
+                if (
+                    cleaned_data.get("timer_type") == Timer.Type.MOONMINING
+                    and structure_type.eve_group_id != constants.EVE_GROUP_ID_REFINERY
+                ):
+                    raise ValidationError(
+                        {
+                            "timer_type": _(
+                                "Moon mining timers are valid for refineries only."
+                            )
+                        }
+                    )
 
         if cleaned_data.get("details_image_url"):
             details_image_url = cleaned_data["details_image_url"]

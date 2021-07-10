@@ -9,11 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Shows distance in ly from home system for every timer
+- Show distance in ly and jumps from staging systems for every timer
+- Allow users to switch between staging systems
 
 ### Changed
 
 - Removed creator column
+
+### Fixed
+
+- Allow creating moon mining timers for refineries only (#17)
 
 ## 1.0.7 - 2021-05-05
 

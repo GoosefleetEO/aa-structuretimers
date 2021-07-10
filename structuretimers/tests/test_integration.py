@@ -84,7 +84,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             structure_type=self.type_astrahus,
         )
 
-    def test_add_new_timer(self):
+    def test_should_add_new_timer(self):
         """
         when user has permissions
         then he can create a new timer
@@ -103,19 +103,24 @@ class TestUI(LoadTestDataMixin, WebTest):
 
         # user enters data and clicks create
         form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
         form["structure_name"] = "Timer 4"
         form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
         form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["timer_type"] = Timer.Type.ANCHORING
         form["days_left"] = 1
         form["hours_left"] = 2
         form["minutes_left"] = 3
         response = form.submit()
 
         # assert results
+        timer_date = now() + timedelta(days=1, hours=2, minutes=3)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("structuretimers:timer_list"))
-        self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
+        obj = Timer.objects.get(structure_name="Timer 4")
+        self.assertEqual(obj.eve_solar_system, self.system_abune)
+        self.assertEqual(obj.structure_type, self.type_astrahus)
+        self.assertEqual(obj.timer_type, Timer.Type.ANCHORING)
+        self.assertAlmostEqual(obj.date, timer_date, delta=timedelta(seconds=10))
 
     def test_add_new_timer_without_permission(self):
         """
@@ -319,6 +324,24 @@ class TestUI(LoadTestDataMixin, WebTest):
         response = form.submit()
 
         # assert results
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("correct the input errors", response.text)
+
+    def test_should_not_allow_moon_mining_type_for_non_mining_structures(self):
+        # given
+        self.app.set_user(self.user_2)
+        add_timer = self.app.get(reverse("structuretimers:add"))
+        # when
+        form = add_timer.forms["add-timer-form"]
+        form["structure_name"] = "Timer 4"
+        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
+        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
+        form["timer_type"] = Timer.Type.MOONMINING
+        form["days_left"] = 1
+        form["hours_left"] = 2
+        form["minutes_left"] = 3
+        response = form.submit()
+        # then
         self.assertEqual(response.status_code, 200)
         self.assertIn("correct the input errors", response.text)
 
