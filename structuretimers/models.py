@@ -26,7 +26,10 @@ from app_utils.logging import LoggerAddTag
 from app_utils.urls import reverse_absolute, static_file_absolute_url
 
 from . import __title__
-from .app_settings import STRUCTURETIMERS_NOTIFICATIONS_ENABLED
+from .app_settings import (
+    STRUCTURETIMER_NOTIFICATION_SET_AVATAR,
+    STRUCTURETIMERS_NOTIFICATIONS_ENABLED,
+)
 from .managers import DistancesFromStagingManager, NotificationRuleManager, TimerManager
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -548,7 +551,7 @@ class Timer(models.Model):
         return label_type
 
     def send_notification(self, webhook: DiscordWebhook, content: str = None) -> None:
-        """sends notification for given self to given webhook"""
+        """Sends notification related to this timer to given webhook."""
         structure_type_name = self.structure_type.name
         solar_system_name = self.eve_solar_system.name
         title = f"{structure_type_name} in {solar_system_name}"
@@ -586,11 +589,17 @@ class Timer(models.Model):
             thumbnail=dhooks_lite.Thumbnail(structure_icon_url),
             color=color,
         )
+        if STRUCTURETIMER_NOTIFICATION_SET_AVATAR:
+            username = __title__
+            avatar_url = default_avatar_url()
+        else:
+            username = None
+            avatar_url = None
         webhook.send_message(
             content=content,
             embeds=[embed],
-            username=__title__,
-            avatar_url=default_avatar_url(),
+            username=username,
+            avatar_url=avatar_url,
         )
 
 

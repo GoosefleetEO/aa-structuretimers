@@ -14,6 +14,7 @@ from app_utils.esi import EsiStatus
 from app_utils.json import JSONDateTimeDecoder
 from app_utils.testing import NoSocketsTestCase
 
+from .. import __title__
 from ..models import (
     DiscordWebhook,
     NotificationRule,
@@ -365,15 +366,37 @@ class TestTimerSendNotification(LoadTestDataMixin, NoSocketsTestCase):
             name="Dummy", url="http://www.example.com"
         )
 
-    def test_minmal(self, mock_send_message):
+    @patch(MODULE_PATH + ".STRUCTURETIMER_NOTIFICATION_SET_AVATAR", True)
+    def test_should_send_minimal_notification(self, mock_send_message):
+        # given
         timer = Timer(
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             date=now(),
         )
+        # when
         timer.send_notification(self.webhook)
-
+        # then
         self.assertEqual(mock_send_message.call_count, 1)
+        _, kwargs = mock_send_message.call_args
+        self.assertEqual(kwargs["username"], __title__)
+        self.assertIsNotNone(kwargs["avatar_url"])
+
+    @patch(MODULE_PATH + ".STRUCTURETIMER_NOTIFICATION_SET_AVATAR", False)
+    def test_should_send_notification_without_avatar(self, mock_send_message):
+        # given
+        timer = Timer(
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+            date=now(),
+        )
+        # when
+        timer.send_notification(self.webhook)
+        # then
+        self.assertEqual(mock_send_message.call_count, 1)
+        _, kwargs = mock_send_message.call_args
+        self.assertIsNone(kwargs["username"])
+        self.assertIsNone(kwargs["avatar_url"])
 
     def test_with_content(self, mock_send_message):
         timer = Timer(

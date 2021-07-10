@@ -25,3 +25,8 @@ STRUCTURETIMERS_DEFAULT_PAGE_LENGTH = clean_setting(
 
 # Wether paging is enabled on the timerboard
 STRUCTURETIMERS_PAGING_ENABLED = clean_setting("STRUCTURETIMERS_PAGING_ENABLED", True)
+
+# Wether structures sets the name and avatar icon of a webhook.
+STRUCTURETIMER_NOTIFICATION_SET_AVATAR = clean_setting(
+    "STRUCTURETIMER_NOTIFICATION_SET_AVATAR", True
+)

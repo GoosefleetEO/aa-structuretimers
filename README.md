@@ -157,6 +157,7 @@ Name | Description | Default
 `STRUCTURETIMERS_DEFAULT_PAGE_LENGTH`| Default page size for timerboard. Must be an integer value from the available options in the app. | `10`
 `STRUCTURETIMERS_PAGING_ENABLED`| Wether paging is enabled on the timerboard. | `True`
 `STRUCTURETIMERS_HOME_SYSTEM_ID`| Eve ID of the home system. Distances will be calculated from that system. | `None`
+`STRUCTURETIMER_NOTIFICATION_SET_AVATAR`| Wether structures sets the name and avatar icon of a webhook. When False the webhook will use it's own values as set on the platform. | `True`
 
 ## Notification Rules
 
