@@ -128,7 +128,10 @@ def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
         )
     else:
         if notification_rule.is_enabled and notification_rule.webhook.is_enabled:
-            content = f"New timer added by **{timer.eve_character}**:"
+            author_text = (
+                f" by **{timer.eve_character}**" if timer.eve_character else ""
+            )
+            content = f"New timer added{author_text}:"
             timer.send_notification(
                 webhook=notification_rule.webhook,
                 content=notification_rule.prepend_ping_text(content),

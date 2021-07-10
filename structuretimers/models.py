@@ -268,6 +268,26 @@ class DiscordWebhook(models.Model):
 class Timer(models.Model):
     """A structure timer"""
 
+    # TODO: Old constants needed to maintain compatibility with other apps
+    # during transition only. REMOVE as soon as possible.
+
+    TYPE_NONE = "NO"
+    TYPE_ARMOR = "AR"
+    TYPE_HULL = "HL"
+    TYPE_FINAL = "FI"
+    TYPE_ANCHORING = "AN"
+    TYPE_UNANCHORING = "UA"
+    TYPE_MOONMINING = "MM"
+
+    OBJECTIVE_UNDEFINED = "UN"
+    OBJECTIVE_HOSTILE = "HO"
+    OBJECTIVE_FRIENDLY = "FR"
+    OBJECTIVE_NEUTRAL = "NE"
+
+    VISIBILITY_UNRESTRICTED = "UN"
+    VISIBILITY_ALLIANCE = "AL"
+    VISIBILITY_CORPORATION = "CO"
+
     class Type(models.TextChoices):
         NONE = "NO", _("Unspecified")
         ARMOR = "AR", _("Armor")
