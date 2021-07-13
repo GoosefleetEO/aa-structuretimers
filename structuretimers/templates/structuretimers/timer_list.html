@@ -29,7 +29,7 @@
             </a>
             <ul class="dropdown-menu">
                 {% for staging_system in stageing_systems %}
-                    <li><a href="{% url 'structuretimers:timer_list' %}?staging={{ staging_system.pk }}">
+                    <li><a href="{% url 'structuretimers:timer_list' %}?staging={{ staging_system.eve_solar_system.name }}">
                         {{ staging_system }} ({{ staging_system.eve_solar_system.eve_constellation.eve_region }})
                         {% if staging_system.is_main %} [MAIN] {% endif %}
                     </a></li>
