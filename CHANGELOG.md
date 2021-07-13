@@ -5,20 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] - yyyy-mm-dd
+## [1.1.0a1] - 2021-07-13
 
 ### Added
 
-- Show distance in ly and jumps from staging systems for every timer
-- Allow users to switch between staging systems
+- Shows distance in ly and jumps from staging systems for timers
+- Admins can define multple staging system and users can switch between them
+- Users can duplicate existing timers (#20)
+- Turned off setting the avatar for Discord webhooks (#14)
 
 ### Changed
 
 - Removed creator column
+- Removed timers from admin site
+- Minor UI improvements for edit and delete pages
 
 ### Fixed
 
-- Allow creating moon mining timers for refineries only (#17)
+- Restrict creating moon mining timers to refineries (#17)
 
 ## 1.0.7 - 2021-05-05
 
