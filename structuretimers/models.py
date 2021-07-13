@@ -929,6 +929,13 @@ class DistancesFromStaging(models.Model):
 
     objects = DistancesFromStagingManager()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["timer", "staging_system"], name="fpk_distances_from_staging"
+            )
+        ]
+
     def __str__(self) -> str:
         return f"{self.timer}-{self.staging_system}"
 

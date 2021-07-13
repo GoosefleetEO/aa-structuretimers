@@ -69,6 +69,8 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             )
         except (StagingSystem.DoesNotExist, ValueError):
             selected_staging_system = staging_systems_qs.filter(is_main=True).first()
+            if not selected_staging_system:
+                selected_staging_system = staging_systems_qs.first()
         stageing_systems = staging_systems_qs.order_by("eve_solar_system__name")
         context = super().get_context_data(**kwargs)
         context.update(
