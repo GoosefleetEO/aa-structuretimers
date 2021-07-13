@@ -49,16 +49,16 @@ class TimerForm(forms.ModelForm):
             # for appropriate fields
             my_instance = kwargs["instance"]
             current_time = timezone.now()
-            td = my_instance.date - current_time
-            initial = kwargs.pop("initial", dict())
-            if "days_left" not in initial:
-                initial.update({"days_left": td.days})
-            if "hours_left" not in initial:
-                initial.update({"hours_left": td.seconds // 3600})
-            if "minutes_left" not in initial:
-                initial.update({"minutes_left": td.seconds // 60 % 60})
-
-            kwargs.update({"initial": initial})
+            if my_instance.date:
+                td = my_instance.date - current_time
+                initial = kwargs.pop("initial", dict())
+                if "days_left" not in initial:
+                    initial.update({"days_left": td.days})
+                if "hours_left" not in initial:
+                    initial.update({"hours_left": td.seconds // 3600})
+                if "minutes_left" not in initial:
+                    initial.update({"minutes_left": td.seconds // 60 % 60})
+                kwargs.update({"initial": initial})
             self.is_new = False
         else:
             my_instance = None

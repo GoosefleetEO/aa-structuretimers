@@ -1,9 +1,10 @@
 import math
+from copy import deepcopy
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -421,23 +422,19 @@ class EditTimerMixin:
         return response
 
 
-class CopyTimerView(TimerManagementView, CreateView):
-
-    permission_required = (
-        "structuretimers.basic_access",
-        "structuretimers.create_timer",
-    )
-
-    def get(self, *args, **kwargs):
-        record = self.get_object()
-        record.pk = None
-        record.save()
-        record.refresh_from_db()
-        return redirect("structuretimers:edit", record.pk)
-
-
 class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateView):
     template_name_suffix = "_update_form"
+
+
+class CopyTimerView(AddTimerView):
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        old_obj = get_object_or_404(Timer, pk=self.kwargs["pk"])
+        new_obj = deepcopy(old_obj)
+        new_obj.pk = None
+        new_obj.date = None
+        kwargs["instance"] = deepcopy(new_obj)
+        return kwargs
 
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
