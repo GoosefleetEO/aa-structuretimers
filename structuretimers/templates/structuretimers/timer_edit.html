@@ -4,7 +4,6 @@
 {% load i18n %}
 
 {% block details %}
-
     <div class="col-md-8 col-md-offset-2">
         <div class="row">
             {% if form.errors %}
@@ -23,7 +22,7 @@
                 <button class="btn btn-primary" type="submit">
                     {% block submit_button_text %}{% endblock %}
                 </button>
-                {% include 'structuretimers/cancel_button.html' %}
+                {% include 'structuretimers/partials/cancel_button.html' %}
             </form>
         </div>
     </div>

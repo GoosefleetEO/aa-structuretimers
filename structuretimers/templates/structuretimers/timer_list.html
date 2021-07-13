@@ -45,7 +45,7 @@
             <div class="tab-content">
                 <!-- current structuretimers tab -->
                 <div role="tabpanel" class="tab-pane active" id="home">
-                    {% include 'structuretimers/timer_list_table.html' with tab_name='current' %}
+                    {% include 'structuretimers/partials/timer_list_table.html' with tab_name='current' %}
                     <p class="text-muted">
                         Timers remain on this page for {{ max_hours_expired }} hours after they expired
                     </p>
@@ -53,7 +53,7 @@
 
                 <!-- past structuretimers tab -->
                 <div role="tabpanel" class="tab-pane" id="profile">
-                    {% include 'structuretimers/timer_list_table.html' with tab_name='past' %}
+                    {% include 'structuretimers/partials/timer_list_table.html' with tab_name='past' %}
                 </div>
             </div>
             <p class="text-muted">

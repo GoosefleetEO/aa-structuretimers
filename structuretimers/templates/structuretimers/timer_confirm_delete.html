@@ -1,9 +1,7 @@
 {% extends "allianceauth/base.html" %}
 {% load i18n %}
 
-{% block page_title %}
-    Delete Timer
-{% endblock page_title %}
+{% block page_title %}Delete Timer{% endblock page_title %}
 
 {% block content %}
     <div class="col-md-8 col-md-offset-2">
@@ -21,7 +19,7 @@
                         <strong>{{ object }}</strong>
                     </p>
                     <input class="btn btn-danger" type="submit" value="Delete" />
-                    {% include 'structuretimers/cancel_button.html' %}
+                    {% include 'structuretimers/partials/cancel_button.html' %}
                 </form>
             </div>
         </div>

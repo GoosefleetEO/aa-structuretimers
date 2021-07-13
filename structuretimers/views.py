@@ -360,10 +360,11 @@ class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
     success_url = reverse_lazy(index_redirect)
     model = Timer
     form_class = TimerForm
+    title = _("Edit Structure Timer")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = "Edit Structure Timer"
+        context["title"] = self.title
         return context
 
 
@@ -377,12 +378,13 @@ class AddUpdateMixin:
         return kwargs
 
 
-class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
+class CreateTimerView(TimerManagementView, AddUpdateMixin, CreateView):
     template_name_suffix = "_create_form"
     permission_required = (
         "structuretimers.basic_access",
         "structuretimers.create_timer",
     )
+    title = _("Create New Timer")
 
     def form_valid(self, form):
         result = super().form_valid(form)
@@ -426,7 +428,7 @@ class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateV
     template_name_suffix = "_update_form"
 
 
-class CopyTimerView(AddTimerView):
+class CopyTimerView(CreateTimerView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         old_obj = get_object_or_404(Timer, pk=self.kwargs["pk"])
