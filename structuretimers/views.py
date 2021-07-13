@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -55,7 +56,7 @@ MAX_HOURS_PASSED = 2
 
 class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = "structuretimers/timer_list.html"
-    permission_required = ("structuretimers.basic_access",)
+    permission_required = "structuretimers.basic_access"
 
     def get_context_data(self, **kwargs):
         staging_systems_qs = StagingSystem.objects.select_related(
@@ -89,7 +90,7 @@ class TimerListDataView(
     """Produce timer list in JSON for AJAX call."""
 
     model = Timer
-    permission_required = ("structuretimers.basic_access",)
+    permission_required = "structuretimers.basic_access"
 
     def render_to_response(self, context, **response_kwargs):
         return self.render_to_json_response(context, **response_kwargs)
@@ -244,46 +245,6 @@ class TimerListDataView(
             elif timer.visibility == Timer.Visibility.CORPORATION:
                 visibility = corporation_name
 
-            # actions
-            actions = ""
-            if timer.details_image_url or timer.details_notes:
-                disabled_html = ""
-                button_type = "primary"
-                data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
-                title = "Show details of this timer"
-            else:
-                button_type = "default"
-                disabled_html = ' disabled="disabled"'
-                data_toggle = ""
-                title = "No details available"
-
-            actions += (
-                format_html(
-                    '<a type="button" id="timerboardBtnDetails" '
-                    f'class="btn btn-{button_type}" title="{title}"'
-                    f"{data_toggle}"
-                    f'data-timerpk="{timer.pk}"{disabled_html}>'
-                    '<i class="fas fa-search-plus"></i></a>'
-                )
-                + "&nbsp;"
-            )
-            if timer.user_can_edit(self.request.user):
-                actions += (
-                    fontawesome_link_button_html(
-                        reverse("structuretimers:delete", args=(timer.pk,)),
-                        "far fa-trash-alt",
-                        "danger",
-                        "Delete this timer",
-                    )
-                    + "&nbsp;"
-                    + fontawesome_link_button_html(
-                        reverse("structuretimers:edit", args=(timer.pk,)),
-                        "far fa-edit",
-                        "warning",
-                        "Edit this timer",
-                    )
-                )
-            actions = no_wrap_html(actions)
             data.append(
                 {
                     "id": timer.id,
@@ -299,7 +260,7 @@ class TimerListDataView(
                     if distances
                     else None,
                     "distance_jumps": distances.jumps if distances else None,
-                    "actions": actions,
+                    "actions": self._get_data_actions(timer),
                     "timer_type_name": timer.get_timer_type_display(),
                     "objective_name": timer.get_objective_display(),
                     "system_name": timer.eve_solar_system.name,
@@ -317,11 +278,58 @@ class TimerListDataView(
 
         return data
 
+    def _get_data_actions(self, timer):
+        actions = ""
+        if timer.details_image_url or timer.details_notes:
+            disabled_html = ""
+            button_type = "primary"
+            data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
+            title = "Show details of this timer"
+        else:
+            button_type = "default"
+            disabled_html = ' disabled="disabled"'
+            data_toggle = ""
+            title = "No details available"
+        actions += (
+            format_html(
+                '<a type="button" id="timerboardBtnDetails" '
+                f'class="btn btn-{button_type}" title="{title}"'
+                f"{data_toggle}"
+                f'data-timerpk="{timer.pk}"{disabled_html}>'
+                '<i class="fas fa-search-plus"></i></a>'
+            )
+            + "&nbsp;"
+        )
+        if timer.user_can_edit(self.request.user):
+            actions += (
+                fontawesome_link_button_html(
+                    reverse("structuretimers:delete", args=(timer.pk,)),
+                    "far fa-trash-alt",
+                    "danger",
+                    "Delete this timer",
+                )
+                + "&nbsp;"
+                + fontawesome_link_button_html(
+                    reverse("structuretimers:edit", args=(timer.pk,)),
+                    "far fa-edit",
+                    "warning",
+                    "Edit this timer",
+                )
+            )
+        if self.request.user.has_perm("structuretimers.create_timer"):
+            actions += "&nbsp;" + fontawesome_link_button_html(
+                reverse("structuretimers:copy", args=(timer.pk,)),
+                "far fa-copy",
+                "success",
+                "Copy this timer",
+            )
+        return no_wrap_html(actions)
+
 
 class TimerDetailDataView(
     LoginRequiredMixin, PermissionRequiredMixin, JSONResponseMixin, BaseDetailView
 ):
-    permission_required = ("structuretimers.basic_access",)
+    permission_required = "structuretimers.basic_access"
     model = Timer
 
     def render_to_response(self, context, **response_kwargs):
@@ -413,17 +421,23 @@ class EditTimerMixin:
         return response
 
 
+class CopyTimerView(TimerManagementView, CreateView):
+
+    permission_required = (
+        "structuretimers.basic_access",
+        "structuretimers.create_timer",
+    )
+
+    def get(self, *args, **kwargs):
+        record = self.get_object()
+        record.pk = None
+        record.save()
+        record.refresh_from_db()
+        return redirect("structuretimers:edit", record.pk)
+
+
 class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateView):
     template_name_suffix = "_update_form"
-
-    """
-    def form_valid(self, form):
-        timer = self.object
-        messages_plus.success(
-            self.request, _('Saved changes to the timer: {}.').format(timer)
-        )
-        return super().form_valid(form)
-    """
 
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
