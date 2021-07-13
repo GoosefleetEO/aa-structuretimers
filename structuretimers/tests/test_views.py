@@ -325,23 +325,32 @@ class TestListData(TestViewBase):
 
 @patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 class TestGetTimerData(TestViewBase):
-    def test_normal(self):
-        request = self.factory.get(
+    def test_should_return_timer(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(
             reverse("structuretimers:get_timer_data", args=[self.timer_1.pk])
         )
-        request.user = self.user_1
-        response = views.get_timer_data(request, self.timer_1.pk)
+        # then
         self.assertEqual(response.status_code, 200)
+        data = json_response_to_python(response)
+        self.assertEqual(
+            data["structure_display_name"],
+            'Astrahus "Timer 1" in Abune near Near the star',
+        )
 
     def test_forbidden(self):
+        # given
+        self.client.force_login(self.user_1)
         self.timer_1.is_opsec = True
         self.timer_1.save()
-        request = self.factory.get(
+        # when
+        response = self.client.get(
             reverse("structuretimers:get_timer_data", args=[self.timer_1.pk])
         )
-        request.user = self.user_3
-        response = views.get_timer_data(request, self.timer_1.pk)
-        self.assertEqual(response.status_code, 403)
+        # then
+        self.assertEqual(response.status_code, 302)
 
 
 class TestSelect2Views(LoadTestDataMixin, TestCase):

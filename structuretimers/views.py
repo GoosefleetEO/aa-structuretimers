@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import reverse
 from django.urls import reverse_lazy
 from django.utils.html import format_html, mark_safe
@@ -12,6 +12,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
+from django.views.generic.detail import BaseDetailView
 from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
@@ -299,26 +300,54 @@ def timer_list_data(request, tab_name: str):
     return JsonResponse(data, safe=False)
 
 
-@login_required
-@permission_required("structuretimers.basic_access")
-def get_timer_data(request, pk: str):
-    """returns data for a timer"""
-    try:
-        timer = (
-            Timer.objects.visible_to_user(request.user)
-            .select_related("structure_type", "eve_solar_system")
-            .get(pk=pk)
+# @login_required
+# @permission_required("structuretimers.basic_access")
+# def get_timer_data(request, pk: str):
+#     """returns data for a timer"""
+#     try:
+#         timer = (
+#             Timer.objects.visible_to_user(request.user)
+#             .select_related("structure_type", "eve_solar_system")
+#             .get(pk=pk)
+#         )
+#     except Timer.DoesNotExist:
+#         return HttpResponseForbidden()
+#     data = {
+#         "display_name": str(timer),
+#         "structure_display_name": timer.structure_display_name,
+#         "date": timer.date.strftime(DATETIME_FORMAT),
+#         "details_image_url": timer.details_image_url if timer.details_image_url else "",
+#         "notes": timer.details_notes if timer.details_notes else "",
+#     }
+#     return JsonResponse(data, safe=False)
+
+
+class TimerDetailDataView(
+    LoginRequiredMixin, PermissionRequiredMixin, JSONResponseMixin, BaseDetailView
+):
+    permission_required = ("structuretimers.basic_access",)
+    model = Timer
+
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.visible_to_user(self.request.user).select_related(
+            "structure_type", "eve_solar_system"
         )
-    except Timer.DoesNotExist:
-        return HttpResponseForbidden()
-    data = {
-        "display_name": str(timer),
-        "structure_display_name": timer.structure_display_name,
-        "date": timer.date.strftime(DATETIME_FORMAT),
-        "details_image_url": timer.details_image_url if timer.details_image_url else "",
-        "notes": timer.details_notes if timer.details_notes else "",
-    }
-    return JsonResponse(data, safe=False)
+
+    def get_context_data(self, object):
+        context = {
+            "display_name": str(object),
+            "structure_display_name": object.structure_display_name,
+            "date": object.date.strftime(DATETIME_FORMAT),
+            "details_image_url": object.details_image_url
+            if object.details_image_url
+            else "",
+            "notes": object.details_notes if object.details_notes else "",
+        }
+        return context
 
 
 class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):
