@@ -1,17 +1,21 @@
 import math
 from datetime import timedelta
 
-from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import reverse
-from django.urls import reverse_lazy
-from django.utils.html import format_html, mark_safe
+from django.urls import reverse, reverse_lazy
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
 from django.views import View
-from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 from django.views.generic.detail import BaseDetailView
 from eveuniverse.models import EveSolarSystem, EveType
 
@@ -79,247 +83,239 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
         return context
 
 
-@login_required
-@permission_required("structuretimers.basic_access")
-def timer_list_data(request, tab_name: str):
-    """returns timer list in JSON for AJAX call in timer_list view"""
-    timers_qs = Timer.objects.visible_to_user(request.user)
-    if tab_name == "current":
-        timers_qs = timers_qs.filter(
-            date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
-        )
-    else:
-        timers_qs = timers_qs.filter(date__lt=now())
+class TimerListDataView(
+    LoginRequiredMixin, PermissionRequiredMixin, JSONResponseMixin, ListView
+):
+    """Produce timer list in JSON for AJAX call."""
 
-    timers_qs = timers_qs.select_related(
-        "eve_solar_system__eve_constellation__eve_region",
-        "structure_type",
-        "structure_type__eve_group",
-        "eve_character",
-        "eve_corporation",
-        "eve_alliance",
-    )
-    staging_system_pk = request.GET.get("staging")
-    if staging_system_pk:
-        distances_map = {
-            obj.timer_id: obj
-            for obj in DistancesFromStaging.objects.filter(
-                staging_system__pk=staging_system_pk
-            ).all()
-        }
-    else:
-        distances_map = dict()
-    data = list()
-    for timer in timers_qs:
-        # location
-        location = link_html(
-            dotlan.solar_system_url(timer.eve_solar_system.name),
-            timer.eve_solar_system.name,
-        )
-        if timer.location_details:
-            location += format_html("<br><em>{}</em>", timer.location_details)
+    model = Timer
+    permission_required = ("structuretimers.basic_access",)
 
-        location += format_html(
-            "<br>{}", timer.eve_solar_system.eve_constellation.eve_region.name
-        )
-        # distance
-        try:
-            distances = distances_map[timer.id]
-        except KeyError:
-            distance_text = "?"
-            distances = None
-        else:
-            light_years_text = (
-                f"{math.ceil(distances.light_years * 10) / 10} ly"
-                if distances.light_years is not None
-                else "N/A"
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        timers_qs = qs.visible_to_user(self.request.user)
+        tab_name = self.kwargs.get("tab_name")
+        if tab_name == "current":
+            timers_qs = timers_qs.filter(
+                date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
             )
-            jumps_text = (
-                f"{distances.jumps} jumps" if distances.jumps is not None else "N/A"
-            )
-            distance_text = format_html("{}<br>{}", light_years_text, jumps_text)
-
-        # structure & timer type & fitting image
-        timer_type = bootstrap_label_html(
-            timer.get_timer_type_display(), timer.label_type_for_timer_type()
-        )
-        if timer.structure_type:
-            structure_type_icon_url = timer.structure_type.icon_url(size=64)
-            structure_type_name = timer.structure_type.name
         else:
-            structure_type_icon_url = ""
-            structure_type_name = "(unknown)"
+            timers_qs = timers_qs.filter(date__lt=now())
 
-        structure = format_html(
-            '<div class="flex-container">'
-            '  <div style="padding-top: 4px;"><img src="{}" width="40"></div>'
-            '  <div style="text-align: left;">'
-            "    {}&nbsp;<br>"
-            "    {}"
-            "  </div>"
-            "</div>",
-            structure_type_icon_url,
-            mark_safe(bootstrap_label_html(structure_type_name, "info")),
-            timer_type,
+        timers_qs = timers_qs.select_related(
+            "eve_solar_system__eve_constellation__eve_region",
+            "structure_type",
+            "structure_type__eve_group",
+            "eve_character",
+            "eve_corporation",
+            "eve_alliance",
         )
+        return timers_qs
 
-        # objective & tags
-        tags = list()
-        is_restricted = False
-        if timer.is_opsec:
-            tags.append(bootstrap_label_html("OPSEC", "danger"))
-            is_restricted = True
+    def get_data(self, context):
+        staging_system_pk = self.request.GET.get("staging")
+        if staging_system_pk:
+            distances_map = {
+                obj.timer_id: obj
+                for obj in DistancesFromStaging.objects.filter(
+                    staging_system__pk=staging_system_pk
+                ).all()
+            }
+        else:
+            distances_map = dict()
+        data = list()
+        for timer in self.object_list:
+            # location
+            location = link_html(
+                dotlan.solar_system_url(timer.eve_solar_system.name),
+                timer.eve_solar_system.name,
+            )
+            if timer.location_details:
+                location += format_html("<br><em>{}</em>", timer.location_details)
 
-        if timer.visibility != Timer.Visibility.UNRESTRICTED:
-            tags.append(bootstrap_label_html(timer.get_visibility_display(), "info"))
-            is_restricted = True
-
-        if timer.is_important:
-            tags.append(bootstrap_label_html("Important", "warning"))
-
-        objective = format_html(
-            "{}<br>{}",
-            mark_safe(
-                bootstrap_label_html(
-                    timer.get_objective_display(), timer.label_type_for_objective()
+            location += format_html(
+                "<br>{}", timer.eve_solar_system.eve_constellation.eve_region.name
+            )
+            # distance
+            try:
+                distances = distances_map[timer.id]
+            except KeyError:
+                distance_text = "?"
+                distances = None
+            else:
+                light_years_text = (
+                    f"{math.ceil(distances.light_years * 10) / 10} ly"
+                    if distances.light_years is not None
+                    else "N/A"
                 )
-            ),
-            mark_safe(" ".join(tags)),
-        )
+                jumps_text = (
+                    f"{distances.jumps} jumps" if distances.jumps is not None else "N/A"
+                )
+                distance_text = format_html("{}<br>{}", light_years_text, jumps_text)
 
-        # name & owner
-        if timer.owner_name:
-            owner_name = timer.owner_name
-            owner = owner_name
-        else:
-            owner = "-"
-            owner_name = ""
-
-        structure_name = timer.structure_name if timer.structure_name else "-"
-        name = format_html("{}<br>{}", structure_name, owner)
-
-        if timer.eve_corporation:
-            corporation_name = timer.eve_corporation.corporation_name
-        else:
-            corporation_name = "-"
-
-        # creator
-        # if timer.eve_character:
-        #     creator = format_html(
-        #         "{}<br>{}",
-        #         link_html(
-        #             evewho.character_url(timer.eve_character.character_id),
-        #             timer.eve_character.character_name,
-        #         ),
-        #         corporation_name,
-        #     )
-        # elif corporation_name:
-        #     creator = corporation_name
-        # else:
-        #     creator = "-"
-
-        # visibility
-        visibility = ""
-        if timer.visibility == Timer.Visibility.ALLIANCE and timer.eve_alliance:
-            visibility = timer.eve_alliance.alliance_name
-        elif timer.visibility == Timer.Visibility.CORPORATION:
-            visibility = corporation_name
-
-        # actions
-        actions = ""
-
-        if timer.details_image_url or timer.details_notes:
-            disabled_html = ""
-            button_type = "primary"
-            data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
-            title = "Show details of this timer"
-        else:
-            button_type = "default"
-            disabled_html = ' disabled="disabled"'
-            data_toggle = ""
-            title = "No details available"
-
-        actions += (
-            format_html(
-                '<a type="button" id="timerboardBtnDetails" '
-                f'class="btn btn-{button_type}" title="{title}"'
-                f"{data_toggle}"
-                f'data-timerpk="{timer.pk}"{disabled_html}>'
-                '<i class="fas fa-search-plus"></i></a>'
+            # structure & timer type & fitting image
+            timer_type = bootstrap_label_html(
+                timer.get_timer_type_display(), timer.label_type_for_timer_type()
             )
-            + "&nbsp;"
-        )
+            if timer.structure_type:
+                structure_type_icon_url = timer.structure_type.icon_url(size=64)
+                structure_type_name = timer.structure_type.name
+            else:
+                structure_type_icon_url = ""
+                structure_type_name = "(unknown)"
 
-        if timer.user_can_edit(request.user):
+            structure = format_html(
+                '<div class="flex-container">'
+                '  <div style="padding-top: 4px;"><img src="{}" width="40"></div>'
+                '  <div style="text-align: left;">'
+                "    {}&nbsp;<br>"
+                "    {}"
+                "  </div>"
+                "</div>",
+                structure_type_icon_url,
+                mark_safe(bootstrap_label_html(structure_type_name, "info")),
+                timer_type,
+            )
+
+            # objective & tags
+            tags = list()
+            is_restricted = False
+            if timer.is_opsec:
+                tags.append(bootstrap_label_html("OPSEC", "danger"))
+                is_restricted = True
+
+            if timer.visibility != Timer.Visibility.UNRESTRICTED:
+                tags.append(
+                    bootstrap_label_html(timer.get_visibility_display(), "info")
+                )
+                is_restricted = True
+
+            if timer.is_important:
+                tags.append(bootstrap_label_html("Important", "warning"))
+
+            objective = format_html(
+                "{}<br>{}",
+                mark_safe(
+                    bootstrap_label_html(
+                        timer.get_objective_display(), timer.label_type_for_objective()
+                    )
+                ),
+                mark_safe(" ".join(tags)),
+            )
+
+            # name & owner
+            if timer.owner_name:
+                owner_name = timer.owner_name
+                owner = owner_name
+            else:
+                owner = "-"
+                owner_name = ""
+
+            structure_name = timer.structure_name if timer.structure_name else "-"
+            name = format_html("{}<br>{}", structure_name, owner)
+
+            if timer.eve_corporation:
+                corporation_name = timer.eve_corporation.corporation_name
+            else:
+                corporation_name = "-"
+
+            # creator
+            # if timer.eve_character:
+            #     creator = format_html(
+            #         "{}<br>{}",
+            #         link_html(
+            #             evewho.character_url(timer.eve_character.character_id),
+            #             timer.eve_character.character_name,
+            #         ),
+            #         corporation_name,
+            #     )
+            # elif corporation_name:
+            #     creator = corporation_name
+            # else:
+            #     creator = "-"
+
+            # visibility
+            visibility = ""
+            if timer.visibility == Timer.Visibility.ALLIANCE and timer.eve_alliance:
+                visibility = timer.eve_alliance.alliance_name
+            elif timer.visibility == Timer.Visibility.CORPORATION:
+                visibility = corporation_name
+
+            # actions
+            actions = ""
+            if timer.details_image_url or timer.details_notes:
+                disabled_html = ""
+                button_type = "primary"
+                data_toggle = 'data-toggle="modal" data-target="#modalTimerDetails" '
+                title = "Show details of this timer"
+            else:
+                button_type = "default"
+                disabled_html = ' disabled="disabled"'
+                data_toggle = ""
+                title = "No details available"
+
             actions += (
-                fontawesome_link_button_html(
-                    reverse("structuretimers:delete", args=(timer.pk,)),
-                    "far fa-trash-alt",
-                    "danger",
-                    "Delete this timer",
+                format_html(
+                    '<a type="button" id="timerboardBtnDetails" '
+                    f'class="btn btn-{button_type}" title="{title}"'
+                    f"{data_toggle}"
+                    f'data-timerpk="{timer.pk}"{disabled_html}>'
+                    '<i class="fas fa-search-plus"></i></a>'
                 )
                 + "&nbsp;"
-                + fontawesome_link_button_html(
-                    reverse("structuretimers:edit", args=(timer.pk,)),
-                    "far fa-edit",
-                    "warning",
-                    "Edit this timer",
+            )
+            if timer.user_can_edit(self.request.user):
+                actions += (
+                    fontawesome_link_button_html(
+                        reverse("structuretimers:delete", args=(timer.pk,)),
+                        "far fa-trash-alt",
+                        "danger",
+                        "Delete this timer",
+                    )
+                    + "&nbsp;"
+                    + fontawesome_link_button_html(
+                        reverse("structuretimers:edit", args=(timer.pk,)),
+                        "far fa-edit",
+                        "warning",
+                        "Edit this timer",
+                    )
                 )
+            actions = no_wrap_html(actions)
+            data.append(
+                {
+                    "id": timer.id,
+                    "local_time": timer.date.isoformat(),
+                    "date": timer.date.isoformat(),
+                    "location": location,
+                    "structure_details": structure,
+                    "name_objective": name,
+                    "owner": objective,
+                    # "creator": creator,
+                    "distance": distance_text,
+                    "distance_light_years": distances.light_years
+                    if distances
+                    else None,
+                    "distance_jumps": distances.jumps if distances else None,
+                    "actions": actions,
+                    "timer_type_name": timer.get_timer_type_display(),
+                    "objective_name": timer.get_objective_display(),
+                    "system_name": timer.eve_solar_system.name,
+                    "region_name": timer.eve_solar_system.eve_constellation.eve_region.name,
+                    "structure_type_name": timer.structure_type.name,
+                    "owner_name": owner_name,
+                    "visibility": visibility,
+                    "opsec_str": yesno_str(timer.is_opsec),
+                    "is_opsec": timer.is_opsec,
+                    "is_passed": timer.date < now(),
+                    "is_important": timer.is_important,
+                    "is_restricted": is_restricted,
+                }
             )
 
-        actions = no_wrap_html(actions)
-
-        data.append(
-            {
-                "id": timer.id,
-                "local_time": timer.date.isoformat(),
-                "date": timer.date.isoformat(),
-                "location": location,
-                "structure_details": structure,
-                "name_objective": name,
-                "owner": objective,
-                # "creator": creator,
-                "distance": distance_text,
-                "distance_light_years": distances.light_years if distances else None,
-                "distance_jumps": distances.jumps if distances else None,
-                "actions": actions,
-                "timer_type_name": timer.get_timer_type_display(),
-                "objective_name": timer.get_objective_display(),
-                "system_name": timer.eve_solar_system.name,
-                "region_name": timer.eve_solar_system.eve_constellation.eve_region.name,
-                "structure_type_name": timer.structure_type.name,
-                "owner_name": owner_name,
-                "visibility": visibility,
-                "opsec_str": yesno_str(timer.is_opsec),
-                "is_opsec": timer.is_opsec,
-                "is_passed": timer.date < now(),
-                "is_important": timer.is_important,
-                "is_restricted": is_restricted,
-            }
-        )
-    return JsonResponse(data, safe=False)
-
-
-# @login_required
-# @permission_required("structuretimers.basic_access")
-# def get_timer_data(request, pk: str):
-#     """returns data for a timer"""
-#     try:
-#         timer = (
-#             Timer.objects.visible_to_user(request.user)
-#             .select_related("structure_type", "eve_solar_system")
-#             .get(pk=pk)
-#         )
-#     except Timer.DoesNotExist:
-#         return HttpResponseForbidden()
-#     data = {
-#         "display_name": str(timer),
-#         "structure_display_name": timer.structure_display_name,
-#         "date": timer.date.strftime(DATETIME_FORMAT),
-#         "details_image_url": timer.details_image_url if timer.details_image_url else "",
-#         "notes": timer.details_notes if timer.details_notes else "",
-#     }
-#     return JsonResponse(data, safe=False)
+        return data
 
 
 class TimerDetailDataView(
@@ -350,11 +346,7 @@ class TimerDetailDataView(
         return context
 
 
-class BaseTimerView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    pass
-
-
-class TimerManagementView(BaseTimerView):
+class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
     index_redirect = "structuretimers:timer_list"
     success_url = reverse_lazy(index_redirect)
     model = Timer
@@ -407,7 +399,7 @@ class AddTimerView(TimerManagementView, AddUpdateMixin, CreateView):
 class EditTimerMixin:
     permission_required = "structuretimers.basic_access"
 
-    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+    def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         if response.status_code == 200:
             if (

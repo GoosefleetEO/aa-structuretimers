@@ -2,13 +2,16 @@ from datetime import timedelta
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
-from django.test import RequestFactory, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 
-from app_utils.testing import json_response_to_dict, json_response_to_python
+from app_utils.testing import (
+    create_user_from_evecharacter,
+    json_response_to_dict,
+    json_response_to_python,
+)
 
-from .. import views
 from ..models import Timer
 from . import (
     LoadTestDataMixin,
@@ -25,8 +28,6 @@ MODELS_PATH = "structuretimers.models"
 class TestViewBase(LoadTestDataMixin, TestCase):
     @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
-        self.factory = RequestFactory()
-
         # user
         self.user_1 = create_test_user(self.character_1)
         self.user_2 = create_test_user(self.character_2)
@@ -74,11 +75,10 @@ class TestListData(TestViewBase):
     def _timer_list_data(self, tab_name: str = "current", user: User = None):
         if not user:
             user = self.user_1
-        request = self.factory.get(
+        self.client.force_login(user)
+        return self.client.get(
             reverse("structuretimers:timer_list_data", args=[tab_name])
         )
-        request.user = user
-        return views.timer_list_data(request, tab_name)
 
     def _timer_list_data_ids(self, tab_name: str = "current", user: User = None) -> set:
         response = self._timer_list_data(tab_name, user)
@@ -91,16 +91,28 @@ class TestListData(TestViewBase):
     #     response = views.timer_list(request)
     #     self.assertEqual(response.status_code, 200)
 
-    def test_timer_list_data_current_and_past(self):
-        # test current timers
+    def test_return_current_timers(self):
+        # when
         timer_ids = self._timer_list_data_ids("current")
-        expected = {self.timer_1.id}
-        self.assertSetEqual(timer_ids, expected)
+        # then
+        self.assertSetEqual(timer_ids, {self.timer_1.id})
 
-        # test past timers
+    def test_return_past_timers(self):
+        # when
         timer_ids = self._timer_list_data_ids("past")
-        expected = {self.timer_2.id, self.timer_3.id}
-        self.assertSetEqual(timer_ids, expected)
+        # then
+        self.assertSetEqual(timer_ids, {self.timer_2.id, self.timer_3.id})
+
+    def test_should_require_permission(self):
+        # given
+        user, _ = create_user_from_evecharacter(1003)
+        self.client.force_login(user)
+        # when
+        response = self.client.get(
+            reverse("structuretimers:timer_list_data", args=["current"])
+        )
+        # then
+        self.assertEqual(response.status_code, 302)
 
     def test_show_corp_restricted_to_corp_member(self):
         timer_4 = create_fake_timer(
@@ -280,15 +292,14 @@ class TestListData(TestViewBase):
             light_years=1.2,
             jumps=3,
         )
+        self.client.force_login(self.user_1)
         # when
-        request = self.factory.get(
+        response = self.client.get(
             reverse("structuretimers:timer_list_data", args=["current"])
             + f"?staging={staging_system.pk}"
         )
-        request.user = self.user_1
-        response = views.timer_list_data(request, "current")
-        data = json_response_to_dict(response)
         # then
+        data = json_response_to_dict(response)
         obj = data[timer.id]
         self.assertEqual(obj["distance_light_years"], 1.2)
         self.assertEqual(obj["distance_jumps"], 3)
@@ -309,15 +320,14 @@ class TestListData(TestViewBase):
         staging_system = create_fake_staging_system(
             eve_solar_system=self.system_enaluri
         )
+        self.client.force_login(self.user_1)
         # when
-        request = self.factory.get(
+        response = self.client.get(
             reverse("structuretimers:timer_list_data", args=["current"])
             + f"?staging={staging_system.pk}"
         )
-        request.user = self.user_1
-        response = views.timer_list_data(request, "current")
-        data = json_response_to_dict(response)
         # then
+        data = json_response_to_dict(response)
         obj = data[timer.id]
         self.assertIsNone(obj["distance_light_years"])
         self.assertIsNone(obj["distance_jumps"])

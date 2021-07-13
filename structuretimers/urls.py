@@ -9,7 +9,11 @@ urlpatterns = [
     path("add/", views.AddTimerView.as_view(), name="add"),
     path("remove/<int:pk>", views.RemoveTimerView.as_view(), name="delete"),
     path("edit/<int:pk>", views.EditTimerView.as_view(), name="edit"),
-    path("list_data/<str:tab_name>", views.timer_list_data, name="timer_list_data"),
+    path(
+        "list_data/<str:tab_name>",
+        views.TimerListDataView.as_view(),
+        name="timer_list_data",
+    ),
     path(
         "get_timer_data/<str:pk>",
         views.TimerDetailDataView.as_view(),
