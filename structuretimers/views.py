@@ -40,6 +40,7 @@ from .constants import (
     EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
+from .helpers import JSONResponseMixin
 from .models import DistancesFromStaging, StagingSystem, Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -408,53 +409,61 @@ class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
     pass
 
 
-@login_required
-@permission_required("structuretimers.basic_access")
-def select2_solar_systems(request):
-    term = request.GET.get("term")
-    if term:
-        results = [
-            {"id": row["id"], "text": row["name"]}
-            for row in EveSolarSystem.objects.filter(name__istartswith=term).values(
-                "id", "name"
-            )
-        ]
-    else:
-        results = None
+class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
 
-    return JsonResponse({"results": results}, safe=False)
+    def get_context_data(self):
+        term = self.request.GET.get("term")
+        if term:
+            results = [
+                {"id": row["id"], "text": row["name"]}
+                for row in EveSolarSystem.objects.filter(name__istartswith=term).values(
+                    "id", "name"
+                )
+            ]
+        else:
+            results = None
+
+        return {"results": results}
 
 
-@login_required
-@permission_required("structuretimers.basic_access")
-def select2_structure_types(request):
-    term = request.GET.get("term")
-    if term:
-        types_qs = (
-            EveType.objects.filter(
-                eve_group__eve_category_id=EVE_CATEGORY_ID_STRUCTURE, published=True
-            )
-            | EveType.objects.filter(
-                eve_group_id__in=[
-                    EVE_GROUP_ID_CONTROL_TOWER,
-                    EVE_GROUP_ID_MOBILE_DEPOT,
-                ],
-                published=True,
-            )
-            | EveType.objects.filter(
-                id__in=[EVE_TYPE_ID_CUSTOMS_OFFICE, EVE_TYPE_ID_IHUB, EVE_TYPE_ID_TCU]
-            )
-        )
-        types_qs = (
-            types_qs.select_related("eve_category", "eve_category__eve_group")
-            .distinct()
-            .filter(name__icontains=term)
-        )
-        results = [
-            {"id": row["id"], "text": row["name"]}
-            for row in types_qs.values("id", "name")
-        ]
-    else:
-        results = None
+class Select2StructureTypesView(JSONResponseMixin, TemplateView):
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
 
-    return JsonResponse({"results": results}, safe=False)
+    def get_context_data(self):
+        term = self.request.GET.get("term")
+        if term:
+            types_qs = (
+                EveType.objects.filter(
+                    eve_group__eve_category_id=EVE_CATEGORY_ID_STRUCTURE, published=True
+                )
+                | EveType.objects.filter(
+                    eve_group_id__in=[
+                        EVE_GROUP_ID_CONTROL_TOWER,
+                        EVE_GROUP_ID_MOBILE_DEPOT,
+                    ],
+                    published=True,
+                )
+                | EveType.objects.filter(
+                    id__in=[
+                        EVE_TYPE_ID_CUSTOMS_OFFICE,
+                        EVE_TYPE_ID_IHUB,
+                        EVE_TYPE_ID_TCU,
+                    ]
+                )
+            )
+            types_qs = (
+                types_qs.select_related("eve_category", "eve_category__eve_group")
+                .distinct()
+                .filter(name__icontains=term)
+            )
+            results = [
+                {"id": row["id"], "text": row["name"]}
+                for row in types_qs.values("id", "name")
+            ]
+        else:
+            results = None
+
+        return {"results": results}

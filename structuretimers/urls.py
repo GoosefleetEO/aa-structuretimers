@@ -13,12 +13,12 @@ urlpatterns = [
     path("get_timer_data/<str:pk>", views.get_timer_data, name="get_timer_data"),
     path(
         "select2_solar_systems/",
-        views.select2_solar_systems,
+        views.Select2SolarSystemsView.as_view(),
         name="select2_solar_systems",
     ),
     path(
         "select2_structure_types/",
-        views.select2_structure_types,
+        views.Select2StructureTypesView.as_view(),
         name="select2_structure_types",
     ),
 ]

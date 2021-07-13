@@ -348,41 +348,48 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.factory = RequestFactory()
         cls.user_1 = create_test_user(cls.character_1)
 
-    def test_select2_solar_systems_normal(self):
-        request = self.factory.get(
+    def test_should_return_solar_systems(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(
             reverse("structuretimers:select2_solar_systems"), data={"term": "abu"}
         )
-        request.user = self.user_1
-        response = views.select2_solar_systems(request)
+        # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_python(response)
         self.assertEqual(data, {"results": [{"id": 30004984, "text": "Abune"}]})
 
-    def test_select2_solar_systems_empty(self):
-        request = self.factory.get(reverse("structuretimers:select2_solar_systems"))
-        request.user = self.user_1
-        response = views.select2_solar_systems(request)
+    def test_should_return_empty_solar_system_list(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(reverse("structuretimers:select2_solar_systems"))
+        # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_python(response)
         self.assertEqual(data, {"results": None})
 
-    def test_select2_structure_types_normal(self):
-        request = self.factory.get(
+    def test_should_return_structure_types(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(
             reverse("structuretimers:select2_structure_types"), data={"term": "ast"}
         )
-        request.user = self.user_1
-        response = views.select2_structure_types(request)
+        # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_python(response)
         self.assertEqual(data, {"results": [{"id": 35832, "text": "Astrahus"}]})
 
-    def test_select2_structure_types_empty(self):
-        request = self.factory.get(reverse("structuretimers:select2_structure_types"))
-        request.user = self.user_1
-        response = views.select2_structure_types(request)
+    def test_should_return_empty_struture_types_list(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(reverse("structuretimers:select2_structure_types"))
+        # then
         self.assertEqual(response.status_code, 200)
         data = json_response_to_python(response)
         self.assertEqual(data, {"results": None})
