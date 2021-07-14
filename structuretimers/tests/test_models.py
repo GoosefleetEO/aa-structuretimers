@@ -10,7 +10,6 @@ from django.test import TestCase, override_settings
 from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
-from app_utils.esi import EsiStatus
 from app_utils.json import JSONDateTimeDecoder
 from app_utils.testing import NoSocketsTestCase
 
@@ -1040,7 +1039,7 @@ class TestNotificationRuleMultiselectDisplay(NoSocketsTestCase):
             NotificationRule.get_multiselect_display(3, self.choices)
 
 
-@patch("structuretimers.tasks.fetch_esi_status", lambda: EsiStatus(True, 100, 60))
+@patch("structuretimers.tasks.retry_task_if_esi_is_down", lambda self: None)
 @patch(MODULE_PATH + ".EveSolarSystem.distance_to", lambda *args, **kwargs: 4.257e16)
 @patch(MODULE_PATH + ".EveSolarSystem.jumps_to", lambda *args, **kwargs: 3)
 @patch(MODULE_PATH + "._task_calc_staging_system", wraps=_task_calc_staging_system)

@@ -5,13 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0a1] - 2021-07-13
+## [1.1.0] - 2021-07-14
 
 ### Added
 
 - Shows distance in ly and jumps from staging systems for timers
 - Admins can define multple staging system and users can switch between them
-- Users can duplicate existing timers (#20)
+- Users can copy existing timers to make it easier to create subsequent timers for the same structure (#20)
 - Turned off setting the avatar for Discord webhooks (#14)
 
 ### Changed

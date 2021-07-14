@@ -26,6 +26,7 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 from app_utils.messages import messages_plus
 from app_utils.views import (
+    JSONResponseMixin,
     bootstrap_label_html,
     fontawesome_link_button_html,
     link_html,
@@ -47,7 +48,6 @@ from .constants import (
     EVE_TYPE_ID_TCU,
 )
 from .forms import TimerForm
-from .helpers import JSONResponseMixin
 from .models import DistancesFromStaging, StagingSystem, Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
