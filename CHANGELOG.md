@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.2] - 2021-10-26
+
+### Changed
+
+- Update CI to include tests for both AA 2.8 with Py3.6/Dj31 and AA 2.9 with Py3.7+/Dj3.2
+
 ## [1.1.1] - 2021-07-14
 
 ### Fixed
