@@ -78,10 +78,10 @@ class TimerManagerBase(models.Manager):
             )
             _, details = self.filter(date__lt=deadline).delete()
             key = f"{self.model._meta.app_label}.{self.model.__name__}"
-            deleted_count = details[key]
-            return deleted_count
-        else:
-            return 0
+            if key in details:
+                deleted_count = details[key]
+                return deleted_count
+        return 0
 
 
 TimerManager = TimerManagerBase.from_queryset(TimerQuerySet)

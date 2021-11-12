@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unpublished
+
+## [1.1.3] - 2021-11-12
+
+### Fixed
+
+- Fix: Housekeeping fails with exception without a timer to delete
+
 ## [1.1.2] - 2021-10-26
 
 ### Changed

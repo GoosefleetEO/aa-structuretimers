@@ -355,6 +355,10 @@ class TestTimerManger(LoadTestDataMixin, NoSocketsTestCase):
         self.assertTrue(Timer.objects.filter(pk=timer_1.pk).exists())
         self.assertFalse(Timer.objects.filter(pk=timer_2.pk).exists())
 
+    def test_can_handle_no_timers(self):
+        result = Timer.objects.delete_obsolete()
+        self.assertEqual(result, 0)
+
 
 @patch(MODULE_PATH + ".DiscordWebhook.send_message", spec=True)
 class TestTimerSendNotification(LoadTestDataMixin, NoSocketsTestCase):
