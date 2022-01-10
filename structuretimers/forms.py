@@ -15,7 +15,8 @@ from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
-from . import __title__, constants
+from . import __title__
+from .constants import EveGroupId
 from .models import Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -154,7 +155,7 @@ class TimerForm(forms.ModelForm):
                 ]
                 if (
                     cleaned_data.get("timer_type") == Timer.Type.MOONMINING
-                    and structure_type.eve_group_id != constants.EVE_GROUP_ID_REFINERY
+                    and structure_type.eve_group_id != EveGroupId.REFINERY
                 ):
                     raise ValidationError(
                         {

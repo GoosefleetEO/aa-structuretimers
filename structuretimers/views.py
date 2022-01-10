@@ -39,14 +39,7 @@ from .app_settings import (
     STRUCTURETIMERS_DEFAULT_PAGE_LENGTH,
     STRUCTURETIMERS_PAGING_ENABLED,
 )
-from .constants import (
-    EVE_CATEGORY_ID_STRUCTURE,
-    EVE_GROUP_ID_CONTROL_TOWER,
-    EVE_GROUP_ID_MOBILE_DEPOT,
-    EVE_TYPE_ID_CUSTOMS_OFFICE,
-    EVE_TYPE_ID_IHUB,
-    EVE_TYPE_ID_TCU,
-)
+from .constants import EveCategoryId, EveGroupId, EveTypeId
 from .forms import TimerForm
 from .models import DistancesFromStaging, StagingSystem, Timer
 
@@ -473,21 +466,17 @@ class Select2StructureTypesView(JSONResponseMixin, TemplateView):
         if term:
             types_qs = (
                 EveType.objects.filter(
-                    eve_group__eve_category_id=EVE_CATEGORY_ID_STRUCTURE, published=True
+                    eve_group__eve_category_id=EveCategoryId.STRUCTURE, published=True
                 )
                 | EveType.objects.filter(
                     eve_group_id__in=[
-                        EVE_GROUP_ID_CONTROL_TOWER,
-                        EVE_GROUP_ID_MOBILE_DEPOT,
+                        EveGroupId.CONTROL_TOWER,
+                        EveGroupId.MOBILE_DEPOT,
                     ],
                     published=True,
                 )
                 | EveType.objects.filter(
-                    id__in=[
-                        EVE_TYPE_ID_CUSTOMS_OFFICE,
-                        EVE_TYPE_ID_IHUB,
-                        EVE_TYPE_ID_TCU,
-                    ]
+                    id__in=[EveTypeId.CUSTOMS_OFFICE, EveTypeId.IHUB, EveTypeId.TCU]
                 )
             )
             types_qs = (

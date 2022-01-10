@@ -27,14 +27,13 @@ from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.models import EveCorporationInfo
 
-from structuretimers import constants
+from structuretimers.constants import EveCategoryId
 from structuretimers.models import Timer
 
 MAX_TIMERS = 20
 
 structure_type_ids = EveType.objects.filter(
-    eve_group__eve_category_id=constants.EVE_CATEGORY_ID_STRUCTURE,
-    published=True,
+    eve_group__eve_category_id=EveCategoryId.STRUCTURE, published=True
 ).values_list("id", flat=True)
 eve_solar_system_ids = EveSolarSystem.objects.values_list("id", flat=True)
 owner_names = EveCorporationInfo.objects.values_list("corporation_name", flat=True)

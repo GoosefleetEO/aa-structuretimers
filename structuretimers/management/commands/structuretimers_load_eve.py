@@ -5,14 +5,7 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
 from ... import __title__
-from ...constants import (
-    EVE_CATEGORY_ID_STRUCTURE,
-    EVE_GROUP_ID_CONTROL_TOWER,
-    EVE_GROUP_ID_MOBILE_DEPOT,
-    EVE_TYPE_ID_CUSTOMS_OFFICE,
-    EVE_TYPE_ID_IHUB,
-    EVE_TYPE_ID_TCU,
-)
+from ...constants import EveCategoryId, EveGroupId, EveTypeId
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
@@ -25,15 +18,15 @@ class Command(BaseCommand):
             "eveuniverse_load_types",
             __title__,
             "--category_id",
-            str(EVE_CATEGORY_ID_STRUCTURE),
+            str(EveCategoryId.STRUCTURE.value),
             "--group_id",
-            str(EVE_GROUP_ID_CONTROL_TOWER),
+            str(EveGroupId.CONTROL_TOWER.value),
             "--group_id",
-            str(EVE_GROUP_ID_MOBILE_DEPOT),
+            str(EveGroupId.MOBILE_DEPOT.value),
             "--type_id",
-            str(EVE_TYPE_ID_CUSTOMS_OFFICE),
+            str(EveTypeId.CUSTOMS_OFFICE.value),
             "--type_id",
-            str(EVE_TYPE_ID_TCU),
+            str(EveTypeId.TCU.value),
             "--type_id",
-            str(EVE_TYPE_ID_IHUB),
+            str(EveTypeId.IHUB.value),
         )
