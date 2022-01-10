@@ -214,7 +214,7 @@ $(document).ready(function () {
         filterDropDown: filterDropDown,
         columnDefs: columnDefs
     });
-    $('#tbl_targets').DataTable({
+    $('#tbl_preliminary').DataTable({
         ajax: {
             url: listDataTargetUrl,
             dataSrc: '',

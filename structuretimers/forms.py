@@ -204,7 +204,7 @@ class TimerForm(forms.ModelForm):
                         code="details_url_unsupported_type",
                     )
 
-        if cleaned_data.get("timer_type") != Timer.Type.TARGET:
+        if cleaned_data.get("timer_type") != Timer.Type.PRELIMINARY:
             if cleaned_data.get("days_left") is None:
                 raise ValidationError({"days_left": _("This is a required field.")})
             if cleaned_data.get("hours_left") is None:
@@ -244,7 +244,7 @@ class TimerForm(forms.ModelForm):
             timer.user = self.user
 
         # calculate future time
-        if self.cleaned_data["timer_type"] == Timer.Type.TARGET:
+        if self.cleaned_data["timer_type"] == Timer.Type.PRELIMINARY:
             timer.date = None
         else:
             future_time = datetime.timedelta(

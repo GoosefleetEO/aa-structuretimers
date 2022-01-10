@@ -174,7 +174,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
         timer = Timer(
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
-            timer_type=Timer.Type.TARGET,
+            timer_type=Timer.Type.PRELIMINARY,
         )
         timer.save()
         self.assertFalse(mock_schedule_notifications.called)

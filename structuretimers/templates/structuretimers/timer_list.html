@@ -21,9 +21,9 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#tab_current" aria-controls="tab_current" role="tab" data-toggle="tab">Current Timers</a></li>
-        <li role="presentation"><a href="#tab_past" aria-controls="tab_past" role="tab" data-toggle="tab">Past Timers</a></li>
-        <li role="presentation"><a href="#tab_target" aria-controls="tab_target" role="tab" data-toggle="tab">Targets</a></li>
+        <li role="presentation"><a href="#tab_preliminary" aria-controls="tab_preliminary" role="tab" data-toggle="tab">Preliminary</a></li>
+        <li role="presentation" class="active"><a href="#tab_current" aria-controls="tab_current" role="tab" data-toggle="tab">Current</a></li>
+        <li role="presentation"><a href="#tab_past" aria-controls="tab_past" role="tab" data-toggle="tab">Past</a></li>
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 Staging: {{ selected_staging_system|default:"?" }} <span class="caret"></span>
@@ -44,6 +44,14 @@
     <div class="panel panel-default panel-tabs">
         <div class="panel-body">
             <div class="tab-content">
+                <!-- targets tab -->
+                <div role="tabpanel" class="tab-pane" id="tab_preliminary">
+                    {% include 'structuretimers/partials/preliminary_list_table.html' %}
+                    <p class="text-muted">
+                        This page contains potential future timers.
+                    </p>
+                </div>
+
                 <!-- current structuretimers tab -->
                 <div role="tabpanel" class="tab-pane active" id="tab_current">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='current' %}
@@ -55,11 +63,6 @@
                 <!-- past structuretimers tab -->
                 <div role="tabpanel" class="tab-pane" id="tab_past">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='past' %}
-                </div>
-
-                <!-- targets tab -->
-                <div role="tabpanel" class="tab-pane" id="tab_target">
-                    {% include 'structuretimers/partials/target_list_table.html' %}
                 </div>
             </div>
             <p class="text-muted">

@@ -91,7 +91,7 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_should_accept_target_timer_without_date(self):
         # given
-        form_data = create_form_data(timer_type=Timer.Type.TARGET)
+        form_data = create_form_data(timer_type=Timer.Type.PRELIMINARY)
         form = TimerForm(data=form_data)
         # when / then
         self.assertTrue(form.is_valid())

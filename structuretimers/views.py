@@ -100,7 +100,7 @@ class TimerListDataView(
                 date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
             )
         elif tab_name == "target":
-            timers_qs = timers_qs.filter(timer_type=Timer.Type.TARGET)
+            timers_qs = timers_qs.filter(timer_type=Timer.Type.PRELIMINARY)
         else:
             timers_qs = timers_qs.filter(date__lt=now())
         timers_qs = timers_qs.select_related(

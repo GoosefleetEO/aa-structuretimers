@@ -299,7 +299,7 @@ class Timer(models.Model):
         ANCHORING = "AN", _("Anchoring")
         UNANCHORING = "UA", _("Unanchoring")
         MOONMINING = "MM", _("Moon Mining")
-        TARGET = "TG", _("Target")
+        PRELIMINARY = "PL", _("Preliminary")
 
     class Objective(models.TextChoices):
         UNDEFINED = "UN", _("undefined")
@@ -449,7 +449,7 @@ class Timer(models.Model):
         schedule_notifications = (
             STRUCTURETIMERS_NOTIFICATIONS_ENABLED
             and not disable_notifications
-            and self.timer_type != self.Type.TARGET
+            and self.timer_type != self.Type.PRELIMINARY
         )
         try:
             old_instance = Timer.objects.get(pk=self.pk)
