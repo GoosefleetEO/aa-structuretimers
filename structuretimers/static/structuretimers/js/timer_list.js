@@ -1,275 +1,332 @@
 /* return duration as countdown string */
 function durationToCountdownStr(duration) {
-    var out = "";
+    let out = "";
     if (duration.years()) {
-        out += duration.years() + 'y ';
+        out += duration.years() + "y ";
     }
     if (duration.months()) {
-        out += duration.months() + 'm ';
+        out += duration.months() + "m ";
     }
     if (duration.days()) {
-        out += duration.days() + 'd ';
+        out += duration.days() + "d ";
     }
-    return out + duration.hours() + "h " + duration.minutes() + "m " + duration.seconds() + "s";
+    return (
+        out +
+        duration.hours() +
+        "h " +
+        duration.minutes() +
+        "m " +
+        duration.seconds() +
+        "s"
+    );
 }
 
 function getCurrentEveTimeString() {
-    return moment().utc().format('dddd LL HH:mm:ss')
+    return moment().utc().format("dddd LL HH:mm:ss");
 }
 
 /* eve clock and timer countdown feature */
 function updateClock() {
-    document.getElementById("current-time").innerHTML =
-        moment().utc().format('YYYY-MM-DD HH:mm:ss');
+    document.getElementById("current-time").innerHTML = moment()
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
 }
 
 /* return countdown to given date as string */
 function dateToCountdownStr(date) {
-    duration = moment.duration(moment(date).utc() - moment(), 'milliseconds');
+    let duration = moment.duration(moment(date).utc() - moment(), "milliseconds");
     if (duration > 0) {
         return durationToCountdownStr(duration);
-    }
-    else {
-        return 'ELAPSED';
+    } else {
+        return "ELAPSED";
     }
 }
 
 /* return local time and countdown string to given date as HTML*/
 function localTimeOutputHtml(date) {
-    return moment(date).format("ddd @ LT") + '<br>' + dateToCountdownStr(date);
+    return moment(date).format("ddd @ LT") + "<br>" + dateToCountdownStr(date);
+}
+
+function createVisibleColumDef(idxStart) {
+    return {
+        visible: false,
+        targets: [
+            idxStart,
+            idxStart + 1,
+            idxStart + 2,
+            idxStart + 3,
+            idxStart + 4,
+            idxStart + 5,
+            idxStart + 6,
+            idxStart + 7,
+        ],
+    };
+}
+
+function createFilterDropDown(
+    idxStart,
+    hasPermOPSEC,
+    titleSolarSystem,
+    titleRegion,
+    titleStructureType,
+    titleTimerType,
+    titleObjective,
+    titleVisibility,
+    titleOwner
+) {
+    var obj = {
+        columns: [
+            {
+                idx: idxStart,
+                title: titleSolarSystem,
+            },
+            {
+                idx: idxStart + 1,
+                title: titleRegion,
+            },
+            {
+                idx: idxStart + 2,
+                title: titleStructureType,
+            },
+            {
+                idx: idxStart + 3,
+                title: titleTimerType,
+            },
+            {
+                idx: idxStart + 4,
+                title: titleObjective,
+            },
+            {
+                idx: idxStart + 5,
+                title: titleVisibility,
+            },
+            {
+                idx: idxStart + 6,
+                title: titleOwner,
+                maxWidth: "12em",
+            },
+        ],
+        bootstrap: true,
+        autoSize: false,
+    };
+    if (hasPermOPSEC) {
+        obj.columns.push({
+            idx: idxStart + 7,
+            title: "OPSEC",
+        });
+    }
+    return obj;
 }
 
 $(document).ready(function () {
-
     /* retrieve generated data from HTML page */
-    var elem = document.getElementById('dataExport');
-    var listDataCurrentUrl = elem.getAttribute('data-listDataCurrentUrl');
-    var listDataPastUrl = elem.getAttribute('data-listDataPastUrl');
-    var listDataTargetUrl = elem.getAttribute('data-listDataTargetUrl');
-    var getTimerDataUrl = elem.getAttribute('data-getTimerDataUrl');
-    var titleSolarSystem = elem.getAttribute('data-titleSolarSystem');
-    var titleRegion = elem.getAttribute('data-titleRegion');
-    var titleStructureType = elem.getAttribute('data-titleStructureType');
-    var titleTimerType = elem.getAttribute('data-titleTimerType');
-    var titleObjective = elem.getAttribute('data-titleObjective');
-    var titleOwner = elem.getAttribute('data-titleOwner');
-    var titleVisibility = elem.getAttribute('data-titleVisibility');
-    var hasPermOPSEC = (elem.getAttribute('data-hasPermOPSEC') == 'True');
-    var dataTablesPageLength = Number(elem.getAttribute('data-dataTablesPageLength'));
-    var dataTablesPaging = (elem.getAttribute('data-dataTablesPaging') == 'True');
+    const elem = document.getElementById("dataExport");
+    const listDataCurrentUrl = elem.getAttribute("data-listDataCurrentUrl");
+    const listDataPastUrl = elem.getAttribute("data-listDataPastUrl");
+    const listDataTargetUrl = elem.getAttribute("data-listDataTargetUrl");
+    const getTimerDataUrl = elem.getAttribute("data-getTimerDataUrl");
+    const titleSolarSystem = elem.getAttribute("data-titleSolarSystem");
+    const titleRegion = elem.getAttribute("data-titleRegion");
+    const titleStructureType = elem.getAttribute("data-titleStructureType");
+    const titleTimerType = elem.getAttribute("data-titleTimerType");
+    const titleObjective = elem.getAttribute("data-titleObjective");
+    const titleOwner = elem.getAttribute("data-titleOwner");
+    const titleVisibility = elem.getAttribute("data-titleVisibility");
+    const hasPermOPSEC = elem.getAttribute("data-hasPermOPSEC") == "True";
+    const dataTablesPageLength = Number(elem.getAttribute("data-dataTablesPageLength"));
+    const dataTablesPaging = elem.getAttribute("data-dataTablesPaging") == "True";
 
     /* Update modal with requested timer */
-    $('#modalTimerDetails').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget)
-        var timer_pk = button.data('timerpk')
-        var modal = $(this)
-        $('#modal_div_data').hide()
-        $('#modal_div_spinner').show()
-        $.get(
-            getTimerDataUrl.replace('pk_dummy', timer_pk),
-            function (timer, status) {
-                if (status == "success") {
+    $("#modalTimerDetails").on("show.bs.modal", function (event) {
+        const button = $(event.relatedTarget);
+        const timer_pk = button.data("timerpk");
+        const modal = $(this);
+        $("#modal_div_data").hide();
+        $("#modal_div_spinner").show();
+        $.get(getTimerDataUrl.replace("pk_dummy", timer_pk), function (timer, status) {
+            if (status == "success") {
+                modal.find(".modal-body span").text(`${timer["display_name"]}`);
+                if (timer["details_image_url"] != "") {
                     modal
-                        .find('.modal-body span')
-                        .text(
-                            `${timer['display_name']}`
-                        );
-                    if (timer['details_image_url'] != "") {
-                        modal
-                            .find('.modal-body label[for="timerboardImgScreenshot"]')
-                            .show()
-                        modal
-                            .find('.modal-body img')
-                            .attr("src", timer['details_image_url']);
-                        modal
-                            .find('.modal-body a')
-                            .show()
-                            .attr("href", timer['details_image_url']);
-                    }
-                    else {
-                        modal
-                            .find('.modal-body a')
-                            .hide()
-                        modal
-                            .find('.modal-body label[for="timerboardImgScreenshot"]')
-                            .hide()
-                    }
-                    if (timer['notes'] != "") {
-                        modal
-                            .find('.modal-body textarea')
-                            .val(timer['notes']);
-                    }
-                    $('#modal_div_spinner').hide()
-                    $('#modal_div_data').show()
+                        .find('.modal-body label[for="timerboardImgScreenshot"]')
+                        .show();
+                    modal
+                        .find(".modal-body img")
+                        .attr("src", timer["details_image_url"]);
+                    modal
+                        .find(".modal-body a")
+                        .show()
+                        .attr("href", timer["details_image_url"]);
                 } else {
+                    modal.find(".modal-body a").hide();
                     modal
-                        .find('.modal-body span')
-                        .html(
-                            `<span class="text-error">Failed to load timer with ID ${timer_pk}</span>`
-                        );
+                        .find('.modal-body label[for="timerboardImgScreenshot"]')
+                        .hide();
                 }
-            });
+                if (timer["notes"] != "") {
+                    modal.find(".modal-body textarea").val(timer["notes"]);
+                }
+                $("#modal_div_spinner").hide();
+                $("#modal_div_data").show();
+            } else {
+                modal
+                    .find(".modal-body span")
+                    .html(
+                        `<span class="text-error">Failed to load timer with ID ${timer_pk}</span>`
+                    );
+            }
+        });
     });
 
     /* build dataTables */
-    var columns = [
+    let columns = [
         {
-            data: 'date',
+            data: "date",
             render: function (data, type, row) {
                 return moment(data).utc().format("YYYY-MM-DD HH:mm");
-            }
+            },
         },
         {
-            data: 'local_time',
+            data: "local_time",
             render: function (data, type, row) {
                 return localTimeOutputHtml(data);
             },
         },
-        { data: 'location' },
-        { data: 'distance' },
-        { data: 'structure_details' },
-        { data: 'owner' },
-        { data: 'name_objective' },
-        { data: 'actions' },
+        { data: "location" },
+        { data: "distance" },
+        { data: "structure_details" },
+        { data: "owner" },
+        { data: "name_objective" },
+        { data: "actions" },
 
         /* hidden columns */
-        { data: 'system_name' },
-        { data: 'region_name' },
-        { data: 'structure_type_name' },
-        { data: 'timer_type_name' },
-        { data: 'objective_name' },
-        { data: 'visibility' },
-        { data: 'owner_name' },
-        { data: 'opsec_str' }
+        { data: "system_name" },
+        { data: "region_name" },
+        { data: "structure_type_name" },
+        { data: "timer_type_name" },
+        { data: "objective_name" },
+        { data: "visibility" },
+        { data: "owner_name" },
+        { data: "opsec_str" },
     ];
-    var idx_start = 8
-    var filterDropDown = {
-        columns: [
-            {
-                idx: idx_start,
-                title: titleSolarSystem
-            },
-            {
-                idx: idx_start + 1,
-                title: titleRegion
-            },
-            {
-                idx: idx_start + 2,
-                title: titleStructureType
-            },
-            {
-                idx: idx_start + 3,
-                title: titleTimerType
-            },
-            {
-                idx: idx_start + 4,
-                title: titleObjective
-            },
-            {
-                idx: idx_start + 5,
-                title: titleVisibility
-            },
-            {
-                idx: idx_start + 6,
-                title: titleOwner,
-                maxWidth: '12em'
-            }
-        ],
-        bootstrap: true,
-        autoSize: false
-    };
-    var lengthMenu = [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
-    if (hasPermOPSEC) {
-        filterDropDown.columns.push({
-            idx: idx_start + 7,
-            title: 'OPSEC'
-        })
-    }
-    var columnDefs = [
-        { "sortable": false, "targets": [idx_start - 1] },
-        {
-            "visible": false, "targets": [
-                idx_start,
-                idx_start + 1,
-                idx_start + 2,
-                idx_start + 3,
-                idx_start + 4,
-                idx_start + 5,
-                idx_start + 6,
-                idx_start + 7
-            ]
-        }
+    let lengthMenu = [
+        [10, 25, 50, 100, -1],
+        [10, 25, 50, 100, "All"],
     ];
-    $('#tbl_timers_past').DataTable({
+    let idxStart = 8;
+    let columnDefs = [
+        { sortable: false, targets: [idxStart - 1] },
+        createVisibleColumDef(idxStart),
+    ];
+
+    $("#tbl_timers_past").DataTable({
         ajax: {
             url: listDataPastUrl,
-            dataSrc: '',
-            cache: false
+            dataSrc: "",
+            cache: false,
         },
         columns: columns,
         order: [[0, "desc"]],
         lengthMenu: lengthMenu,
         paging: dataTablesPaging,
         pageLength: dataTablesPageLength,
-        filterDropDown: filterDropDown,
-        columnDefs: columnDefs
+        filterDropDown: createFilterDropDown(
+            idxStart,
+            hasPermOPSEC,
+            titleSolarSystem,
+            titleRegion,
+            titleStructureType,
+            titleTimerType,
+            titleObjective,
+            titleVisibility,
+            titleOwner
+        ),
+        columnDefs: columnDefs,
     });
-    $('#tbl_preliminary').DataTable({
+    $("#tbl_preliminary").DataTable({
         ajax: {
             url: listDataTargetUrl,
-            dataSrc: '',
-            cache: false
+            dataSrc: "",
+            cache: false,
         },
         columns: [
-            { data: 'location' },
-            { data: 'distance' },
-            { data: 'structure_details' },
-            { data: 'owner' },
-            { data: 'name_objective' },
+            { data: "location" },
+            { data: "distance" },
+            { data: "structure_details" },
+            { data: "owner" },
+            { data: "name_objective" },
             {
-                data: 'last_updated_at',
+                data: "last_updated_at",
                 render: function (data, type, row) {
                     return moment(data).utc().format("YYYY-MM-DD HH:mm");
                 },
             },
-            { data: 'actions' }
+            { data: "actions" },
+            /* hidden columns */
+            { data: "system_name" },
+            { data: "region_name" },
+            { data: "structure_type_name" },
+            { data: "timer_type_name" },
+            { data: "objective_name" },
+            { data: "visibility" },
+            { data: "owner_name" },
+            { data: "opsec_str" },
         ],
-        order: [[0, "desc"]],
+        order: [[5, "desc"]],
         lengthMenu: lengthMenu,
         paging: dataTablesPaging,
-        pageLength: dataTablesPageLength
+        pageLength: dataTablesPageLength,
+        columnDefs: [createVisibleColumDef(7)],
+        filterDropDown: createFilterDropDown(
+            7,
+            hasPermOPSEC,
+            titleSolarSystem,
+            titleRegion,
+            titleStructureType,
+            titleTimerType,
+            titleObjective,
+            titleVisibility,
+            titleOwner
+        ),
     });
-    var table_current = $('#tbl_timers_current').DataTable({
+    const table_current = $("#tbl_timers_current").DataTable({
         ajax: {
             url: listDataCurrentUrl,
-            dataSrc: '',
-            cache: false
+            dataSrc: "",
+            cache: false,
         },
         columns: columns,
         order: [[0, "asc"]],
         lengthMenu: lengthMenu,
         paging: dataTablesPaging,
         pageLength: dataTablesPageLength,
-        filterDropDown: filterDropDown,
+        filterDropDown: createFilterDropDown(
+            idxStart,
+            hasPermOPSEC,
+            titleSolarSystem,
+            titleRegion,
+            titleStructureType,
+            titleTimerType,
+            titleObjective,
+            titleVisibility,
+            titleOwner
+        ),
         columnDefs: columnDefs,
         createdRow: function (row, data, dataIndex) {
-            if (data['is_passed']) {
-                $(row).addClass('active');
+            if (data["is_passed"]) {
+                $(row).addClass("active");
+            } else if (data["is_important"]) {
+                $(row).addClass("warning");
             }
-            else if (data['is_important']) {
-                $(row).addClass('warning');
-            }
-        }
+        },
     });
 
     function updateTimers() {
         table_current.rows().every(function () {
             var d = this.data();
-            if (!d['is_passed']) {
-                d['local_time'] = d['date']
-                table_current
-                    .row(this)
-                    .data(d);
+            if (!d["is_passed"]) {
+                d["local_time"] = d["date"];
+                table_current.row(this).data(d);
             }
         });
     }

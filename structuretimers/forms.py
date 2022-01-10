@@ -107,17 +107,17 @@ class TimerForm(forms.ModelForm):
     )
     days_left = forms.IntegerField(
         required=False,
-        label=_(format_html(f"Days Remaining {asterisk_html}")),
+        label=_("Days Remaining"),
         validators=[MinValueValidator(0)],
     )
     hours_left = forms.IntegerField(
         required=False,
-        label=_(format_html(f"Hours Remaining {asterisk_html}")),
+        label=_("Hours Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
     )
     minutes_left = forms.IntegerField(
         required=False,
-        label=_(format_html(f"Minutes Remaining {asterisk_html}")),
+        label=_("Minutes Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
     details_image_url = forms.URLField(required=False)
@@ -203,14 +203,27 @@ class TimerForm(forms.ModelForm):
                         },
                         code="details_url_unsupported_type",
                     )
+        timer_type = cleaned_data.get("timer_type")
+        days_left = cleaned_data.get("days_left")
+        hours_left = cleaned_data.get("hours_left")
+        minutes_left = cleaned_data.get("minutes_left")
+        if timer_type != Timer.Type.PRELIMINARY and any(
+            [days_left, hours_left, minutes_left]
+        ):
+            if days_left is None:
+                cleaned_data["days_left"] = 0
+            if hours_left is None:
+                cleaned_data["hours_left"] = 0
+            if minutes_left is None:
+                cleaned_data["minutes_left"] = 0
 
-        if cleaned_data.get("timer_type") != Timer.Type.PRELIMINARY:
-            if cleaned_data.get("days_left") is None:
-                raise ValidationError({"days_left": _("This is a required field.")})
-            if cleaned_data.get("hours_left") is None:
-                raise ValidationError({"hours_left": _("This is a required field.")})
-            if cleaned_data.get("minutes_left") is None:
-                raise ValidationError({"minutes_left": _("This is a required field.")})
+        if days_left is None and hours_left is None and minutes_left is None:
+            cleaned_data["timer_type"] = Timer.Type.PRELIMINARY.value
+
+        if timer_type == Timer.Type.PRELIMINARY and (
+            days_left is not None or hours_left is not None or minutes_left is not None
+        ):
+            cleaned_data["timer_type"] = Timer.Type.NONE.value
 
     def save(self, commit=True):
         timer = super().save(commit=False)

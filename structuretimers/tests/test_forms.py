@@ -45,6 +45,58 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
 
+    def test_should_accept_normal_timer_with_partial_date_1(self):
+        # given
+        form_data = create_form_data(days_left=1)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+
+    def test_should_accept_normal_timer_with_partial_date_2(self):
+        # given
+        form_data = create_form_data(hours_left=1)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+
+    def test_should_accept_normal_timer_with_partial_date_3(self):
+        # given
+        form_data = create_form_data(minutes_left=1)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+
+    def test_should_accept_preliminary_timer_without_date(self):
+        # given
+        form_data = create_form_data(timer_type=Timer.Type.PRELIMINARY)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+
+    def test_should_upgrade_preliminary_timer_when_date_specified(self):
+        # given
+        form_data = create_form_data(
+            timer_type=Timer.Type.PRELIMINARY,
+            days_left=0,
+            hours_left=3,
+            minutes_left=30,
+        )
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+
+    def test_should_set_timer_as_preliminary_timer_when_no_date_specified(self):
+        # given
+        form_data = create_form_data(timer_type=Timer.Type.ARMOR)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.PRELIMINARY)
+
     def test_should_not_accept_timer_without_solar_system(self):
         # given
         form_data = create_form_data(days_left=0, hours_left=3, minutes_left=30)
@@ -61,40 +113,12 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertFalse(form.is_valid())
 
-    def test_should_not_accept_timer_without_days(self):
-        # given
-        form_data = create_form_data(hours_left=3, minutes_left=30)
-        form = TimerForm(data=form_data)
-        # when / then
-        self.assertFalse(form.is_valid())
-
-    def test_should_not_accept_timer_without_hours(self):
-        # given
-        form_data = create_form_data(days_left=3, minutes_left=30)
-        form = TimerForm(data=form_data)
-        # when / then
-        self.assertFalse(form.is_valid())
-
-    def test_should_not_accept_timer_without_minutes(self):
-        # given
-        form_data = create_form_data(days_left=3, hours_left=4)
-        form = TimerForm(data=form_data)
-        # when / then
-        self.assertFalse(form.is_valid())
-
     def test_should_not_accept_invalid_days(self):
         # given
         form_data = create_form_data(days_left=-1, hours_left=3, minutes_left=30)
         form = TimerForm(data=form_data)
         # when / then
         self.assertFalse(form.is_valid())
-
-    def test_should_accept_target_timer_without_date(self):
-        # given
-        form_data = create_form_data(timer_type=Timer.Type.PRELIMINARY)
-        form = TimerForm(data=form_data)
-        # when / then
-        self.assertTrue(form.is_valid())
 
     def test_should_not_accept_moon_mining_type_for_non_mining_structures(self):
         # given

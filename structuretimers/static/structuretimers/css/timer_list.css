@@ -1,13 +1,20 @@
-.table_timers thead th {
+.table_timers thead th, #tbl_preliminary thead th {
     text-align: center
 }
-.table_timers tbody td {
+
+.table_timers tbody td, #tbl_preliminary tbody td {
     text-align: center;
     word-wrap: break-word;
 }
-.table_timers tbody td:nth-child(1) { white-space: nowrap; }
-.table_timers tbody td:nth-child(2) { white-space: nowrap; }
-.table_timers tbody td:nth-child(8) { white-space: nowrap; }
+
+.table_timers tbody td:nth-child(1), .table_timers tbody td:nth-child(2), .table_timers tbody td:nth-child(8) {
+    white-space: nowrap;
+}
+
+#tbl_preliminary tbody td:nth-child(6), #tbl_preliminary tbody td:nth-child(7) {
+    white-space: nowrap;
+}
+
 
 /*
 .nav-tabs > li {
@@ -20,12 +27,12 @@
     margin: 0 auto;
 }
 
-.flex-container > div {
+.flex-container>div {
     align-self: center;
     padding-left: 3px;
 }
 
-.flex-container > div:first-child {
+.flex-container>div:first-child {
     align-self: center;
     padding-left: 20px;
 }
