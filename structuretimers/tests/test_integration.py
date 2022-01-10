@@ -1,9 +1,6 @@
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
-from requests.exceptions import ConnectionError as NewConnectionError
-from requests.exceptions import HTTPError
-
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -20,22 +17,10 @@ from . import (
     create_fake_timer,
     create_test_user,
 )
-from .testdata import test_data_filename, test_image_filename
 
 MODELS_PATH = "structuretimers.models"
 FORMS_PATH = "structuretimers.forms"
 TASKS_PATH = "structuretimers.tasks"
-
-
-def bytes_from_file(filename, chunksize=8192):
-    with open(filename, "rb") as f:
-        while True:
-            chunk = f.read(chunksize)
-            if chunk:
-                for b in chunk:
-                    yield b
-            else:
-                break
 
 
 @patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
@@ -144,206 +129,6 @@ class TestUI(LoadTestDataMixin, WebTest):
         response = self.app.get(reverse("structuretimers:add"))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("authentication:dashboard"))
-
-    def test_should_not_allow_submitting_without_structure_type(self):
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["days_left"] = -1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    def test_should_not_allow_submitting_without_solar_system(self):
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["structure_name"] = "Timer 4"
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = -1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    def test_should_not_allow_entering_invalid_days(self):
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = -1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    @patch(FORMS_PATH + ".requests.get", spec=True)
-    def test_should_show_error_when_image_can_not_be_loaded_1(self, mock_get):
-        mock_get.side_effect = NewConnectionError
-
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = 1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        form["details_image_url"] = "http://www.example.com/image.png"
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    @patch(FORMS_PATH + ".requests.get", spec=True)
-    def test_should_show_error_when_image_can_not_be_loaded_2(self, mock_get):
-        """
-        when user entered invalid day
-        then page can not be submitted and error is shown to user
-        """
-        mock_get.side_effect = HTTPError
-
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = 1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        form["details_image_url"] = "http://www.example.com/image.png"
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    @patch(FORMS_PATH + ".requests.get", spec=True)
-    def test_should_create_timer_with_valid_details_image(self, mock_get):
-        image_file = bytearray(bytes_from_file(test_image_filename()))
-        mock_get.return_value.content = image_file
-
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = 1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        form["details_image_url"] = "http://www.example.com/image.png"
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("structuretimers:timer_list"))
-        self.assertTrue(Timer.objects.filter(structure_name="Timer 4").exists())
-
-    @patch(FORMS_PATH + ".requests.get", spec=True)
-    def test_should_not_allow_invalid_link_for_detail_images(self, mock_get):
-        """
-        when user provides invalid file link
-        then page can not be submitted and error is shown to user
-        """
-        image_file = bytearray(bytes_from_file(test_data_filename()))
-        mock_get.return_value.content = image_file
-
-        # login
-        self.app.set_user(self.user_2)
-
-        # user clicks on "Add Timer"
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        self.assertEqual(add_timer.status_code, 200)
-
-        # user enters data and clicks create
-        form = add_timer.forms["add-timer-form"]
-        form["days_left"] = 1
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["days_left"] = 1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        form["details_image_url"] = "http://www.example.com/image.png"
-        response = form.submit()
-
-        # assert results
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
-
-    def test_should_not_allow_moon_mining_type_for_non_mining_structures(self):
-        # given
-        self.app.set_user(self.user_2)
-        add_timer = self.app.get(reverse("structuretimers:add"))
-        # when
-        form = add_timer.forms["add-timer-form"]
-        form["structure_name"] = "Timer 4"
-        form["eve_solar_system_2"].force_value([str(self.system_abune.id)])
-        form["structure_type_2"].force_value([str(self.type_astrahus.id)])
-        form["timer_type"] = Timer.Type.MOONMINING
-        form["days_left"] = 1
-        form["hours_left"] = 2
-        form["minutes_left"] = 3
-        response = form.submit()
-        # then
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("correct the input errors", response.text)
 
     def test_edit_existing_timer(self):
         """

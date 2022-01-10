@@ -7,7 +7,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
-from django.utils.html import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from eveuniverse.models import EveSolarSystem, EveType
 
@@ -84,12 +84,12 @@ class TimerForm(forms.ModelForm):
     asterisk_html = '<i class="fas fa-asterisk"></i>'
     eve_solar_system_2 = forms.CharField(
         required=True,
-        label=_(mark_safe(f"Solar System {asterisk_html}")),
+        label=_(format_html(f"Solar System {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-solar-systems"}),
     )
     structure_type_2 = forms.CharField(
         required=True,
-        label=_(mark_safe(f"Structure Type {asterisk_html}")),
+        label=_(format_html(f"Structure Type {asterisk_html}")),
         widget=forms.Select(attrs={"class": "select2-structure-types"}),
     )
     objective = forms.ChoiceField(
@@ -106,18 +106,18 @@ class TimerForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
     days_left = forms.IntegerField(
-        required=True,
-        label=_(mark_safe(f"Days Remaining {asterisk_html}")),
+        required=False,
+        label=_(format_html(f"Days Remaining {asterisk_html}")),
         validators=[MinValueValidator(0)],
     )
     hours_left = forms.IntegerField(
-        required=True,
-        label=_(mark_safe(f"Hours Remaining {asterisk_html}")),
+        required=False,
+        label=_(format_html(f"Hours Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
     )
     minutes_left = forms.IntegerField(
-        required=True,
-        label=_(mark_safe(f"Minutes Remaining {asterisk_html}")),
+        required=False,
+        label=_(format_html(f"Minutes Remaining {asterisk_html}")),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
     )
     details_image_url = forms.URLField(required=False)
@@ -204,6 +204,14 @@ class TimerForm(forms.ModelForm):
                         code="details_url_unsupported_type",
                     )
 
+        if cleaned_data.get("timer_type") != Timer.Type.TARGET:
+            if cleaned_data.get("days_left") is None:
+                raise ValidationError({"days_left": _("This is a required field.")})
+            if cleaned_data.get("hours_left") is None:
+                raise ValidationError({"hours_left": _("This is a required field.")})
+            if cleaned_data.get("minutes_left") is None:
+                raise ValidationError({"minutes_left": _("This is a required field.")})
+
     def save(self, commit=True):
         timer = super().save(commit=False)
 
@@ -216,16 +224,17 @@ class TimerForm(forms.ModelForm):
                 alliance = EveAllianceInfo.objects.create_alliance(
                     character.alliance_id
                 )
-
             try:
                 corporation = character.corporation
             except EveCorporationInfo.DoesNotExist:
                 corporation = EveCorporationInfo.objects.create_corporation(
                     character.corporation_id
                 )
-
             logger.debug(
-                "Determined timer save request is on behalf of character %s corporation %s",
+                (
+                    "Determined timer save request is on behalf of "
+                    "character %s corporation %s"
+                ),
                 character,
                 corporation,
             )
@@ -235,20 +244,23 @@ class TimerForm(forms.ModelForm):
             timer.user = self.user
 
         # calculate future time
-        future_time = datetime.timedelta(
-            days=self.cleaned_data["days_left"],
-            hours=self.cleaned_data["hours_left"],
-            minutes=self.cleaned_data["minutes_left"],
-        )
-        current_time = timezone.now()
-        date = current_time + future_time
-        logger.debug(
-            "Determined timer eve time is %s - current time %s, adding %s",
-            date,
-            current_time,
-            future_time,
-        )
-        timer.date = date
+        if self.cleaned_data["timer_type"] == Timer.Type.TARGET:
+            timer.date = None
+        else:
+            future_time = datetime.timedelta(
+                days=self.cleaned_data["days_left"],
+                hours=self.cleaned_data["hours_left"],
+                minutes=self.cleaned_data["minutes_left"],
+            )
+            current_time = timezone.now()
+            date = current_time + future_time
+            logger.debug(
+                "Determined timer eve time is %s - current time %s, adding %s",
+                date,
+                current_time,
+                future_time,
+            )
+            timer.date = date
 
         # structure type
         timer.structure_type_id = self.cleaned_data["structure_type_2"]

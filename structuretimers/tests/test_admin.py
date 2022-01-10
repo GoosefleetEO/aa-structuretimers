@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django_webtest import WebTest
 
@@ -152,6 +152,7 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
         self.assertEqual(NotificationRule.objects.count(), 0)
 
 
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestStagingSystemAdmin(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls):

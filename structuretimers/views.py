@@ -99,9 +99,10 @@ class TimerListDataView(
             timers_qs = timers_qs.filter(
                 date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
             )
+        elif tab_name == "target":
+            timers_qs = timers_qs.filter(timer_type=Timer.Type.TARGET)
         else:
             timers_qs = timers_qs.filter(date__lt=now())
-
         timers_qs = timers_qs.select_related(
             "eve_solar_system__eve_constellation__eve_region",
             "structure_type",
@@ -244,8 +245,8 @@ class TimerListDataView(
             data.append(
                 {
                     "id": timer.id,
-                    "local_time": timer.date.isoformat(),
-                    "date": timer.date.isoformat(),
+                    "local_time": timer.date.isoformat() if timer.date else "",
+                    "date": timer.date.isoformat() if timer.date else "",
                     "location": location,
                     "structure_details": structure,
                     "name_objective": name,
@@ -266,9 +267,10 @@ class TimerListDataView(
                     "visibility": visibility,
                     "opsec_str": yesno_str(timer.is_opsec),
                     "is_opsec": timer.is_opsec,
-                    "is_passed": timer.date < now(),
+                    "is_passed": timer.date < now() if timer.date else None,
                     "is_important": timer.is_important,
                     "is_restricted": is_restricted,
+                    "last_updated_at": timer.last_updated_at.isoformat(),
                 }
             )
 

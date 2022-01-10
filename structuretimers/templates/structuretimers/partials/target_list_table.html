@@ -2,16 +2,15 @@
 {% load humanize %}
 
 <div class="table-responsive">
-    <table class="table table-striped table_timers" id="tbl_timers_{{ tab_name }}" style="width:100%;">
+    <table class="table table-striped table_timers" id="tbl_targets" style="width:100%;">
         <thead>
             <tr>
-                <th>{% translate "Eve Time" %}</th>
-                <th>{% translate "Local Time" %}</th>
                 <th>{% translate "Location" %}</th>
                 <th>{% translate "Dist. *" %}</th>
                 <th>{% translate "Structure" %} / {% translate "Timer Type" %}</th>
                 <th>{% translate "Objective" %} / {% translate "Tags" %}</th>
                 <th>{% translate "Name" %} / {% translate "Owner" %}</th>
+                <th>{% translate "Last updated" %}</th>
                 <th></th>
             </tr>
         </thead>

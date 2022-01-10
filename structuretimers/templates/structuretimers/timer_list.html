@@ -21,8 +21,9 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Current Timers</a></li>
-        <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Past Timers</a></li>
+        <li role="presentation" class="active"><a href="#tab_current" aria-controls="tab_current" role="tab" data-toggle="tab">Current Timers</a></li>
+        <li role="presentation"><a href="#tab_past" aria-controls="tab_past" role="tab" data-toggle="tab">Past Timers</a></li>
+        <li role="presentation"><a href="#tab_target" aria-controls="tab_target" role="tab" data-toggle="tab">Targets</a></li>
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 Staging: {{ selected_staging_system|default:"?" }} <span class="caret"></span>
@@ -44,7 +45,7 @@
         <div class="panel-body">
             <div class="tab-content">
                 <!-- current structuretimers tab -->
-                <div role="tabpanel" class="tab-pane active" id="home">
+                <div role="tabpanel" class="tab-pane active" id="tab_current">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='current' %}
                     <p class="text-muted">
                         Timers remain on this page for {{ max_hours_expired }} hours after they expired
@@ -52,8 +53,13 @@
                 </div>
 
                 <!-- past structuretimers tab -->
-                <div role="tabpanel" class="tab-pane" id="profile">
+                <div role="tabpanel" class="tab-pane" id="tab_past">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='past' %}
+                </div>
+
+                <!-- targets tab -->
+                <div role="tabpanel" class="tab-pane" id="tab_target">
+                    {% include 'structuretimers/partials/target_list_table.html' %}
                 </div>
             </div>
             <p class="text-muted">
@@ -106,6 +112,7 @@
         id="dataExport"
         data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}?staging={{ selected_staging_system.pk }}"
         data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}"
+        data-listDataTargetUrl="{% url 'structuretimers:timer_list_data' 'target' %}"
         data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
         data-titleSolarSystem="{% translate 'Solar System' %}"
         data-titleRegion="{% translate 'Region' %}"

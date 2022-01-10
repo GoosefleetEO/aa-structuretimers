@@ -299,6 +299,7 @@ class Timer(models.Model):
         ANCHORING = "AN", _("Anchoring")
         UNANCHORING = "UA", _("Unanchoring")
         MOONMINING = "MM", _("Moon Mining")
+        TARGET = "TG", _("Target")
 
     class Objective(models.TextChoices):
         UNDEFINED = "UN", _("undefined")
@@ -313,6 +314,7 @@ class Timer(models.Model):
 
     date = models.DateTimeField(
         db_index=True,
+        null=True,
         help_text="Date when this timer happens",
     )
     details_image_url = models.CharField(
@@ -423,6 +425,7 @@ class Timer(models.Model):
             " of your organization"
         ),
     )
+    last_updated_at = models.DateTimeField(auto_now=True)
 
     objects = TimerManager()
 
@@ -434,7 +437,7 @@ class Timer(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        """New save method for Timers. Will also schedule notifications for timers
+        """New save method for Timers. Will also schedule notifications for timers.
 
         Args:
             disable_notifications: Set to True to disable all notifications for the saved timer
@@ -443,8 +446,10 @@ class Timer(models.Model):
             disable_notifications = kwargs.pop("disable_notifications")
         except KeyError:
             disable_notifications = False
-        notification_enabled = (
-            STRUCTURETIMERS_NOTIFICATIONS_ENABLED and not disable_notifications
+        schedule_notifications = (
+            STRUCTURETIMERS_NOTIFICATIONS_ENABLED
+            and not disable_notifications
+            and self.timer_type != self.Type.TARGET
         )
         try:
             old_instance = Timer.objects.get(pk=self.pk)
@@ -461,7 +466,7 @@ class Timer(models.Model):
             _task_calc_timer_distances_for_all_staging_systems().apply_async(
                 args=[self.pk], priority=4
             )
-        if notification_enabled and (is_new or date_changed):
+        if schedule_notifications and (is_new or date_changed):
             _task_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3
             )

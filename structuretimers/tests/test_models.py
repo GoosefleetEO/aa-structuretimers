@@ -167,6 +167,18 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
             timer.structure_name = "Some fancy name"
             self.assertFalse(mock_schedule_notifications.called)
 
+    @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
+    def test_dont_schedule_notifications_for_new_target_timers(
+        self, mock_schedule_notifications
+    ):
+        timer = Timer(
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            timer_type=Timer.Type.TARGET,
+        )
+        timer.save()
+        self.assertFalse(mock_schedule_notifications.called)
+
 
 @patch(MODULE_PATH + "._task_schedule_notifications_for_timer", Mock)
 class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):

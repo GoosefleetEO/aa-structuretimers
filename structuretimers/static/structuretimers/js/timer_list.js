@@ -45,6 +45,7 @@ $(document).ready(function () {
     var elem = document.getElementById('dataExport');
     var listDataCurrentUrl = elem.getAttribute('data-listDataCurrentUrl');
     var listDataPastUrl = elem.getAttribute('data-listDataPastUrl');
+    var listDataTargetUrl = elem.getAttribute('data-listDataTargetUrl');
     var getTimerDataUrl = elem.getAttribute('data-getTimerDataUrl');
     var titleSolarSystem = elem.getAttribute('data-titleSolarSystem');
     var titleRegion = elem.getAttribute('data-titleRegion');
@@ -112,8 +113,18 @@ $(document).ready(function () {
 
     /* build dataTables */
     var columns = [
-        { data: 'date' },
-        { data: 'local_time' },
+        {
+            data: 'date',
+            render: function (data, type, row) {
+                return moment(data).utc().format("YYYY-MM-DD HH:mm");
+            }
+        },
+        {
+            data: 'local_time',
+            render: function (data, type, row) {
+                return localTimeOutputHtml(data);
+            },
+        },
         { data: 'location' },
         { data: 'distance' },
         { data: 'structure_details' },
@@ -187,21 +198,9 @@ $(document).ready(function () {
                 idx_start + 6,
                 idx_start + 7
             ]
-        },
-        {
-            "render": function (data, type, row) {
-                return moment(data).utc().format("YYYY-MM-DD HH:mm");
-            },
-            "targets": 0
-        },
-        {
-            "render": function (data, type, row) {
-                return localTimeOutputHtml(data);
-            },
-            "targets": 1
         }
     ];
-    $('#tab_timers_past').DataTable({
+    $('#tbl_timers_past').DataTable({
         ajax: {
             url: listDataPastUrl,
             dataSrc: '',
@@ -215,7 +214,32 @@ $(document).ready(function () {
         filterDropDown: filterDropDown,
         columnDefs: columnDefs
     });
-    var table_current = $('#tab_timers_current').DataTable({
+    $('#tbl_targets').DataTable({
+        ajax: {
+            url: listDataTargetUrl,
+            dataSrc: '',
+            cache: false
+        },
+        columns: [
+            { data: 'location' },
+            { data: 'distance' },
+            { data: 'structure_details' },
+            { data: 'owner' },
+            { data: 'name_objective' },
+            {
+                data: 'last_updated_at',
+                render: function (data, type, row) {
+                    return moment(data).utc().format("YYYY-MM-DD HH:mm");
+                },
+            },
+            { data: 'actions' }
+        ],
+        order: [[0, "desc"]],
+        lengthMenu: lengthMenu,
+        paging: dataTablesPaging,
+        pageLength: dataTablesPageLength
+    });
+    var table_current = $('#tbl_timers_current').DataTable({
         ajax: {
             url: listDataCurrentUrl,
             dataSrc: '',
