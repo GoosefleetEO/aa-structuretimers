@@ -9,6 +9,7 @@ from simple_mq import SimpleMQ
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
@@ -434,6 +435,14 @@ class Timer(models.Model):
             self.get_timer_type_display(),
             self.structure_display_name,
             f" @ {self.date.strftime(DATETIME_FORMAT)}" if self.date else "",
+        )
+
+    def get_absolute_url(self) -> str:
+        url = reverse("structuretimers:timer_list")
+        return (
+            f"{url}?tab=preliminary"
+            if self.timer_type == self.Type.PRELIMINARY
+            else url
         )
 
     def save(self, *args, **kwargs):

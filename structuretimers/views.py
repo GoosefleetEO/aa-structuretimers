@@ -354,8 +354,6 @@ class TimerDetailDataView(
 
 
 class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    index_redirect = "structuretimers:timer_list"
-    success_url = reverse_lazy(index_redirect)
     model = Timer
     form_class = TimerForm
     title = _("Edit Structure Timer")
@@ -397,7 +395,7 @@ class CreateTimerView(TimerManagementView, AddUpdateMixin, CreateView):
             self.request,
             _("Added new %(type)s timer for %(structure)s in %(system)s %(time)s.")
             % {
-                "type": timer.get_timer_type_display(),
+                "type": timer.get_timer_type_display().lower(),
                 "structure": timer.structure_type.name,
                 "system": timer.eve_solar_system.name,
                 "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
@@ -441,7 +439,7 @@ class CopyTimerView(CreateTimerView):
 
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
-    pass
+    success_url = reverse_lazy("structuretimers:timer_list")
 
 
 class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
