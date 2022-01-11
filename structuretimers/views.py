@@ -2,6 +2,7 @@ import math
 from copy import deepcopy
 from datetime import timedelta
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -24,7 +25,6 @@ from eveuniverse.models import EveSolarSystem, EveType
 from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
-from app_utils.messages import messages_plus
 from app_utils.views import (
     JSONResponseMixin,
     bootstrap_label_html,
@@ -392,7 +392,7 @@ class CreateTimerView(TimerManagementView, AddUpdateMixin, CreateView):
             timer.date,
             self.request.user,
         )
-        messages_plus.success(
+        messages.success(
             self.request,
             _("Added new %(type)s timer for %(structure)s in %(system)s %(time)s.")
             % {
