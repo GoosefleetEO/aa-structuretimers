@@ -135,6 +135,10 @@ $(document).ready(function () {
     const hasPermOPSEC = elem.getAttribute("data-hasPermOPSEC") == "True";
     const dataTablesPageLength = Number(elem.getAttribute("data-dataTablesPageLength"));
     const dataTablesPaging = elem.getAttribute("data-dataTablesPaging") == "True";
+    const tabId = elem.getAttribute("data-tabId");
+
+    /* activate selected tab */
+    $('a[href="#' + tabId + '"]').tab("show");
 
     /* Update modal with requested timer */
     $("#modalTimerDetails").on("show.bs.modal", function (event) {

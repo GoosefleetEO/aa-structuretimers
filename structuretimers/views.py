@@ -75,6 +75,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "data_tables_paging": STRUCTURETIMERS_PAGING_ENABLED,
                 "selected_staging_system": selected_staging_system,
                 "stageing_systems": stageing_systems,
+                "tab": self.request.GET.get("tab", "current"),
             }
         )
         return context

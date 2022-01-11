@@ -21,9 +21,9 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation"><a href="#tab_preliminary" aria-controls="tab_preliminary" role="tab" data-toggle="tab">Preliminary</a></li>
-        <li role="presentation" class="active"><a href="#tab_current" aria-controls="tab_current" role="tab" data-toggle="tab">Current</a></li>
-        <li role="presentation"><a href="#tab_past" aria-controls="tab_past" role="tab" data-toggle="tab">Past</a></li>
+        <li role="presentation"><a href="#preliminary" aria-controls="preliminary" role="tab" data-toggle="tab">Preliminary</a></li>
+        <li role="presentation"><a href="#current" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
+        <li role="presentation"><a href="#past" aria-controls="past" role="tab" data-toggle="tab">Past</a></li>
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 Staging: {{ selected_staging_system|default:"?" }} <span class="caret"></span>
@@ -45,7 +45,7 @@
         <div class="panel-body">
             <div class="tab-content">
                 <!-- targets tab -->
-                <div role="tabpanel" class="tab-pane" id="tab_preliminary">
+                <div role="tabpanel" class="tab-pane" id="preliminary">
                     {% include 'structuretimers/partials/preliminary_list_table.html' %}
                     <p class="text-muted">
                         This page contains potential future timers.
@@ -53,7 +53,7 @@
                 </div>
 
                 <!-- current structuretimers tab -->
-                <div role="tabpanel" class="tab-pane active" id="tab_current">
+                <div role="tabpanel" class="tab-pane" id="current">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='current' %}
                     <p class="text-muted">
                         Timers remain on this page for {{ max_hours_expired }} hours after they expired
@@ -61,7 +61,7 @@
                 </div>
 
                 <!-- past structuretimers tab -->
-                <div role="tabpanel" class="tab-pane" id="tab_past">
+                <div role="tabpanel" class="tab-pane" id="past">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='past' %}
                 </div>
             </div>
@@ -71,44 +71,43 @@
             </p>
         </div>
     </div>
-</div>
 
-<!-- modal to show timer details -->
-<div class="modal" id="modalTimerDetails" tabindex="-1" role="dialog" aria-labelledby="myModal">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
-            </div>
-            <div class="modal-body">
-                <div id="modal_div_spinner">
-                    {% if NIGHT_MODE %}
-                        <img src="{% static 'structuretimers/img/Spinner-1s-64px-dark.gif' %}" alt="Spinner"/>
-                    {% else %}
-                        <img src="{% static 'structuretimers/img/Spinner-1s-64px-light.gif' %}" alt="Spinner"/>
-                    {% endif %}
+    <!-- modal to show timer details -->
+    <div class="modal" id="modalTimerDetails" tabindex="-1" role="dialog" aria-labelledby="myModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
                 </div>
-                <div id="modal_div_data" style="display: none">
-                    <label for="timerboardTimer">Timer</label>
-                    <p><span id="timerboardTimer"></span></p>
-                    <label for="timerboardImgScreenshot">Image</label>
-                    <a href="#" target="_blank">
-                        <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
-                    </a>
-                    <br>
-                    <label for="timerboardNotes">Notes</label>
-                    <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
+                <div class="modal-body">
+                    <div id="modal_div_spinner">
+                        {% if NIGHT_MODE %}
+                            <img src="{% static 'structuretimers/img/Spinner-1s-64px-dark.gif' %}" alt="Spinner"/>
+                        {% else %}
+                            <img src="{% static 'structuretimers/img/Spinner-1s-64px-light.gif' %}" alt="Spinner"/>
+                        {% endif %}
+                    </div>
+                    <div id="modal_div_data" style="display: none">
+                        <label for="timerboardTimer">Timer</label>
+                        <p><span id="timerboardTimer"></span></p>
+                        <label for="timerboardImgScreenshot">Image</label>
+                        <a href="#" target="_blank">
+                            <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
+                        </a>
+                        <br>
+                        <label for="timerboardNotes">Notes</label>
+                        <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
-
 
     <!-- share data with JS part -->
     <div
@@ -127,6 +126,7 @@
         data-hasPermOPSEC="{{ perms.structuretimers.opsec_access }}"
         data-dataTablesPageLength="{{ data_tables_page_length }}"
         data-dataTablesPaging="{{ data_tables_paging }}"
+        data-tabId="{{ tab }}"
     >
     </div>
 
