@@ -7,8 +7,6 @@ from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem, EveType
 
-from app_utils.testing import generate_invalid_pk
-
 from ..models import DiscordWebhook, NotificationRule, ScheduledNotification
 from ..tasks import (
     notify_about_new_timer,
@@ -17,7 +15,8 @@ from ..tasks import (
     send_messages_for_webhook,
     send_scheduled_notification,
 )
-from . import LoadTestDataMixin, create_fake_timer
+from .testdata.factory import create_timer
+from .testdata.fixtures import LoadTestDataMixin
 from .testdata.load_eveuniverse import load_eveuniverse
 
 MODULE_PATH = "structuretimers.tasks"
@@ -35,7 +34,7 @@ class TestCaseBase(LoadTestDataMixin, TestCase):
             scheduled_time=NotificationRule.MINUTES_15,
             webhook=self.webhook,
         )
-        self.timer = create_fake_timer(
+        self.timer = create_timer(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
@@ -51,12 +50,6 @@ class TestSendMessagesForWebhook(TestCaseBase):
         self.assertEqual(mock_send_queued_messages.call_count, 1)
         self.assertEqual(mock_logger.info.call_count, 2)
         self.assertEqual(mock_logger.error.call_count, 0)
-
-    def test_invalid_pk(self, mock_logger, mock_send_queued_messages):
-        send_messages_for_webhook(generate_invalid_pk(DiscordWebhook))
-        self.assertEqual(mock_send_queued_messages.call_count, 0)
-        self.assertEqual(mock_logger.info.call_count, 0)
-        self.assertEqual(mock_logger.error.call_count, 1)
 
     def test_disabled_webhook(self, mock_logger, mock_send_queued_messages):
         self.webhook.is_enabled = False
@@ -214,7 +207,7 @@ class TestSendScheduledNotification(TransactionTestCase):
             scheduled_time=NotificationRule.MINUTES_15,
             webhook=self.webhook,
         )
-        self.timer = create_fake_timer(
+        self.timer = create_timer(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,

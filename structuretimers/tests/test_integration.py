@@ -1,22 +1,18 @@
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
-from django.test import TestCase
-from django.test.utils import override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import now
 from django_webtest import WebTest
 
 from allianceauth.tests.auth_utils import AuthUtils
 
-from ..models import DiscordWebhook, Timer
+from ..models import DiscordWebhook, ScheduledNotification, Timer
 from ..tasks import send_test_message_to_webhook
-from . import (
-    LoadTestDataMixin,
-    add_permission_to_user_by_name,
-    create_fake_timer,
-    create_test_user,
-)
+from .testdata.factory import create_notification_rule, create_timer, create_user
+from .testdata.fixtures import LoadTestDataMixin
+from .utils import add_permission_to_user_by_name
 
 MODELS_PATH = "structuretimers.models"
 FORMS_PATH = "structuretimers.forms"
@@ -31,17 +27,17 @@ class TestUI(LoadTestDataMixin, WebTest):
         super().setUpClass()
 
         # user 1
-        cls.user_1 = create_test_user(cls.character_1)
+        cls.user_1 = create_user(cls.character_1)
 
         # user 2
-        cls.user_2 = create_test_user(cls.character_2)
+        cls.user_2 = create_user(cls.character_2)
         cls.user_2 = add_permission_to_user_by_name(
             "structuretimers.create_timer", cls.user_2
         )
 
     @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.timer_1 = create_fake_timer(
+        self.timer_1 = create_timer(
             structure_name="Timer 1",
             date=now() + timedelta(hours=4),
             eve_character=self.character_2,
@@ -50,7 +46,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
-        self.timer_2 = create_fake_timer(
+        self.timer_2 = create_timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -59,7 +55,7 @@ class TestUI(LoadTestDataMixin, WebTest):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
         )
-        self.timer_3 = create_fake_timer(
+        self.timer_3 = create_timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_2,
@@ -183,7 +179,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         """
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
         self.app.set_user(user_3)
 
@@ -199,7 +195,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         """
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
 
@@ -235,7 +231,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.timer_3.save()
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
         user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
@@ -255,7 +251,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         self.timer_3.save()
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
         user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
@@ -272,7 +268,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         """
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.manage_timer", user_3)
         self.app.set_user(user_3)
 
@@ -332,7 +328,7 @@ class TestUI(LoadTestDataMixin, WebTest):
         """
 
         # login
-        user_3 = create_test_user(self.character_3)
+        user_3 = create_user(self.character_3)
         user_3 = add_permission_to_user_by_name("structuretimers.create_timer", user_3)
         self.app.set_user(user_3)
 
@@ -356,7 +352,7 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
         self.rule.webhooks.add(self.webhook)
 
     def test_normal(self, mock_execute):
-        create_fake_timer(
+        create_timer(
             structure_name="Test_1",
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
@@ -389,3 +385,26 @@ class TestTestMessageToWebhook(LoadTestDataMixin, TestCase):
         )
         self.assertEqual(mock_execute.call_count, 1)
         self.assertTrue(mock_notify.called)
+
+
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
+@patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
+class TestTimerSave(LoadTestDataMixin, TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(
+            name="Dummy", url="http://www.example.com"
+        )
+
+    def test_schedule_notifications_for_new_timers_2(self):
+        # when
+        create_notification_rule()
+        timer = create_timer(
+            date=now() + timedelta(hours=4),
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            enabled_notifications=True,
+        )
+        # then
+        self.assertTrue(ScheduledNotification.objects.filter(timer=timer).exists())

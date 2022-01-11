@@ -13,13 +13,9 @@ from app_utils.testing import (
 )
 
 from ..models import Timer
-from . import (
-    LoadTestDataMixin,
-    add_permission_to_user_by_name,
-    create_fake_staging_system,
-    create_fake_timer,
-    create_test_user,
-)
+from .testdata.factory import create_staging_system, create_timer, create_user
+from .testdata.fixtures import LoadTestDataMixin
+from .utils import add_permission_to_user_by_name
 
 MODELS_PATH = "structuretimers.models"
 
@@ -29,15 +25,15 @@ class TestViewBase(LoadTestDataMixin, TestCase):
     @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self):
         # user
-        self.user_1 = create_test_user(self.character_1)
-        self.user_2 = create_test_user(self.character_2)
+        self.user_1 = create_user(self.character_1)
+        self.user_2 = create_user(self.character_2)
         self.user_2 = add_permission_to_user_by_name(
             "structuretimers.manage_timer", self.user_2
         )
-        self.user_3 = create_test_user(self.character_3)
+        self.user_3 = create_user(self.character_3)
 
         # timers
-        self.timer_1 = create_fake_timer(
+        self.timer_1 = create_timer(
             structure_name="Timer 1",
             location_details="Near the star",
             date=now() + timedelta(hours=4),
@@ -50,7 +46,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             details_image_url="http://www.example.com/dummy.png",
             details_notes="Some notes",
         )
-        self.timer_2 = create_fake_timer(
+        self.timer_2 = create_timer(
             structure_name="Timer 2",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -60,7 +56,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             structure_type=self.type_raitaru,
             is_important=True,
         )
-        self.timer_3 = create_fake_timer(
+        self.timer_3 = create_timer(
             structure_name="Timer 3",
             date=now() - timedelta(hours=8),
             eve_character=self.character_1,
@@ -115,7 +111,7 @@ class TestListData(TestViewBase):
         self.assertEqual(response.status_code, 302)
 
     def test_show_corp_restricted_to_corp_member(self):
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -130,7 +126,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_corp_restricted_to_non_corp_member(self):
-        create_fake_timer(
+        create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -145,7 +141,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_alliance_restricted_to_alliance_member(self):
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -161,7 +157,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_alliance_restricted_to_non_alliance_member(self):
-        create_fake_timer(
+        create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -180,7 +176,7 @@ class TestListData(TestViewBase):
         self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -195,7 +191,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_dont_show_opsec_restricted_to_non_opsec_member(self):
-        create_fake_timer(
+        create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -213,7 +209,7 @@ class TestListData(TestViewBase):
         self.user_1 = add_permission_to_user_by_name(
             "structuretimers.opsec_access", self.user_1
         )
-        create_fake_timer(
+        create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -229,7 +225,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_corp_timer_to_creator_of_different_corp(self):
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -244,7 +240,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_show_alliance_timer_to_creator_of_different_alliance(self):
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -260,7 +256,7 @@ class TestListData(TestViewBase):
         self.assertSetEqual(timer_ids, expected)
 
     def test_can_show_timers_without_user_character_corporation_or_alliance(self):
-        timer_4 = create_fake_timer(
+        timer_4 = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -277,7 +273,7 @@ class TestListData(TestViewBase):
 
     def test_should_include_distances(self):
         # given
-        timer = create_fake_timer(
+        timer = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -287,7 +283,7 @@ class TestListData(TestViewBase):
             eve_corporation=self.corporation_3,
             user=self.user_1,
         )
-        staging_system = create_fake_staging_system(
+        staging_system = create_staging_system(
             eve_solar_system=self.system_enaluri,
             light_years=1.2,
             jumps=3,
@@ -307,7 +303,7 @@ class TestListData(TestViewBase):
 
     def test_should_not_include_distances(self):
         # given
-        timer = create_fake_timer(
+        timer = create_timer(
             structure_name="Timer 4",
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
@@ -317,9 +313,7 @@ class TestListData(TestViewBase):
             eve_corporation=self.corporation_3,
             user=self.user_1,
         )
-        staging_system = create_fake_staging_system(
-            eve_solar_system=self.system_enaluri
-        )
+        staging_system = create_staging_system(eve_solar_system=self.system_enaluri)
         self.client.force_login(self.user_1)
         # when
         response = self.client.get(
@@ -367,7 +361,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.user_1 = create_test_user(cls.character_1)
+        cls.user_1 = create_user(cls.character_1)
 
     def test_should_return_solar_systems(self):
         # given

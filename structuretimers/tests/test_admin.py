@@ -6,7 +6,8 @@ from django.urls import reverse
 from django_webtest import WebTest
 
 from ..models import DiscordWebhook, NotificationRule, StagingSystem, Timer
-from . import LoadTestDataMixin, create_fake_staging_system
+from .testdata.factory import create_staging_system
+from .testdata.fixtures import LoadTestDataMixin
 
 
 @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
@@ -177,7 +178,7 @@ class TestStagingSystemAdmin(LoadTestDataMixin, TestCase):
     def test_should_ensure_only_one_obj_is_main(self):
         # given
         self.client.force_login(self.user)
-        create_fake_staging_system(eve_solar_system=self.system_enaluri, is_main=True)
+        create_staging_system(eve_solar_system=self.system_enaluri, is_main=True)
         # when
         res = self.client.post(
             self.url_add,

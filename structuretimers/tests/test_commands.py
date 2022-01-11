@@ -11,7 +11,8 @@ from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
 from ..models import Timer
-from . import LoadTestDataMixin, create_test_user
+from .testdata.factory import create_user
+from .testdata.fixtures import LoadTestDataMixin
 
 PACKAGE_PATH = "structuretimers.management.commands"
 MODELS_PATH = "structuretimers.models"
@@ -31,7 +32,7 @@ class TestMigirateTimers(LoadTestDataMixin, NoSocketsTestCase):
 
     def setUp(self) -> None:
         self.out = StringIO()
-        self.user = create_test_user(self.character_1)
+        self.user = create_user(self.character_1)
         self.auth_timer = AuthTimer.objects.create(
             system="Abune",
             planet_moon="Near Heydieles gate",

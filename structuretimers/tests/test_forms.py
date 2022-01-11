@@ -7,8 +7,8 @@ from app_utils.testing import NoSocketsTestCase
 
 from ..forms import TimerForm
 from ..models import Timer
-from . import LoadTestDataMixin
 from .testdata import test_image_filename
+from .testdata.fixtures import LoadTestDataMixin
 
 FORMS_PATH = "structuretimers.forms"
 
