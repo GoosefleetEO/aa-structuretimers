@@ -430,10 +430,10 @@ class Timer(models.Model):
     objects = TimerManager()
 
     def __str__(self):
-        return "%s timer for %s @ %s" % (
+        return "{} timer for {}{}".format(
             self.get_timer_type_display(),
             self.structure_display_name,
-            self.date.strftime(DATETIME_FORMAT),
+            f" @ {self.date.strftime(DATETIME_FORMAT)}" if self.date else "",
         )
 
     def save(self, *args, **kwargs):
@@ -456,6 +456,7 @@ class Timer(models.Model):
         except (Timer.DoesNotExist, ValueError):
             needs_recalc = True
             date_changed = False
+            old_instance = None
         else:
             needs_recalc = self.eve_solar_system != old_instance.eve_solar_system
             date_changed = self.date != old_instance.date
@@ -466,6 +467,12 @@ class Timer(models.Model):
             _task_calc_timer_distances_for_all_staging_systems().apply_async(
                 args=[self.pk], priority=4
             )
+        if (
+            self.timer_type == self.Type.PRELIMINARY
+            and old_instance
+            and old_instance.timer_type != self.Type.PRELIMINARY
+        ):
+            self.scheduled_notifications.all().delete()
         if schedule_notifications and (is_new or date_changed):
             _task_schedule_notifications_for_timer().apply_async(
                 kwargs={"timer_pk": self.pk, "is_new": is_new}, priority=3

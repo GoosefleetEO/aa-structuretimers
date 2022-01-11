@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import imghdr
 
 import requests
@@ -6,8 +6,8 @@ import requests
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from eveuniverse.models import EveSolarSystem, EveType
 
@@ -49,7 +49,7 @@ class TimerForm(forms.ModelForm):
             # Do conversion from db datetime to days/hours/minutes
             # for appropriate fields
             my_instance = kwargs["instance"]
-            current_time = timezone.now()
+            current_time = now()
             if my_instance.date:
                 td = my_instance.date - current_time
                 initial = kwargs.pop("initial", dict())
@@ -260,12 +260,12 @@ class TimerForm(forms.ModelForm):
         if self.cleaned_data["timer_type"] == Timer.Type.PRELIMINARY:
             timer.date = None
         else:
-            future_time = datetime.timedelta(
+            future_time = dt.timedelta(
                 days=self.cleaned_data["days_left"],
                 hours=self.cleaned_data["hours_left"],
                 minutes=self.cleaned_data["minutes_left"],
             )
-            current_time = timezone.now()
+            current_time = now()
             date = current_time + future_time
             logger.debug(
                 "Determined timer eve time is %s - current time %s, adding %s",

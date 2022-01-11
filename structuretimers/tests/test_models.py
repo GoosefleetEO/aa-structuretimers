@@ -1,8 +1,9 @@
+import datetime as dt
 import json
-from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import dhooks_lite
+from pytz import utc
 
 from django.core.cache import cache
 from django.db import models
@@ -22,7 +23,13 @@ from ..models import (
     Timer,
     _task_calc_staging_system,
 )
-from .testdata.factory import create_staging_system, create_timer, create_user
+from .testdata.factory import (
+    create_notification_rule,
+    create_scheduled_notification,
+    create_staging_system,
+    create_timer,
+    create_user,
+)
 from .testdata.fixtures import LoadTestDataMixin
 from .utils import add_permission_to_user_by_name
 
@@ -30,15 +37,25 @@ MODULE_PATH = "structuretimers.models"
 
 
 class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
-    def test_str(self):
+    def test_str_1(self):
         timer = Timer(
             structure_name="Test",
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         expected = 'Armor timer for Raitaru "Test" in Abune @ 2020-08-06 13:25'
+        self.assertEqual(str(timer), expected)
+
+    def test_str_2(self):
+        timer = Timer(
+            structure_name="Test",
+            timer_type=Timer.Type.PRELIMINARY,
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_raitaru,
+        )
+        expected = 'Preliminary timer for Raitaru "Test" in Abune'
         self.assertEqual(str(timer), expected)
 
     def test_structure_display_name_1(self):
@@ -46,7 +63,7 @@ class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         expected = "Raitaru in Abune"
         self.assertEqual(timer.structure_display_name, expected)
@@ -57,7 +74,7 @@ class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
             location_details="P5-M3",
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         expected = "Raitaru in Abune near P5-M3"
         self.assertEqual(timer.structure_display_name, expected)
@@ -68,7 +85,7 @@ class TestTimer(LoadTestDataMixin, NoSocketsTestCase):
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         expected = 'Raitaru "Big Boy" in Abune'
         self.assertEqual(timer.structure_display_name, expected)
@@ -106,7 +123,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
     def test_schedule_notifications_for_new_timers(self, mock_schedule_notifications):
         timer = create_timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             enabled_notifications=True,
@@ -120,7 +137,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
         self, mock_schedule_notifications
     ):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -132,7 +149,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
             MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_schedule_notifications:
             timer = create_timer(
-                date=now() + timedelta(hours=4),
+                date=now() + dt.timedelta(hours=4),
                 eve_solar_system=self.system_abune,
                 structure_type=self.type_astrahus,
             )
@@ -140,7 +157,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_schedule_notifications:
-            timer.date = now() + timedelta(hours=3)
+            timer.date = now() + dt.timedelta(hours=3)
             timer.save()
             self.assertTrue(mock_schedule_notifications.called)
             _, kwargs = mock_schedule_notifications.return_value.apply_async.call_args
@@ -151,7 +168,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
             MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_schedule_notifications:
             timer = create_timer(
-                date=now() + timedelta(hours=4),
+                date=now() + dt.timedelta(hours=4),
                 eve_solar_system=self.system_abune,
                 structure_type=self.type_astrahus,
             )
@@ -159,7 +176,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
         with patch(
             MODULE_PATH + "._task_schedule_notifications_for_timer"
         ) as mock_schedule_notifications:
-            timer.date = now() + timedelta(hours=3)
+            timer.date = now() + dt.timedelta(hours=3)
             timer.structure_name = "Some fancy name"
             self.assertFalse(mock_schedule_notifications.called)
 
@@ -167,25 +184,30 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
     def test_dont_schedule_notifications_for_new_preliminary_timers(
         self, mock_schedule_notifications
     ):
-        timer = Timer(
-            eve_solar_system=self.system_abune,
-            structure_type=self.type_astrahus,
-            timer_type=Timer.Type.PRELIMINARY,
-        )
-        timer.save()
+        # when
+        create_timer(timer_type=Timer.Type.PRELIMINARY)
+        # then
         self.assertFalse(mock_schedule_notifications.called)
 
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
-    def test_remove_scheduled_notifications_when_timer_changed(
+    def test_remove_scheduled_notifications_when_timer_changed_to_prelimary(
         self, mock_schedule_notifications
     ):
-        timer = Timer(
-            eve_solar_system=self.system_abune,
-            structure_type=self.type_astrahus,
-            timer_type=Timer.Type.PRELIMINARY,
+        # given
+        rule = create_notification_rule(is_enabled=False)
+        timer = create_timer(date=now() + dt.timedelta(hours=4))
+        notification = create_scheduled_notification(
+            notification_rule=rule, timer=timer
         )
+        mock_schedule_notifications.reset()
+        # when
+        timer.timer_type = Timer.Type.PRELIMINARY
         timer.save()
+        # then
         self.assertFalse(mock_schedule_notifications.called)
+        self.assertFalse(
+            ScheduledNotification.objects.filter(pk=notification.pk).exists()
+        )
 
 
 @patch(MODULE_PATH + "._task_schedule_notifications_for_timer", Mock)
@@ -201,7 +223,7 @@ class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
     def test_should_calc_distances_when_created(self, mock_calc_distances):
         # when
         timer = Timer.objects.create(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -215,7 +237,7 @@ class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
         self, mock_calc_distances
     ):
         timer = create_timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -230,7 +252,7 @@ class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
         self, mock_calc_distances
     ):
         timer = create_timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -264,7 +286,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_creator_can_edit_own_timer(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             user=self.user_1,
@@ -273,7 +295,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_manager_can_edit_other_timers(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             user=self.user_1,
@@ -282,7 +304,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_non_manager_can_not_edit_other_timer(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             user=self.user_1,
@@ -292,7 +314,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
     """
     def test_user_with_basic_access_can_view_normal_timer(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             user=self.user_1,
@@ -301,7 +323,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_user_can_not_view_corp_restricted_timer_from_other_corp(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_corporation=self.corporation_1,
@@ -312,7 +334,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_user_can_view_corp_restricted_timer_from_same_corp(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_corporation=self.corporation_1,
@@ -323,7 +345,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_user_can_not_view_alliance_restricted_timer_from_other_alliance(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             eve_alliance=self.alliance_1,
@@ -334,7 +356,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_opsec_user_can_view_opsec_timer(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             is_opsec=True,
@@ -344,7 +366,7 @@ class TestTimerAccess(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_non_opsec_user_can_not_view_opsec_timer(self):
         timer = Timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
             is_opsec=True,
@@ -368,7 +390,7 @@ class TestTimerManger(LoadTestDataMixin, NoSocketsTestCase):
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=now() - timedelta(days=1, seconds=1),
+            date=now() - dt.timedelta(days=1, seconds=1),
         )
         result = Timer.objects.delete_obsolete()
         self.assertEqual(result, 1)
@@ -468,7 +490,7 @@ class TestTimerQuerySet(LoadTestDataMixin, NoSocketsTestCase):
     def setUp(self) -> None:
         self.timer_1 = create_timer(
             structure_name="Timer 1",
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
@@ -478,7 +500,7 @@ class TestTimerQuerySet(LoadTestDataMixin, NoSocketsTestCase):
         )
         self.timer_2 = create_timer(
             structure_name="Timer 2",
-            date=now() - timedelta(hours=8),
+            date=now() - dt.timedelta(hours=8),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
@@ -904,7 +926,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, NoSocketsTestCase):
         """
         timer = create_timer(
             structure_name="Test Timer",
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
@@ -924,7 +946,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, NoSocketsTestCase):
         """
         timer = create_timer(
             structure_name="Test Timer",
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
@@ -944,7 +966,7 @@ class TestNotificationRuleQuerySet(LoadTestDataMixin, NoSocketsTestCase):
         """
         timer = create_timer(
             structure_name="Test Timer",
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_character=self.character_1,
             eve_corporation=self.corporation_1,
             eve_solar_system=self.system_abune,
@@ -1024,7 +1046,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             webhook=self.webhook,
         )
         timer = create_timer(
-            date=now() + timedelta(hours=4),
+            date=now() + dt.timedelta(hours=4),
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
@@ -1032,7 +1054,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             timer=timer,
             notification_rule=rule,
             timer_date=timer.date,
-            notification_date=timer.date - timedelta(minutes=10),
+            notification_date=timer.date - dt.timedelta(minutes=10),
         )
         rule.trigger = NotificationRule.Trigger.NEW_TIMER_CREATED
         rule.scheduled_time = None
@@ -1076,7 +1098,7 @@ class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         # when
         staging_system = StagingSystem.objects.create(
@@ -1098,7 +1120,7 @@ class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
             timer_type=Timer.Type.ARMOR,
             eve_solar_system=self.system_abune,
             structure_type=self.type_raitaru,
-            date=datetime(2020, 8, 6, 13, 25),
+            date=dt.datetime(2020, 8, 6, 13, 25, tzinfo=utc),
         )
         staging_system = create_staging_system(eve_solar_system=self.system_enaluri)
         # when

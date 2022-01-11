@@ -7,7 +7,7 @@ from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem, EveType
 
-from ..models import DiscordWebhook, NotificationRule, ScheduledNotification
+from ..models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
 from ..tasks import (
     notify_about_new_timer,
     schedule_notifications_for_rule,
@@ -78,6 +78,16 @@ class TestScheduleNotificationForTimer(TestCaseBase):
         self.assertTrue(
             self.timer.scheduled_notifications.filter(notification_rule=self.rule)
         )
+
+    def test_should_not_create_notification_for_preliminary_timer(
+        self, mock_send_notification, mock_send_notification_for_timer
+    ):
+        # given
+        mock_send_notification.apply_async.return_value.task_id = "my_task_id"
+        timer = create_timer(timer_type=Timer.Type.PRELIMINARY)
+        # when/then
+        with self.assertRaises(ValueError):
+            schedule_notifications_for_timer(timer_pk=timer.pk, is_new=True)
 
     def test_remove_old_notifications(
         self, mock_send_notification, mock_send_notification_for_timer

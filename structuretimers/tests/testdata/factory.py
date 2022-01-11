@@ -1,6 +1,8 @@
+import datetime as dt
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
+from django.utils.timezone import now
 
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter
@@ -11,6 +13,7 @@ from ...models import (
     DiscordWebhook,
     DistancesFromStaging,
     NotificationRule,
+    ScheduledNotification,
     StagingSystem,
     Timer,
 )
@@ -46,6 +49,10 @@ def create_timer(*args, **kwargs):
             jumps = kwargs.pop("jumps")
         else:
             jumps = None
+        if "eve_solar_system" not in kwargs and "eve_solar_system_id" not in kwargs:
+            kwargs["eve_solar_system_id"] = 30004984
+        if "structure_type" not in kwargs and "structure_type_id" not in kwargs:
+            kwargs["structure_type_id"] = 35825
         if "enabled_notifications" in kwargs:
             kwargs.pop("enabled_notifications")
             timer = Timer.objects.create(*args, **kwargs)
@@ -105,3 +112,13 @@ def create_notification_rule(*args, **kwargs):
     if "scheduled_time" not in kwargs:
         kwargs["scheduled_time"] = 60
     return NotificationRule.objects.create(*args, **kwargs)
+
+
+def create_scheduled_notification(*args, **kwargs):
+    if "timer_date" not in kwargs:
+        kwargs["timer_date"] = now() + dt.timedelta(hours=1)
+    if "notification_date" not in kwargs:
+        kwargs["notification_date"] = now() + dt.timedelta(minutes=45)
+    if "celery_task_id" not in kwargs:
+        kwargs["celery_task_id"] = random_string(8)
+    return ScheduledNotification.objects.create(*args, **kwargs)

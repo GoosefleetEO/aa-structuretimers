@@ -394,11 +394,14 @@ class CreateTimerView(TimerManagementView, AddUpdateMixin, CreateView):
         )
         messages_plus.success(
             self.request,
-            _("Added new timer for %(type)s in %(system)s at %(time)s.")
+            _("Added new %(type)s timer for %(structure)s in %(system)s %(time)s.")
             % {
-                "type": timer.structure_type.name,
+                "type": timer.get_timer_type_display(),
+                "structure": timer.structure_type.name,
                 "system": timer.eve_solar_system.name,
-                "time": timer.date.strftime(DATETIME_FORMAT),
+                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
+                if timer.date
+                else "",
             },
         )
         return result
