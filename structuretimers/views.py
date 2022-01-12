@@ -5,8 +5,8 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
+from django.shortcuts import HttpResponse, get_object_or_404
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
@@ -366,9 +366,7 @@ class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 class AddUpdateMixin:
     def get_form_kwargs(self):
-        """
-        Inject the request user into the kwargs passed to the form
-        """
+        """Inject the request user into the kwargs passed to the form."""
         kwargs = super().get_form_kwargs()
         kwargs.update({"user": self.request.user})
         return kwargs
@@ -426,6 +424,23 @@ class EditTimerMixin:
 class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateView):
     template_name_suffix = "_update_form"
 
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        timer = self.object
+        messages.success(
+            self.request,
+            _("Updated %(type)s timer for %(structure)s in %(system)s %(time)s.")
+            % {
+                "type": timer.get_timer_type_display().lower(),
+                "structure": timer.structure_type.name,
+                "system": timer.eve_solar_system.name,
+                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
+                if timer.date
+                else "",
+            },
+        )
+        return result
+
 
 class CopyTimerView(CreateTimerView):
     def get_form_kwargs(self):
@@ -439,7 +454,25 @@ class CopyTimerView(CreateTimerView):
 
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
-    success_url = reverse_lazy("structuretimers:timer_list")
+    def delete(self, request, *args, **kwargs) -> HttpResponse:
+        timer = self.object = self.get_object()
+        response = super().delete(request, *args, **kwargs)
+        messages.success(
+            self.request,
+            _("Removed %(type)s timer for %(structure)s in %(system)s %(time)s.")
+            % {
+                "type": timer.get_timer_type_display().lower(),
+                "structure": timer.structure_type.name,
+                "system": timer.eve_solar_system.name,
+                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
+                if timer.date
+                else "",
+            },
+        )
+        return response
+
+    def get_success_url(self) -> str:
+        return self.object.get_absolute_url()
 
 
 class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
@@ -457,7 +490,6 @@ class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
             ]
         else:
             results = None
-
         return {"results": results}
 
 
@@ -494,5 +526,4 @@ class Select2StructureTypesView(JSONResponseMixin, TemplateView):
             ]
         else:
             results = None
-
         return {"results": results}
