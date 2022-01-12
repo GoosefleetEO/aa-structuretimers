@@ -65,6 +65,13 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             eve_solar_system=self.system_enaluri,
             structure_type=self.type_astrahus,
         )
+        self.timer_4 = create_timer(
+            timer_type=Timer.Type.PRELIMINARY,
+            structure_name="Timer 4",
+            eve_character=self.character_1,
+            eve_corporation=self.corporation_1,
+            user=self.user_1,
+        )
 
 
 class TestListData(TestViewBase):
@@ -98,6 +105,12 @@ class TestListData(TestViewBase):
         timer_ids = self._timer_list_data_ids("past")
         # then
         self.assertSetEqual(timer_ids, {self.timer_2.id, self.timer_3.id})
+
+    def test_return_preliminary_timers(self):
+        # when
+        timer_ids = self._timer_list_data_ids("preliminary")
+        # then
+        self.assertSetEqual(timer_ids, {self.timer_4.id})
 
     def test_should_require_permission(self):
         # given

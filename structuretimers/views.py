@@ -1,6 +1,5 @@
 import math
 from copy import deepcopy
-from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -65,6 +64,9 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             if not selected_staging_system:
                 selected_staging_system = staging_systems_qs.first()
         stageing_systems = staging_systems_qs.order_by("eve_solar_system__name")
+        preliminary_count = Timer.objects.filter(
+            timer_type=Timer.Type.PRELIMINARY
+        ).count()
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -76,6 +78,7 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "selected_staging_system": selected_staging_system,
                 "stageing_systems": stageing_systems,
                 "tab": self.request.GET.get("tab", "current"),
+                "preliminary_count": preliminary_count,
             }
         )
         return context
@@ -96,14 +99,9 @@ class TimerListDataView(
         qs = super().get_queryset()
         timers_qs = qs.visible_to_user(self.request.user)
         tab_name = self.kwargs.get("tab_name")
-        if tab_name == "current":
-            timers_qs = timers_qs.filter(
-                date__gte=now() - timedelta(hours=MAX_HOURS_PASSED)
-            )
-        elif tab_name == "target":
-            timers_qs = timers_qs.filter(timer_type=Timer.Type.PRELIMINARY)
-        else:
-            timers_qs = timers_qs.filter(date__lt=now())
+        timers_qs = timers_qs.filter_by_tab(
+            tab_name=tab_name, max_hours_passed=MAX_HOURS_PASSED
+        )
         timers_qs = timers_qs.select_related(
             "eve_solar_system__eve_constellation__eve_region",
             "structure_type",

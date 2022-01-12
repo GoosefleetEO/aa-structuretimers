@@ -9,7 +9,9 @@ from .app_settings import STRUCTURETIMERS_TIMERS_OBSOLETE_AFTER_DAYS
 
 class NotificationRuleQuerySet(models.QuerySet):
     def conforms_with_timer(self, timer: object) -> models.QuerySet:
-        """returns new queryset based on current queryset, which only contains notification rules that conforms with the given timer"""
+        """Return new queryset based on current queryset,
+        which only contains notification rules that conforms with the given timer.
+        """
         matching_rule_pks = list()
         for notification_rule in self:
             if notification_rule.is_matching_timer(timer):
@@ -31,7 +33,9 @@ class TimerQuerySet(models.QuerySet):
     def conforms_with_notification_rule(
         self, notification_rule: object
     ) -> models.QuerySet:
-        """returns new queryset based on current queryset, which only contains timers that conform with the given notification rule"""
+        """Return new queryset based on current queryset,
+        which only contains timers that conform with the given notification rule.
+        """
         matching_timer_pks = list()
         for timer in self:
             if notification_rule.is_matching_timer(timer):
@@ -66,6 +70,16 @@ class TimerQuerySet(models.QuerySet):
             )
         )
         return timers_qs
+
+    def filter_by_tab(self, tab_name: str, max_hours_passed: int) -> models.QuerySet:
+        """Filter timers for tabs."""
+        if tab_name == "current":
+            return self.filter(date__gte=now() - timedelta(hours=max_hours_passed))
+        elif tab_name == "preliminary":
+            return self.filter(timer_type=self.model.Type.PRELIMINARY)
+        elif tab_name == "past":
+            return self.filter(date__lt=now())
+        raise ValueError(f"Invalid tab name: {tab_name}")
 
 
 class TimerManagerBase(models.Manager):
