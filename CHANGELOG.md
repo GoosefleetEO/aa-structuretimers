@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.2.0] - tbd.
+
+### Added
+
+- Preliminary timers: Ability to create preliminary timers, which are timers without a date. This can e.g. be useful for creating a target list ahead of the initial attack and storing all infos about the structure including fittings. Preliminary timers are shown on a dedicated tab and can be converted to normal timers later by adding a date.
+
+### Changed
+
+- Improved intellegence when creating or editing timers: 1) When no date is specified, timers are automatically created as prelimiary. 2) When a partial date is entered, the missing values are assumed to be zero. e.g. if you enter 5 for hours, then minutes and days are set to 0. 3) When you add a date to a preliminary date, it is upgrade to a normal (unspecified) timer.
+
 ## [1.1.3] - 2021-11-12
 
 ### Fixed
