@@ -363,6 +363,26 @@ class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
         context["title"] = self.title
         return context
 
+    def send_success_message(self, keyword: str) -> None:
+        """Inform user about result of his action via message."""
+        timer = self.object
+        messages.info(
+            self.request,
+            _(
+                "%(keyword)s %(type)s timer for %(structure)s %(name)sin %(system)s %(time)s."
+            )
+            % {
+                "keyword": keyword,
+                "type": timer.get_timer_type_display().lower(),
+                "structure": timer.structure_type.name,
+                "name": f'"{timer.structure_name}" ' if timer.structure_name else "",
+                "system": timer.eve_solar_system.name,
+                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
+                if timer.date
+                else "",
+            },
+        )
+
 
 class AddUpdateMixin:
     def get_form_kwargs(self):
@@ -389,18 +409,7 @@ class CreateTimerView(TimerManagementView, AddUpdateMixin, CreateView):
             timer.date,
             self.request.user,
         )
-        messages.success(
-            self.request,
-            _("Added new %(type)s timer for %(structure)s in %(system)s %(time)s.")
-            % {
-                "type": timer.get_timer_type_display().lower(),
-                "structure": timer.structure_type.name,
-                "system": timer.eve_solar_system.name,
-                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
-                if timer.date
-                else "",
-            },
-        )
+        self.send_success_message(_("Added"))
         return result
 
 
@@ -426,19 +435,7 @@ class EditTimerView(EditTimerMixin, TimerManagementView, AddUpdateMixin, UpdateV
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        timer = self.object
-        messages.success(
-            self.request,
-            _("Updated %(type)s timer for %(structure)s in %(system)s %(time)s.")
-            % {
-                "type": timer.get_timer_type_display().lower(),
-                "structure": timer.structure_type.name,
-                "system": timer.eve_solar_system.name,
-                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
-                if timer.date
-                else "",
-            },
-        )
+        self.send_success_message(_("Updated"))
         return result
 
 
@@ -455,20 +452,9 @@ class CopyTimerView(CreateTimerView):
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
     def delete(self, request, *args, **kwargs) -> HttpResponse:
-        timer = self.object = self.get_object()
+        self.object = self.get_object()
         response = super().delete(request, *args, **kwargs)
-        messages.success(
-            self.request,
-            _("Removed %(type)s timer for %(structure)s in %(system)s %(time)s.")
-            % {
-                "type": timer.get_timer_type_display().lower(),
-                "structure": timer.structure_type.name,
-                "system": timer.eve_solar_system.name,
-                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
-                if timer.date
-                else "",
-            },
-        )
+        self.send_success_message(_("Removed"))
         return response
 
     def get_success_url(self) -> str:
