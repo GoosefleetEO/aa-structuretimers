@@ -36,7 +36,6 @@ class TimerQuerySet(models.QuerySet):
         for timer in self:
             if notification_rule.is_matching_timer(timer):
                 matching_timer_pks.append(timer.pk)
-
         return self.filter(pk__in=matching_timer_pks)
 
     def visible_to_user(self, user: User) -> models.QuerySet:

@@ -268,12 +268,10 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             kwargs["queryset"] = EveAllianceInfo.objects.order_by(
                 Lower("alliance_name")
             )
-
         elif db_field.name in {"require_corporations", "exclude_corporations"}:
             kwargs["queryset"] = EveCorporationInfo.objects.order_by(
                 Lower("corporation_name")
             )
-
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 

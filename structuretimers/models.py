@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
+from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
 from eveuniverse.helpers import meters_to_ly
 from eveuniverse.models import EveSolarSystem, EveType
@@ -300,7 +301,12 @@ class Timer(models.Model):
         ANCHORING = "AN", _("Anchoring")
         UNANCHORING = "UA", _("Unanchoring")
         MOONMINING = "MM", _("Moon Mining")
-        PRELIMINARY = "PL", _("Preliminary")
+        PRELIMINARY = "PL", _("Preliminary")  # special timer with no date
+
+        @classproperty
+        def choices_for_notification_rules(cls) -> list:
+            """Subset of choices suitable for creating notification rules."""
+            return [choice for choice in cls.choices if choice[0] != cls.PRELIMINARY]
 
     class Objective(models.TextChoices):
         UNDEFINED = "UN", _("undefined")
@@ -704,7 +710,7 @@ class NotificationRule(models.Model):
         help_text="whether this rule is currently active",
     )
     require_timer_types = MultiSelectField(
-        choices=Timer.Type.choices,
+        choices=Timer.Type.choices_for_notification_rules,
         blank=True,
         help_text=(
             "Timer must have one of the given timer types "
@@ -712,7 +718,7 @@ class NotificationRule(models.Model):
         ),
     )
     exclude_timer_types = MultiSelectField(
-        choices=Timer.Type.choices,
+        choices=Timer.Type.choices_for_notification_rules,
         blank=True,
         help_text="Timer must NOT have one of the given timer types",
     )
@@ -819,6 +825,8 @@ class NotificationRule(models.Model):
 
     def is_matching_timer(self, timer: "Timer") -> bool:
         """returns True if notification rule is matching the given timer, else False"""
+        if timer.date is None:
+            return False
         is_matching = True
         if is_matching and self.is_important == self.Clause.REQUIRED:
             is_matching = timer.is_important

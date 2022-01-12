@@ -782,6 +782,11 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
         self.timer.timer_type = Timer.Type.ARMOR
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
+    def test_should_never_match_without_date(self):
+        # given
+        self.timer.date = None
+        self.assertFalse(self.rule.is_matching_timer(self.timer))
+
     def test_require_objectives(self):
         # do not process if it does not match
         self.rule.require_objectives = [Timer.Objective.HOSTILE]
