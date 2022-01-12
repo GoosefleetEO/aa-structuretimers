@@ -173,7 +173,7 @@ class TimerForm(forms.ModelForm):
             except (
                 requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError,
-            ):
+            ) as ex:
                 logger.warning(
                     f"Failed to load image from URL: {details_image_url}", exc_info=True
                 )
@@ -184,7 +184,7 @@ class TimerForm(forms.ModelForm):
                         )
                     },
                     code="details_url_failed_to_load",
-                )
+                ) from ex
             else:
                 image_type = imghdr.what(None, h=r.content)
                 if image_type not in {"gif", "jpeg", "png"}:

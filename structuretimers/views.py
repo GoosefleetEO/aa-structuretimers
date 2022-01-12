@@ -64,9 +64,6 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             if not selected_staging_system:
                 selected_staging_system = staging_systems_qs.first()
         stageing_systems = staging_systems_qs.order_by("eve_solar_system__name")
-        preliminary_count = Timer.objects.filter(
-            timer_type=Timer.Type.PRELIMINARY
-        ).count()
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -78,7 +75,6 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 "selected_staging_system": selected_staging_system,
                 "stageing_systems": stageing_systems,
                 "tab": self.request.GET.get("tab", "current"),
-                "preliminary_count": preliminary_count,
             }
         )
         return context
@@ -338,15 +334,14 @@ class TimerDetailDataView(
             "structure_type", "eve_solar_system"
         )
 
-    def get_context_data(self, object):
+    def get_context_data(self, **kwargs):
+        obj = self.object
         context = {
-            "display_name": str(object),
-            "structure_display_name": object.structure_display_name,
-            "date": object.date.strftime(DATETIME_FORMAT),
-            "details_image_url": object.details_image_url
-            if object.details_image_url
-            else "",
-            "notes": object.details_notes if object.details_notes else "",
+            "display_name": str(obj),
+            "structure_display_name": obj.structure_display_name,
+            "date": obj.date.strftime(DATETIME_FORMAT),
+            "details_image_url": obj.details_image_url if obj.details_image_url else "",
+            "notes": obj.details_notes if obj.details_notes else "",
         }
         return context
 
@@ -449,6 +444,9 @@ class CopyTimerView(CreateTimerView):
 
 
 class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
+    def __init__(self) -> None:
+        self.object = None
+
     def delete(self, request, *args, **kwargs) -> HttpResponse:
         self.object = self.get_object()
         response = super().delete(request, *args, **kwargs)
@@ -463,7 +461,7 @@ class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         return self.render_to_json_response(context, **response_kwargs)
 
-    def get_context_data(self):
+    def get_context_data(self, **kwargs):
         term = self.request.GET.get("term")
         if term:
             results = [
@@ -481,7 +479,7 @@ class Select2StructureTypesView(JSONResponseMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         return self.render_to_json_response(context, **response_kwargs)
 
-    def get_context_data(self):
+    def get_context_data(self, **kwargs):
         term = self.request.GET.get("term")
         if term:
             types_qs = (

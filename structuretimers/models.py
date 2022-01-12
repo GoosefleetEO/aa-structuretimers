@@ -253,7 +253,7 @@ class DiscordWebhook(models.Model):
                 "avatar_url": default_avatar_url(),
             }
             success = self.send_message_to_webhook(message)
-        except Exception as ex:
+        except OSError as ex:
             logger.warning(
                 "Failed to send test notification to webhook %s: %s",
                 self,
