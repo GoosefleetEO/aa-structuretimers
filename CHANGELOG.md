@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Improved intellegence when creating or editing timers: 1) When no date is specified, timers are automatically created as prelimiary. 2) When a partial date is entered, the missing values are assumed to be zero. e.g. if you enter 5 for hours, then minutes and days are set to 0. 3) When you add a date to a preliminary date, it is upgrade to a normal (unspecified) timer.
 
+### Fixed
+
+- Show distances for timers on all tabs
+
 ## [1.1.3] - 2021-11-12
 
 ### Fixed

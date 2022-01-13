@@ -75,7 +75,7 @@ class TestViewBase(LoadTestDataMixin, TestCase):
 
 
 class TestListData(TestViewBase):
-    def _timer_list_data(self, tab_name: str = "current", user: User = None):
+    def _get_timer_list_data(self, tab_name: str = "current", user: User = None):
         if not user:
             user = self.user_1
         self.client.force_login(user)
@@ -83,8 +83,10 @@ class TestListData(TestViewBase):
             reverse("structuretimers:timer_list_data", args=[tab_name])
         )
 
-    def _timer_list_data_ids(self, tab_name: str = "current", user: User = None) -> set:
-        response = self._timer_list_data(tab_name, user)
+    def _get_timer_list_data_ids(
+        self, tab_name: str = "current", user: User = None
+    ) -> set:
+        response = self._get_timer_list_data(tab_name, user)
         self.assertEqual(response.status_code, 200)
         return set(json_response_to_dict(response).keys())
 
@@ -96,19 +98,19 @@ class TestListData(TestViewBase):
 
     def test_return_current_timers(self):
         # when
-        timer_ids = self._timer_list_data_ids("current")
+        timer_ids = self._get_timer_list_data_ids("current")
         # then
         self.assertSetEqual(timer_ids, {self.timer_1.id})
 
     def test_return_past_timers(self):
         # when
-        timer_ids = self._timer_list_data_ids("past")
+        timer_ids = self._get_timer_list_data_ids("past")
         # then
         self.assertSetEqual(timer_ids, {self.timer_2.id, self.timer_3.id})
 
     def test_return_preliminary_timers(self):
         # when
-        timer_ids = self._timer_list_data_ids("preliminary")
+        timer_ids = self._get_timer_list_data_ids("preliminary")
         # then
         self.assertSetEqual(timer_ids, {self.timer_4.id})
 
@@ -134,7 +136,7 @@ class TestListData(TestViewBase):
             user=self.user_2,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -149,7 +151,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -165,7 +167,7 @@ class TestListData(TestViewBase):
             user=self.user_2,
             visibility=Timer.Visibility.ALLIANCE,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -181,7 +183,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             visibility=Timer.Visibility.ALLIANCE,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -199,7 +201,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             is_opsec=True,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -214,7 +216,7 @@ class TestListData(TestViewBase):
             user=self.user_3,
             is_opsec=True,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -233,7 +235,7 @@ class TestListData(TestViewBase):
             is_opsec=True,
             visibility=Timer.Visibility.CORPORATION,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -248,7 +250,7 @@ class TestListData(TestViewBase):
             visibility=Timer.Visibility.CORPORATION,
             user=self.user_1,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -264,7 +266,7 @@ class TestListData(TestViewBase):
             visibility=Timer.Visibility.ALLIANCE,
             user=self.user_1,
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
@@ -275,16 +277,16 @@ class TestListData(TestViewBase):
             structure_type=self.type_astrahus,
             date=now() + timedelta(hours=8),
         )
-        timer_ids = self._timer_list_data_ids()
+        timer_ids = self._get_timer_list_data_ids()
         expected = {self.timer_1.id, timer_4.id}
         self.assertSetEqual(timer_ids, expected)
 
     def test_list_for_manager(self):
-        timer_ids = self._timer_list_data_ids(user=self.user_2)
+        timer_ids = self._get_timer_list_data_ids(user=self.user_2)
         expected = {self.timer_1.id}
         self.assertSetEqual(timer_ids, expected)
 
-    def test_should_include_distances(self):
+    def test_should_include_distances_1(self):
         # given
         timer = create_timer(
             structure_name="Timer 4",
@@ -314,7 +316,33 @@ class TestListData(TestViewBase):
         self.assertEqual(obj["distance_jumps"], 3)
         self.assertTrue(obj["distance"])
 
-    def test_should_not_include_distances(self):
+    def test_should_not_include_distances_1(self):
+        # given
+        timer = create_timer(
+            structure_name="Timer 4",
+            eve_solar_system=self.system_abune,
+            structure_type=self.type_astrahus,
+            date=now() + timedelta(hours=8),
+            eve_character=self.character_3,
+            eve_alliance=self.alliance_3,
+            eve_corporation=self.corporation_3,
+            user=self.user_1,
+        )
+        create_staging_system(
+            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3, is_main=True
+        )
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(
+            reverse("structuretimers:timer_list_data", args=["current"])
+        )
+        # then
+        data = json_response_to_dict(response)
+        obj = data[timer.id]
+        self.assertIsNone(obj["distance_light_years"])
+        self.assertIsNone(obj["distance_jumps"])
+
+    def test_should_not_include_distances_2(self):
         # given
         timer = create_timer(
             structure_name="Timer 4",

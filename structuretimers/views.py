@@ -359,22 +359,7 @@ class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def send_success_message(self, keyword: str) -> None:
         """Inform user about result of his action via message."""
         timer = self.object
-        messages.info(
-            self.request,
-            _(
-                "%(keyword)s %(type)s timer for %(structure)s %(name)sin %(system)s %(time)s."
-            )
-            % {
-                "keyword": keyword,
-                "type": timer.get_timer_type_display().lower(),
-                "structure": timer.structure_type.name,
-                "name": f'"{timer.structure_name}" ' if timer.structure_name else "",
-                "system": timer.eve_solar_system.name,
-                "time": f"at {timer.date.strftime(DATETIME_FORMAT)}"
-                if timer.date
-                else "",
-            },
-        )
+        messages.info(self.request, f"{keyword}: {timer}.")
 
 
 class AddUpdateMixin:
