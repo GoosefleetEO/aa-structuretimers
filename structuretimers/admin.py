@@ -30,34 +30,30 @@ class DiscordWebhookAdmin(admin.ModelAdmin):
 
     actions = ["send_test_message", "purge_messages"]
 
+    @admin.display(description="Purge queued messages of selected webhooks")
     def purge_messages(self, request, queryset):
         actions_count = 0
         killmails_deleted = 0
         for webhook in queryset:
             killmails_deleted += webhook.clear_queue()
             actions_count += 1
-
         self.message_user(
             request,
             f"Purged queued messages for {actions_count} webhooks, "
             f"deleting a total of {killmails_deleted} messages.",
         )
 
-    purge_messages.short_description = "Purge queued messages of selected webhooks"
-
+    @admin.display(description="Send test message to selected webhooks")
     def send_test_message(self, request, queryset):
         actions_count = 0
         for webhook in queryset:
             tasks.send_test_message_to_webhook.delay(webhook.pk, request.user.pk)
             actions_count += 1
-
         self.message_user(
             request,
             f"Initiated sending of {actions_count} test messages to "
             f"selected webhooks. You will receive a notification with the result.",
         )
-
-    send_test_message.short_description = "Send test message to selected webhooks"
 
 
 def field_nice_display(name: str) -> str:
@@ -152,13 +148,11 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     list_filter = ("is_enabled", "trigger")
     ordering = ("id",)
 
+    @admin.display(ordering="scheduled time")
     def _time(self, obj) -> Optional[str]:
         if obj.scheduled_time is None:
             return None
-        else:
-            return obj.get_scheduled_time_display()
-
-    _time.admin_order_field = "scheduled time"
+        return obj.get_scheduled_time_display()
 
     def _timer_clauses(self, obj) -> list:
         clauses = list()
@@ -208,17 +202,15 @@ class NotificationRuleAdmin(admin.ModelAdmin):
 
     actions = ["enable_rule", "disable_rule"]
 
+    @admin.display(description="Enable selected notification rules")
     def enable_rule(self, request, queryset):
         queryset.update(is_enabled=True)
         self.message_user(request, f"Enabled {queryset.count()} notification rules.")
 
-    enable_rule.short_description = "Enable selected notification rules"
-
+    @admin.display(description="Disable selected notification rules")
     def disable_rule(self, request, queryset):
         queryset.update(is_enabled=False)
         self.message_user(request, f"Disabled {queryset.count()} notification rules.")
-
-    disable_rule.short_description = "Disable selected notification rules"
 
     filter_horizontal = (
         "require_alliances",
@@ -350,18 +342,16 @@ class StagingSystemAdmin(admin.ModelAdmin):
     autocomplete_fields = ["eve_solar_system"]
     ordering = ("eve_solar_system__name",)
 
+    @admin.display(ordering="eve_solar_system__eve_constellation__eve_region")
     def _region(self, obj) -> str:
         return obj.eve_solar_system.eve_constellation.eve_region.name
 
-    _region.admin_order_field = "eve_solar_system__eve_constellation__eve_region"
-
     actions = ["_recalc_timers"]
 
+    @admin.display(description="Recalc timers for selected staging system")
     def _recalc_timers(self, request, queryset):
         for obj in queryset:
             tasks.calc_staging_system.delay(obj.pk, force_update=True)
             self.message_user(
                 request, f"{obj}: Started to update timers for staging system..."
             )
-
-    _recalc_timers.short_description = "Recalc timers for selected staging system"
