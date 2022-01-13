@@ -426,51 +426,65 @@ class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
         return self.object.get_absolute_url()
 
 
-class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
-    def render_to_response(self, context, **response_kwargs):
-        return self.render_to_json_response(context, **response_kwargs)
+class Select2SolarSystemsView(JSONResponseMixin, ListView):
+    """Dynamically generated list of solar systems for select2 widget."""
+
+    model = EveSolarSystem
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        term = self.request.GET.get("term")
+        if not term:
+            return qs.none()
+        return qs.filter(name__istartswith=term)
 
     def get_context_data(self, **kwargs):
-        term = self.request.GET.get("term")
-        if term:
-            solar_systems = EveSolarSystem.objects.filter(
-                name__istartswith=term
-            ).values("id", "name")
+        if self.object_list:
+            solar_systems = self.object_list.values("id", "name")
             results = [{"id": row["id"], "text": row["name"]} for row in solar_systems]
             results = sorted(results, key=lambda d: d["text"])
         else:
             results = None
         return {"results": results}
 
-
-class Select2StructureTypesView(JSONResponseMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         return self.render_to_json_response(context, **response_kwargs)
 
-    def get_context_data(self, **kwargs):
+
+class Select2StructureTypesView(JSONResponseMixin, ListView):
+    """Dynamically generated list of types for select2 widget."""
+
+    model = EveType
+
+    def get_queryset(self):
+        qs = super().get_queryset()
         term = self.request.GET.get("term")
-        if term:
-            types_qs = (
-                EveType.objects.filter(
-                    eve_group__eve_category_id=EveCategoryId.STRUCTURE, published=True
-                )
-                | EveType.objects.filter(
-                    eve_group_id__in=[
-                        EveGroupId.CONTROL_TOWER,
-                        EveGroupId.MOBILE_DEPOT,
-                    ],
-                    published=True,
-                )
-                | EveType.objects.filter(
-                    id__in=[EveTypeId.CUSTOMS_OFFICE, EveTypeId.IHUB, EveTypeId.TCU]
-                )
+        if not term:
+            return qs.none()
+        qs = (
+            qs.filter(
+                eve_group__eve_category_id=EveCategoryId.STRUCTURE, published=True
             )
-            types_qs = types_qs.distinct().filter(name__icontains=term)
+            | qs.filter(
+                eve_group_id__in=[EveGroupId.CONTROL_TOWER, EveGroupId.MOBILE_DEPOT],
+                published=True,
+            )
+            | qs.filter(
+                id__in=[EveTypeId.CUSTOMS_OFFICE, EveTypeId.IHUB, EveTypeId.TCU]
+            )
+        )
+        return qs.distinct().filter(name__icontains=term)
+
+    def get_context_data(self, **kwargs):
+        if self.object_list:
             results = [
                 {"id": row["id"], "text": row["name"]}
-                for row in types_qs.values("id", "name").order_by("name")
+                for row in self.object_list.values("id", "name").order_by("name")
             ]
             results = sorted(results, key=lambda d: d["text"])
         else:
             results = None
         return {"results": results}
+
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
