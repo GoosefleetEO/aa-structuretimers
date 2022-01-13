@@ -455,6 +455,7 @@ class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
                     "id", "name"
                 )
             ]
+            results = sorted(results, key=lambda d: d["text"])
         else:
             results = None
         return {"results": results}
@@ -489,8 +490,9 @@ class Select2StructureTypesView(JSONResponseMixin, TemplateView):
             )
             results = [
                 {"id": row["id"], "text": row["name"]}
-                for row in types_qs.values("id", "name")
+                for row in types_qs.values("id", "name").order_by("name")
             ]
+            results = sorted(results, key=lambda d: d["text"])
         else:
             results = None
         return {"results": results}
