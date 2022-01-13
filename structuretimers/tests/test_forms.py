@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from requests.exceptions import ConnectionError as NewConnectionError
 from requests.exceptions import HTTPError
@@ -8,9 +8,11 @@ from app_utils.testing import NoSocketsTestCase
 from ..forms import TimerForm
 from ..models import Timer
 from .testdata import test_image_filename
+from .testdata.factory import create_user
 from .testdata.fixtures import LoadTestDataMixin
 
 FORMS_PATH = "structuretimers.forms"
+MODELS_PATH = "structuretimers.models"
 
 
 def bytes_from_file(filename, chunksize=8192):
@@ -26,8 +28,8 @@ def bytes_from_file(filename, chunksize=8192):
 
 def create_form_data(**kwargs):
     form_data = {
-        "eve_solar_system_2": TestTimerForm.system_abune.id,
-        "structure_type_2": TestTimerForm.type_astrahus.id,
+        "eve_solar_system_2": 30004984,
+        "structure_type_2": 35832,
         "timer_type": Timer.Type.NONE,
         "objective": Timer.Objective.UNDEFINED,
         "visibility": Timer.Visibility.UNRESTRICTED,
@@ -37,7 +39,7 @@ def create_form_data(**kwargs):
     return form_data
 
 
-class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
+class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
     def test_should_accept_normal_timer(self):
         # given
         form_data = create_form_data(days_left=0, hours_left=3, minutes_left=30)
@@ -88,6 +90,20 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+        self.assertIsNotNone(form.cleaned_data["days_left"])
+        self.assertIsNotNone(form.cleaned_data["hours_left"])
+        self.assertIsNotNone(form.cleaned_data["minutes_left"])
+
+    def test_should_upgrade_preliminary_timer_when_date_specified_2(self):
+        # given
+        form_data = create_form_data(timer_type=Timer.Type.PRELIMINARY, days_left=5)
+        form = TimerForm(data=form_data)
+        # when / then
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
+        self.assertIsNotNone(form.cleaned_data["days_left"])
+        self.assertIsNotNone(form.cleaned_data["hours_left"])
+        self.assertIsNotNone(form.cleaned_data["minutes_left"])
 
     def test_should_set_timer_as_preliminary_timer_when_no_date_specified(self):
         # given
@@ -96,6 +112,9 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.PRELIMINARY)
+        self.assertIsNone(form.cleaned_data["days_left"])
+        self.assertIsNone(form.cleaned_data["hours_left"])
+        self.assertIsNone(form.cleaned_data["minutes_left"])
 
     def test_should_not_accept_timer_without_solar_system(self):
         # given
@@ -190,3 +209,47 @@ class TestTimerForm(LoadTestDataMixin, NoSocketsTestCase):
         form = TimerForm(data=form_data)
         # when / then
         self.assertFalse(form.is_valid())
+
+
+@patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
+@patch(MODELS_PATH + "._task_schedule_notifications_for_timer", Mock())
+class TestTimerFormSave(LoadTestDataMixin, NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = create_user(cls.character_1)
+
+    def test_should_create_new_normal_timer(self):
+        # given
+        form_data = create_form_data(
+            days_left=0, hours_left=3, minutes_left=30, timer_type=Timer.Type.ARMOR
+        )
+        form = TimerForm(user=self.user, data=form_data)
+        # when
+        form.save()
+        # then
+        timer = Timer.objects.first()
+        self.assertEqual(timer.timer_type, Timer.Type.ARMOR)
+        self.assertIsNotNone(timer.date)
+
+    def test_should_create_new_preliminary_timer(self):
+        # given
+        form_data = create_form_data()
+        form = TimerForm(user=self.user, data=form_data)
+        # when
+        form.save()
+        # then
+        timer = Timer.objects.first()
+        self.assertEqual(timer.timer_type, Timer.Type.PRELIMINARY)
+        self.assertIsNone(timer.date)
+
+    def test_should_promote_preliminary_timer_to_normal_timer(self):
+        # given
+        form_data = create_form_data(timer_type=Timer.Type.PRELIMINARY, days_left=1)
+        form = TimerForm(user=self.user, data=form_data)
+        # when
+        form.save()
+        # then
+        timer = Timer.objects.first()
+        self.assertEqual(timer.timer_type, Timer.Type.NONE)
+        self.assertIsNotNone(timer.date)

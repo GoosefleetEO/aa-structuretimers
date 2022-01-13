@@ -203,23 +203,25 @@ class TimerForm(forms.ModelForm):
                         },
                         code="details_url_unsupported_type",
                     )
-        timer_type = cleaned_data.get("timer_type")
         days_left = cleaned_data.get("days_left")
         hours_left = cleaned_data.get("hours_left")
         minutes_left = cleaned_data.get("minutes_left")
-        if timer_type != Timer.Type.PRELIMINARY and any(
-            [days_left, hours_left, minutes_left]
-        ):
+        if any([days_left, hours_left, minutes_left]):
             if days_left is None:
-                cleaned_data["days_left"] = 0
+                days_left = cleaned_data["days_left"] = 0
             if hours_left is None:
-                cleaned_data["hours_left"] = 0
+                hours_left = cleaned_data["hours_left"] = 0
             if minutes_left is None:
-                cleaned_data["minutes_left"] = 0
+                minutes_left = cleaned_data["minutes_left"] = 0
 
-        if days_left is None and hours_left is None and minutes_left is None:
+        timer_type = cleaned_data.get("timer_type")
+        if (
+            timer_type != Timer.Type.PRELIMINARY
+            and days_left is None
+            and hours_left is None
+            and minutes_left is None
+        ):
             cleaned_data["timer_type"] = Timer.Type.PRELIMINARY.value
-
         if timer_type == Timer.Type.PRELIMINARY and (
             days_left is not None or hours_left is not None or minutes_left is not None
         ):
@@ -257,13 +259,16 @@ class TimerForm(forms.ModelForm):
             timer.user = self.user
 
         # calculate future time
-        if self.cleaned_data["timer_type"] == Timer.Type.PRELIMINARY:
-            timer.date = None
-        else:
+        days_left = self.cleaned_data.get("days_left")
+        hours_left = self.cleaned_data.get("hours_left")
+        minutes_left = self.cleaned_data.get("minutes_left")
+        if (
+            days_left is not None
+            and hours_left is not None
+            and minutes_left is not None
+        ):
             future_time = dt.timedelta(
-                days=self.cleaned_data["days_left"],
-                hours=self.cleaned_data["hours_left"],
-                minutes=self.cleaned_data["minutes_left"],
+                days=days_left, hours=hours_left, minutes=minutes_left
             )
             current_time = now()
             date = current_time + future_time
@@ -274,10 +279,12 @@ class TimerForm(forms.ModelForm):
                 future_time,
             )
             timer.date = date
+        else:
+            timer.date = None
 
         # structure type
-        timer.structure_type_id = self.cleaned_data["structure_type_2"]
-        timer.eve_solar_system_id = self.cleaned_data["eve_solar_system_2"]
+        timer.structure_type_id = self.cleaned_data.get("structure_type_2")
+        timer.eve_solar_system_id = self.cleaned_data.get("eve_solar_system_2")
 
         if commit:
             timer.save()
