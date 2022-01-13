@@ -90,17 +90,7 @@
                             <img src="{% static 'structuretimers/img/Spinner-1s-64px-light.gif' %}" alt="Spinner"/>
                         {% endif %}
                     </div>
-                    <div id="modal_div_data" style="display: none">
-                        <label for="timerboardTimer">Timer</label>
-                        <p><span id="timerboardTimer"></span></p>
-                        <label for="timerboardImgScreenshot">Image</label>
-                        <a href="#" target="_blank">
-                            <img id="timerboardImgScreenshot" class="img-responsive" alt="details image" src=""/>
-                        </a>
-                        <br>
-                        <label for="timerboardNotes">Notes</label>
-                        <textarea id="timerboardNotes" class="form-control" rows="3" readonly></textarea>
-                    </div>
+                    <div id="modalContent" style="display: none"></div>
                     <div id="modalLoadError"></div>
                 </div>
                 <div class="modal-footer">
@@ -116,7 +106,7 @@
         data-listDataCurrentUrl="{% url 'structuretimers:timer_list_data' 'current' %}?staging={{ selected_staging_system.pk }}"
         data-listDataPastUrl="{% url 'structuretimers:timer_list_data' 'past' %}?staging={{ selected_staging_system.pk }}"
         data-listDataTargetUrl="{% url 'structuretimers:timer_list_data' 'preliminary' %}?staging={{ selected_staging_system.pk }}"
-        data-getTimerDataUrl="{% url 'structuretimers:get_timer_data' 'pk_dummy' %}"
+        data-getTimerDataUrl="{% url 'structuretimers:detail' 'pk_dummy' %}"
         data-titleSolarSystem="{% translate 'Solar System' %}"
         data-titleRegion="{% translate 'Region' %}"
         data-titleStructureType="{% translate 'Structure Type' %}"

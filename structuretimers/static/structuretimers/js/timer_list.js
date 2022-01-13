@@ -142,51 +142,29 @@ $(document).ready(function () {
 
     /* Update modal with requested timer */
     $("#modalTimerDetails").on("show.bs.modal", function (event) {
-        const button = $(event.relatedTarget);
-        const timer_pk = button.data("timerpk");
-        const modal = $(this);
+        const timer_pk = $(event.relatedTarget).data("timerpk");
 
         $("#modalLoadError").html("");
-        $("#modal_div_data").hide();
+        $("#modalContent").hide();
         $("#modal_div_spinner").show();
-        $.get(getTimerDataUrl.replace("pk_dummy", timer_pk))
-            .done((timer) => {
-                modal.find(".modal-body span").text(`${timer["display_name"]}`);
-                if (timer["details_image_url"] != "") {
-                    modal
-                        .find('.modal-body label[for="timerboardImgScreenshot"]')
-                        .show();
-                    modal
-                        .find(".modal-body img")
-                        .attr("src", timer["details_image_url"]);
-                    modal
-                        .find(".modal-body a")
-                        .show()
-                        .attr("href", timer["details_image_url"]);
-                } else {
-                    modal.find(".modal-body a").hide();
-                    modal
-                        .find('.modal-body label[for="timerboardImgScreenshot"]')
-                        .hide();
-                }
-                if (timer["notes"] != "") {
-                    modal.find(".modal-body textarea").val(timer["notes"]);
-                }
+        $("#modalContent").load(
+            getTimerDataUrl.replace("pk_dummy", timer_pk),
+            function (responseText, textStatus, req) {
                 $("#modal_div_spinner").hide();
-                $("#modal_div_data").show();
-            })
-            .fail((jqXHR) => {
-                $("#modal_div_spinner").hide();
-                console.log(jqXHR);
-                $("#modalLoadError").html(
-                    '<p class="text-danger">An unexpected error occured: ' +
-                        jqXHR.status +
-                        " " +
-                        jqXHR.statusText +
-                        '</p><p class="text-danger">' +
-                        "Please close this window and try again.</p>"
-                );
-            });
+                $("#modalContent").show();
+                if (textStatus == "error") {
+                    console.log(req);
+                    $("#modalLoadError").html(
+                        '<p class="text-danger">An unexpected error occured: ' +
+                            req.status +
+                            " " +
+                            req.statusText +
+                            '</p><p class="text-danger">' +
+                            "Please close this window and try again.</p>"
+                    );
+                }
+            }
+        );
     });
 
     /* build dataTables */

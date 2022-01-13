@@ -14,11 +14,11 @@ from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
+    DetailView,
     ListView,
     TemplateView,
     UpdateView,
 )
-from django.views.generic.detail import BaseDetailView
 from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
@@ -320,31 +320,15 @@ class TimerListDataView(
         return no_wrap_html(actions)
 
 
-class TimerDetailDataView(
-    LoginRequiredMixin, PermissionRequiredMixin, JSONResponseMixin, BaseDetailView
-):
+class TimerDetailDataView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     permission_required = "structuretimers.basic_access"
     model = Timer
-
-    def render_to_response(self, context, **response_kwargs):
-        return self.render_to_json_response(context, **response_kwargs)
 
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.visible_to_user(self.request.user).select_related(
             "structure_type", "eve_solar_system"
         )
-
-    def get_context_data(self, **kwargs):
-        obj = self.object
-        context = {
-            "display_name": str(obj),
-            "structure_display_name": obj.structure_display_name,
-            "date": obj.date.strftime(DATETIME_FORMAT) if obj.date else None,
-            "details_image_url": obj.details_image_url if obj.details_image_url else "",
-            "notes": obj.details_notes if obj.details_notes else "",
-        }
-        return context
 
 
 class TimerManagementView(LoginRequiredMixin, PermissionRequiredMixin, View):

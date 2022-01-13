@@ -15,11 +15,7 @@ urlpatterns = [
         views.TimerListDataView.as_view(),
         name="timer_list_data",
     ),
-    path(
-        "get_timer_data/<str:pk>",
-        views.TimerDetailDataView.as_view(),
-        name="get_timer_data",
-    ),
+    path("detail/<str:pk>", views.TimerDetailDataView.as_view(), name="detail"),
     path(
         "select2_solar_systems/",
         views.Select2SolarSystemsView.as_view(),
