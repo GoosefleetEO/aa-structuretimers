@@ -197,7 +197,13 @@ $(document).ready(function () {
             },
         },
         { data: "location" },
-        { data: "distance" },
+        {
+            data: "distance",
+            render: {
+                _: "display",
+                sort: "sort",
+            },
+        },
         { data: "structure_details" },
         { data: "owner" },
         { data: "name_objective" },
@@ -255,7 +261,13 @@ $(document).ready(function () {
         },
         columns: [
             { data: "location" },
-            { data: "distance" },
+            {
+                data: "distance",
+                render: {
+                    _: "display",
+                    sort: "sort",
+                },
+            },
             { data: "structure_details" },
             { data: "owner" },
             { data: "name_objective" },

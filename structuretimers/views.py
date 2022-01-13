@@ -236,7 +236,7 @@ class TimerListDataView(
                 visibility = timer.eve_alliance.alliance_name
             elif timer.visibility == Timer.Visibility.CORPORATION:
                 visibility = corporation_name
-
+            distances_light_years = distances.light_years if distances else None
             data.append(
                 {
                     "id": timer.id,
@@ -247,10 +247,11 @@ class TimerListDataView(
                     "name_objective": name,
                     "owner": objective,
                     # "creator": creator,
-                    "distance": distance_text,
-                    "distance_light_years": distances.light_years
-                    if distances
-                    else None,
+                    "distance": {
+                        "display": distance_text,
+                        "sort": distances_light_years,
+                    },
+                    "distance_light_years": distances_light_years,
                     "distance_jumps": distances.jumps if distances else None,
                     "actions": self._get_data_actions(timer),
                     "timer_type_name": timer.get_timer_type_display(),

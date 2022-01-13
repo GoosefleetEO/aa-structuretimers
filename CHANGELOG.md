@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Show distances for timers on all tabs
 - Sort options for solar systems and types
+- Sorting by distance
 
 ## [1.1.3] - 2021-11-12
 
