@@ -94,9 +94,8 @@ class TimerListDataView(
     def get_queryset(self):
         qs = super().get_queryset()
         timers_qs = qs.visible_to_user(self.request.user)
-        tab_name = self.kwargs.get("tab_name")
         timers_qs = timers_qs.filter_by_tab(
-            tab_name=tab_name, max_hours_passed=MAX_HOURS_PASSED
+            tab_name=self.kwargs.get("tab_name"), max_hours_passed=MAX_HOURS_PASSED
         )
         timers_qs = timers_qs.select_related(
             "eve_solar_system__eve_constellation__eve_region",
@@ -434,12 +433,10 @@ class Select2SolarSystemsView(JSONResponseMixin, TemplateView):
     def get_context_data(self, **kwargs):
         term = self.request.GET.get("term")
         if term:
-            results = [
-                {"id": row["id"], "text": row["name"]}
-                for row in EveSolarSystem.objects.filter(name__istartswith=term).values(
-                    "id", "name"
-                )
-            ]
+            solar_systems = EveSolarSystem.objects.filter(
+                name__istartswith=term
+            ).values("id", "name")
+            results = [{"id": row["id"], "text": row["name"]} for row in solar_systems]
             results = sorted(results, key=lambda d: d["text"])
         else:
             results = None
@@ -468,11 +465,7 @@ class Select2StructureTypesView(JSONResponseMixin, TemplateView):
                     id__in=[EveTypeId.CUSTOMS_OFFICE, EveTypeId.IHUB, EveTypeId.TCU]
                 )
             )
-            types_qs = (
-                types_qs.select_related("eve_category", "eve_category__eve_group")
-                .distinct()
-                .filter(name__icontains=term)
-            )
+            types_qs = types_qs.distinct().filter(name__icontains=term)
             results = [
                 {"id": row["id"], "text": row["name"]}
                 for row in types_qs.values("id", "name").order_by("name")
