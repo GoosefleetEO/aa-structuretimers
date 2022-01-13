@@ -340,7 +340,7 @@ class TimerDetailDataView(
         context = {
             "display_name": str(obj),
             "structure_display_name": obj.structure_display_name,
-            "date": obj.date.strftime(DATETIME_FORMAT),
+            "date": obj.date.strftime(DATETIME_FORMAT) if obj.date else None,
             "details_image_url": obj.details_image_url if obj.details_image_url else "",
             "notes": obj.details_notes if obj.details_notes else "",
         }

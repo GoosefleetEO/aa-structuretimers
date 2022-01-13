@@ -145,10 +145,12 @@ $(document).ready(function () {
         const button = $(event.relatedTarget);
         const timer_pk = button.data("timerpk");
         const modal = $(this);
+
+        $("#modalLoadError").html("");
         $("#modal_div_data").hide();
         $("#modal_div_spinner").show();
-        $.get(getTimerDataUrl.replace("pk_dummy", timer_pk), function (timer, status) {
-            if (status == "success") {
+        $.get(getTimerDataUrl.replace("pk_dummy", timer_pk))
+            .done((timer) => {
                 modal.find(".modal-body span").text(`${timer["display_name"]}`);
                 if (timer["details_image_url"] != "") {
                     modal
@@ -172,14 +174,19 @@ $(document).ready(function () {
                 }
                 $("#modal_div_spinner").hide();
                 $("#modal_div_data").show();
-            } else {
-                modal
-                    .find(".modal-body span")
-                    .html(
-                        `<span class="text-error">Failed to load timer with ID ${timer_pk}</span>`
-                    );
-            }
-        });
+            })
+            .fail((jqXHR) => {
+                $("#modal_div_spinner").hide();
+                console.log(jqXHR);
+                $("#modalLoadError").html(
+                    '<p class="text-danger">An unexpected error occured: ' +
+                        jqXHR.status +
+                        " " +
+                        jqXHR.statusText +
+                        '</p><p class="text-danger">' +
+                        "Please close this window and try again.</p>"
+                );
+            });
     });
 
     /* build dataTables */

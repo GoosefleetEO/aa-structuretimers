@@ -370,7 +370,7 @@ class TestListData(TestViewBase):
 
 @patch(MODELS_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 class TestGetTimerData(TestViewBase):
-    def test_should_return_timer(self):
+    def test_should_return_normal_timer(self):
         # given
         self.client.force_login(self.user_1)
         # when
@@ -384,6 +384,18 @@ class TestGetTimerData(TestViewBase):
             data["structure_display_name"],
             'Astrahus "Timer 1" in Abune near Near the star',
         )
+
+    def test_should_return_preliminary_timer(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get(
+            reverse("structuretimers:get_timer_data", args=[self.timer_4.pk])
+        )
+        # then
+        self.assertEqual(response.status_code, 200)
+        data = json_response_to_python(response)
+        self.assertIn("Timer 4", data["structure_display_name"])
 
     def test_forbidden(self):
         # given
