@@ -7,15 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
-## [1.2.0] - tbd.
+## [1.2.0] - 2022-01-15
 
 ### Added
 
-- Preliminary timers: Ability to create preliminary timers, which are timers without a date. This can e.g. be useful for creating a target list ahead of the initial attack and storing all infos about the structure including fittings. Preliminary timers are shown on a dedicated tab and can be converted to normal timers later by adding a date.
+- Preliminary timers: Ability to create preliminary timers, which are timers without a date. This can be used for storing all infos about a structure including scanned fittings ahead of the initial attack. Preliminary timers are shown on a dedicated tab and can be converted to normal timers later simply by adding a date.
 
 ### Changed
 
-- Improved logic when creating or editing timers: 1) When no date is specified, timers are automatically created as prelimiary. 2) When a partial date is entered, the missing values are assumed to be zero. e.g. if you enter 5 for hours, then minutes and days are set to 0. 3) When you add a date to a preliminary date, it is upgrade to a normal (unspecified) timer.
+- Improved logic when creating or editing timers:
+  - When no date is specified, timers are automatically created as prelimiary.
+  - When a partial date is entered, timers are create as normal timer and missing values are assumed to be zero. e.g. if you enter 5 for hours, then minutes and days are set to 0.
+  - When you add a date to a preliminary date, it is upgrade to a normal (unspecified) timer.
 - Removed support for Python 3.6 / Django 3.1
 
 ### Fixed
