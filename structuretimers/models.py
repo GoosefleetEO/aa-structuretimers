@@ -925,7 +925,7 @@ class StagingSystem(models.Model):
         null=True,
         blank=True,
         related_name="+",
-    )
+    )  # TODO: Remove Nullable if possible, because it is causeing issues
     is_main = models.BooleanField(default=False)
 
     def __str__(self) -> str:

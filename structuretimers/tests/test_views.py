@@ -75,10 +75,81 @@ class TestViewBase(LoadTestDataMixin, TestCase):
             )
 
 
-class TestListView(TestViewBase):
-    def test_should_open_list_view(self):
+class TestListViewWithSelectedStagingSystem(TestViewBase):
+    def test_should_open_with_main_staging_system(self):
         # given
-        ...
+        create_staging_system(eve_solar_system=self.system_abune)
+        staging_system = create_staging_system(
+            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3, is_main=True
+        )
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context_data["selected_staging_system"], staging_system
+        )
+
+    def test_should_open_with_first_staging_system(self):
+        # given
+        staging_system = create_staging_system(
+            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3
+        )
+        create_staging_system(eve_solar_system=self.system_abune)
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context_data["selected_staging_system"], staging_system
+        )
+
+    def test_should_open_without_staging_system(self):
+        # given
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context_data["selected_staging_system"])
+
+    def test_should_ignore_wrong_staging_system_name(self):
+        # given
+        staging_system = create_staging_system(
+            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3, is_main=True
+        )
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/?staging=invalid_name")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context_data["selected_staging_system"], staging_system
+        )
+
+    def test_should_handle_multiple_invalid_staging_systems(self):
+        # given
+        create_staging_system()
+        create_staging_system()
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context_data["selected_staging_system"])
+
+    def test_should_handle_multiple_invalid_staging_systems_with_main(self):
+        # given
+        create_staging_system(is_main=True)
+        create_staging_system()
+        self.client.force_login(self.user_1)
+        # when
+        response = self.client.get("/structuretimers/")
+        # then
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context_data["selected_staging_system"])
 
 
 class TestListData(TestViewBase):

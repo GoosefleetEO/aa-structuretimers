@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.2.1] - 2022-01-26
+
+### Fixed
+
+- Error: `MultipleObjectsReturned at /structuretimers/` when more then one staging system exists without an EveSolarSystem
+
 ## [1.2.0] - 2022-01-15
 
 ### Added

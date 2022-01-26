@@ -54,12 +54,17 @@ class TimerListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         staging_systems_qs = StagingSystem.objects.select_related(
             "eve_solar_system", "eve_solar_system__eve_constellation__eve_region"
-        )
-        try:
-            selected_staging_system = staging_systems_qs.get(
-                eve_solar_system__name=self.request.GET.get("staging")
-            )
-        except (StagingSystem.DoesNotExist, ValueError):
+        ).filter(eve_solar_system__isnull=False)
+        selected_staging_system = None
+        staging_system_name = self.request.GET.get("staging")
+        if staging_system_name:
+            try:
+                selected_staging_system = staging_systems_qs.get(
+                    eve_solar_system__name=self.request.GET.get("staging")
+                )
+            except (StagingSystem.DoesNotExist, ValueError):
+                pass
+        if not selected_staging_system:
             selected_staging_system = staging_systems_qs.filter(is_main=True).first()
             if not selected_staging_system:
                 selected_staging_system = staging_systems_qs.first()
