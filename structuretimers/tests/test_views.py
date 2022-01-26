@@ -22,56 +22,63 @@ MODELS_PATH = "structuretimers.models"
 
 @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestViewBase(LoadTestDataMixin, TestCase):
-    @patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         # user
-        self.user_1 = create_user(self.character_1)
-        self.user_2 = create_user(self.character_2)
-        self.user_2 = add_permission_to_user_by_name(
-            "structuretimers.manage_timer", self.user_2
+        cls.user_1 = create_user(cls.character_1)
+        cls.user_2 = create_user(cls.character_2)
+        cls.user_2 = add_permission_to_user_by_name(
+            "structuretimers.manage_timer", cls.user_2
         )
-        self.user_3 = create_user(self.character_3)
-
+        cls.user_3 = create_user(cls.character_3)
         # timers
-        self.timer_1 = create_timer(
-            structure_name="Timer 1",
-            location_details="Near the star",
-            date=now() + timedelta(hours=4),
-            eve_character=self.character_1,
-            eve_corporation=self.corporation_1,
-            user=self.user_1,
-            eve_solar_system=self.system_abune,
-            structure_type=self.type_astrahus,
-            owner_name="Big Boss",
-            details_image_url="http://www.example.com/dummy.png",
-            details_notes="Some notes",
-        )
-        self.timer_2 = create_timer(
-            structure_name="Timer 2",
-            date=now() - timedelta(hours=8),
-            eve_character=self.character_1,
-            eve_corporation=self.corporation_1,
-            user=self.user_1,
-            eve_solar_system=self.system_abune,
-            structure_type=self.type_raitaru,
-            is_important=True,
-        )
-        self.timer_3 = create_timer(
-            structure_name="Timer 3",
-            date=now() - timedelta(hours=8),
-            eve_character=self.character_1,
-            eve_corporation=self.corporation_1,
-            user=self.user_1,
-            eve_solar_system=self.system_enaluri,
-            structure_type=self.type_astrahus,
-        )
-        self.timer_4 = create_timer(
-            timer_type=Timer.Type.PRELIMINARY,
-            structure_name="Timer 4",
-            eve_character=self.character_1,
-            eve_corporation=self.corporation_1,
-            user=self.user_1,
-        )
+        with patch(MODELS_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False):
+            cls.timer_1 = create_timer(
+                structure_name="Timer 1",
+                location_details="Near the star",
+                date=now() + timedelta(hours=4),
+                eve_character=cls.character_1,
+                eve_corporation=cls.corporation_1,
+                user=cls.user_1,
+                eve_solar_system=cls.system_abune,
+                structure_type=cls.type_astrahus,
+                owner_name="Big Boss",
+                details_image_url="http://www.example.com/dummy.png",
+                details_notes="Some notes",
+            )
+            cls.timer_2 = create_timer(
+                structure_name="Timer 2",
+                date=now() - timedelta(hours=8),
+                eve_character=cls.character_1,
+                eve_corporation=cls.corporation_1,
+                user=cls.user_1,
+                eve_solar_system=cls.system_abune,
+                structure_type=cls.type_raitaru,
+                is_important=True,
+            )
+            cls.timer_3 = create_timer(
+                structure_name="Timer 3",
+                date=now() - timedelta(hours=8),
+                eve_character=cls.character_1,
+                eve_corporation=cls.corporation_1,
+                user=cls.user_1,
+                eve_solar_system=cls.system_enaluri,
+                structure_type=cls.type_astrahus,
+            )
+            cls.timer_4 = create_timer(
+                timer_type=Timer.Type.PRELIMINARY,
+                structure_name="Timer 4",
+                eve_character=cls.character_1,
+                eve_corporation=cls.corporation_1,
+                user=cls.user_1,
+            )
+
+
+class TestListView(TestViewBase):
+    def test_should_open_list_view(self):
+        # given
+        ...
 
 
 class TestListData(TestViewBase):
