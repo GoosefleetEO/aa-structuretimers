@@ -332,6 +332,16 @@ class ScheduledNotificationAdmin(admin.ModelAdmin):
 #     )
 
 
+class StagingSystemAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["eve_solar_system"].required = True
+
+    class Meta:
+        model = StagingSystem
+        fields = ["eve_solar_system", "is_main"]
+
+
 @admin.register(StagingSystem)
 class StagingSystemAdmin(admin.ModelAdmin):
     list_display = ("eve_solar_system", "_region", "is_main")
@@ -341,10 +351,13 @@ class StagingSystemAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ["eve_solar_system"]
     ordering = ("eve_solar_system__name",)
+    form = StagingSystemAdminForm
 
     @admin.display(ordering="eve_solar_system__eve_constellation__eve_region")
     def _region(self, obj) -> str:
-        return obj.eve_solar_system.eve_constellation.eve_region.name
+        if obj.eve_solar_system:
+            return obj.eve_solar_system.eve_constellation.eve_region.name
+        return ""
 
     actions = ["_recalc_timers"]
 
