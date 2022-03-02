@@ -7,7 +7,6 @@ from multiselectfield import MultiSelectField
 from simple_mq import SimpleMQ
 
 from django.contrib.auth.models import User
-from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
 from django.utils.functional import classproperty
@@ -22,6 +21,7 @@ from allianceauth.eveonline.models import (
     EveCorporationInfo,
 )
 from allianceauth.services.hooks import get_extension_logger
+from app_utils.allianceauth import get_redis_client
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.json import JSONDateTimeDecoder, JSONDateTimeEncoder
 from app_utils.logging import LoggerAddTag
@@ -109,11 +109,10 @@ class DiscordWebhook(models.Model):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._main_queue = SimpleMQ(
-            cache.get_master_client(), f"{__title__}_webhook_{self.pk}_main"
-        )
+        redis_client = get_redis_client()
+        self._main_queue = SimpleMQ(redis_client, f"{__title__}_webhook_{self.pk}_main")
         self._error_queue = SimpleMQ(
-            cache.get_master_client(), f"{__title__}_webhook_{self.pk}_errors"
+            redis_client, f"{__title__}_webhook_{self.pk}_errors"
         )
 
     def __str__(self) -> str:
@@ -970,6 +969,7 @@ class DistancesFromStaging(models.Model):
 
     def calculate(self):
         """Calculate all distances."""
+        # TODO: self.staging_system.eve_solar_system can be null
         self.light_years = meters_to_ly(
             self.staging_system.eve_solar_system.distance_to(
                 self.timer.eve_solar_system

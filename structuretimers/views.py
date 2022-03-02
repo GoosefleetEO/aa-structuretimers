@@ -4,7 +4,7 @@ from copy import deepcopy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import HttpResponse, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -417,15 +417,10 @@ class CopyTimerView(CreateTimerView):
         return kwargs
 
 
-class RemoveTimerView(EditTimerMixin, TimerManagementView, DeleteView):
-    def __init__(self) -> None:
-        self.object = None
-
-    def delete(self, request, *args, **kwargs) -> HttpResponse:
-        self.object = self.get_object()
-        response = super().delete(request, *args, **kwargs)
-        self.send_success_message(_("Removed"))
-        return response
+class RemoveTimerView(
+    EditTimerMixin, LoginRequiredMixin, PermissionRequiredMixin, DeleteView
+):
+    model = Timer
 
     def get_success_url(self) -> str:
         return self.object.get_absolute_url()
