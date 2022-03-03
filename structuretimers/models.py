@@ -969,12 +969,12 @@ class DistancesFromStaging(models.Model):
 
     def calculate(self):
         """Calculate all distances."""
-        # TODO: self.staging_system.eve_solar_system can be null
-        self.light_years = meters_to_ly(
-            self.staging_system.eve_solar_system.distance_to(
+        if self.staging_system.eve_solar_system:
+            self.light_years = meters_to_ly(
+                self.staging_system.eve_solar_system.distance_to(
+                    self.timer.eve_solar_system
+                )
+            )
+            self.jumps = self.staging_system.eve_solar_system.jumps_to(
                 self.timer.eve_solar_system
             )
-        )
-        self.jumps = self.staging_system.eve_solar_system.jumps_to(
-            self.timer.eve_solar_system
-        )

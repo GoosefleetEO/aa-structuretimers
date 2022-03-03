@@ -80,7 +80,7 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
         # given
         create_staging_system(eve_solar_system=self.system_abune)
         staging_system = create_staging_system(
-            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3, is_main=True
+            eve_solar_system=self.system_enaluri, is_main=True
         )
         self.client.force_login(self.user_1)
         # when
@@ -93,9 +93,7 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
 
     def test_should_open_with_first_staging_system(self):
         # given
-        staging_system = create_staging_system(
-            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3
-        )
+        staging_system = create_staging_system(eve_solar_system=self.system_enaluri)
         create_staging_system(eve_solar_system=self.system_abune)
         self.client.force_login(self.user_1)
         # when
@@ -117,9 +115,7 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
 
     def test_should_ignore_wrong_staging_system_name(self):
         # given
-        staging_system = create_staging_system(
-            eve_solar_system=self.system_enaluri, light_years=1.2, jumps=3, is_main=True
-        )
+        staging_system = create_staging_system(is_main=True)
         self.client.force_login(self.user_1)
         # when
         response = self.client.get("/structuretimers/?staging=invalid_name")
@@ -131,8 +127,8 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
 
     def test_should_handle_multiple_invalid_staging_systems(self):
         # given
-        create_staging_system()
-        create_staging_system()
+        create_staging_system(eve_solar_system=None)
+        create_staging_system(eve_solar_system=None)
         self.client.force_login(self.user_1)
         # when
         response = self.client.get("/structuretimers/")
@@ -142,8 +138,8 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
 
     def test_should_handle_multiple_invalid_staging_systems_with_main(self):
         # given
-        create_staging_system(is_main=True)
-        create_staging_system()
+        create_staging_system(eve_solar_system=None, is_main=True)
+        create_staging_system(eve_solar_system=None)
         self.client.force_login(self.user_1)
         # when
         response = self.client.get("/structuretimers/")

@@ -24,6 +24,7 @@ from ..models import (
     _task_calc_staging_system,
 )
 from .testdata.factory import (
+    create_distances_from_staging,
     create_notification_rule,
     create_scheduled_notification,
     create_staging_system,
@@ -1132,3 +1133,39 @@ class TestStagingSystem(LoadTestDataMixin, NoSocketsTestCase):
         staging_system.save()
         # then
         self.assertFalse(spy_task_calc_staging_system.called)
+
+
+@patch(MODULE_PATH + ".EveSolarSystem.jumps_to", spec=True)
+@patch(MODULE_PATH + ".EveSolarSystem.distance_to", spec=True)
+class TestDistancesFromStaging(LoadTestDataMixin, NoSocketsTestCase):
+    def test_should_calculate_distances(self, mock_distance_to, mock_jumps_to):
+        # given
+        mock_distance_to.return_value = 2.3
+        mock_jumps_to.return_value = 4
+        timer = create_timer()
+        staging_system = create_staging_system()
+        distances = create_distances_from_staging(
+            timer, staging_system, light_years=None, jumps=None
+        )
+        # when
+        distances.calculate()
+        # then
+        self.assertGreater(distances.light_years, 0)
+        self.assertEqual(distances.jumps, 4)
+
+    def test_should_calculate_distances_when_none(
+        self, mock_distance_to, mock_jumps_to
+    ):
+        # given
+        mock_distance_to.return_value = 2.3
+        mock_jumps_to.return_value = 4
+        timer = create_timer()
+        staging_system = create_staging_system(eve_solar_system=None)
+        distances = create_distances_from_staging(
+            timer, staging_system, light_years=None, jumps=None
+        )
+        # when
+        distances.calculate()
+        # then
+        self.assertIsNone(distances.light_years)
+        self.assertIsNone(distances.jumps)
