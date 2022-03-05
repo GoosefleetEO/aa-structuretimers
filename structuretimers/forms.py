@@ -110,25 +110,25 @@ class TimerForm(forms.ModelForm):
         required=False,
         label=_("End Date"),
         widget=forms.DateTimeInput(),
-        input_formats=['%Y.%m.%d %H:%M:%S'],
+        input_formats=["%Y.%m.%d %H:%M:%S"],
     )
     days_left = forms.IntegerField(
         required=False,
         label=_("Days Remaining"),
         validators=[MinValueValidator(0)],
-        help_text=_('This field is ignored when the "End Date" field is filled.')
+        help_text=_('This field is ignored when the "End Date" field is filled.'),
     )
     hours_left = forms.IntegerField(
         required=False,
         label=_("Hours Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
-        help_text=_('This field is ignored when the "End Date" field is filled.')
+        help_text=_('This field is ignored when the "End Date" field is filled.'),
     )
     minutes_left = forms.IntegerField(
         required=False,
         label=_("Minutes Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
-        help_text=_('This field is ignored when the "End Date" field is filled.')
+        help_text=_('This field is ignored when the "End Date" field is filled.'),
     )
     details_image_url = forms.URLField(required=False)
 
