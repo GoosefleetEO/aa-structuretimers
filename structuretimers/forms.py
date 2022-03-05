@@ -33,6 +33,7 @@ class TimerForm(forms.ModelForm):
             "structure_name",
             "owner_name",
             "objective",
+            "end_date",
             "days_left",
             "hours_left",
             "minutes_left",
@@ -105,20 +106,29 @@ class TimerForm(forms.ModelForm):
         choices=Timer.Visibility.choices,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
+    end_date = forms.DateTimeField(
+        required=False,
+        label=_("End Date"),
+        widget=forms.DateTimeInput(),
+        input_formats=['%Y.%m.%d %H:%M:%S'],
+    )
     days_left = forms.IntegerField(
         required=False,
         label=_("Days Remaining"),
         validators=[MinValueValidator(0)],
+        help_text=_('This field is ignored when the "End Date" field is filled.')
     )
     hours_left = forms.IntegerField(
         required=False,
         label=_("Hours Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
+        help_text=_('This field is ignored when the "End Date" field is filled.')
     )
     minutes_left = forms.IntegerField(
         required=False,
         label=_("Minutes Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
+        help_text=_('This field is ignored when the "End Date" field is filled.')
     )
     details_image_url = forms.URLField(required=False)
 
@@ -206,6 +216,7 @@ class TimerForm(forms.ModelForm):
         days_left = cleaned_data.get("days_left")
         hours_left = cleaned_data.get("hours_left")
         minutes_left = cleaned_data.get("minutes_left")
+        end_date = cleaned_data.get("end_date")
         if any([days_left, hours_left, minutes_left]):
             if days_left is None:
                 days_left = cleaned_data["days_left"] = 0
@@ -220,10 +231,14 @@ class TimerForm(forms.ModelForm):
             and days_left is None
             and hours_left is None
             and minutes_left is None
+            and end_date is None
         ):
             cleaned_data["timer_type"] = Timer.Type.PRELIMINARY.value
         if timer_type == Timer.Type.PRELIMINARY and (
-            days_left is not None or hours_left is not None or minutes_left is not None
+            days_left is not None
+            or hours_left is not None
+            or minutes_left is not None
+            or end_date is not None
         ):
             cleaned_data["timer_type"] = Timer.Type.NONE.value
 
@@ -262,7 +277,10 @@ class TimerForm(forms.ModelForm):
         days_left = self.cleaned_data.get("days_left")
         hours_left = self.cleaned_data.get("hours_left")
         minutes_left = self.cleaned_data.get("minutes_left")
-        if (
+        end_date = self.cleaned_data.get("end_date")
+        if end_date is not None:
+            timer.date = end_date
+        elif (
             days_left is not None
             and hours_left is not None
             and minutes_left is not None
