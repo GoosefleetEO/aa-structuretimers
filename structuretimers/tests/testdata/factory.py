@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
 from django.utils.timezone import now
+from eveuniverse.models import EveSolarSystem, EveType
 
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter
@@ -36,31 +37,36 @@ def create_user(character: EveCharacter) -> User:
     return user
 
 
-def create_timer(*args, **kwargs):
+def create_distances_from_staging(
+    timer: Timer, staging_system: StagingSystem, **kwargs
+) -> DistancesFromStaging:
+    params = {
+        "timer": timer,
+        "staging_system": staging_system,
+        "light_years": 1.2,
+        "jumps": 3,
+    }
+    params.update(kwargs)
+    return DistancesFromStaging.objects.create(**params)
+
+
+def create_timer(light_years=None, jumps=None, enabled_notifications=False, **kwargs):
+    params = {
+        "eve_solar_system": EveSolarSystem.objects.get(id=30004984),
+        "structure_type": EveType.objects.get(id=35825),
+    }
+    params.update(kwargs)
     with patch(
         "structuretimers.models._task_calc_timer_distances_for_all_staging_systems",
         Mock(),
     ):
-        if "light_years" in kwargs:
-            light_years = kwargs.pop("light_years")
-        else:
-            light_years = None
-        if "jumps" in kwargs:
-            jumps = kwargs.pop("jumps")
-        else:
-            jumps = None
-        if "eve_solar_system" not in kwargs and "eve_solar_system_id" not in kwargs:
-            kwargs["eve_solar_system_id"] = 30004984
-        if "structure_type" not in kwargs and "structure_type_id" not in kwargs:
-            kwargs["structure_type_id"] = 35825
-        if "enabled_notifications" in kwargs:
-            kwargs.pop("enabled_notifications")
-            timer = Timer.objects.create(*args, **kwargs)
+        if enabled_notifications:
+            timer = Timer.objects.create(**params)
         else:
             with patch(
                 "structuretimers.models._task_schedule_notifications_for_timer", Mock()
             ):
-                timer = Timer.objects.create(*args, **kwargs)
+                timer = Timer.objects.create(**params)
         if light_years or jumps:
             for staging_system in StagingSystem.objects.all():
                 DistancesFromStaging.objects.update_or_create(
@@ -71,17 +77,11 @@ def create_timer(*args, **kwargs):
         return timer
 
 
-def create_staging_system(*args, **kwargs):
-    if "light_years" in kwargs:
-        light_years = kwargs.pop("light_years")
-    else:
-        light_years = None
-    if "jumps" in kwargs:
-        jumps = kwargs.pop("jumps")
-    else:
-        jumps = None
+def create_staging_system(light_years=None, jumps=None, **kwargs):
+    params = {"eve_solar_system": EveSolarSystem.objects.get(id=30045339)}  # enaluri
+    params.update(kwargs)
     with patch("structuretimers.models._task_calc_staging_system", Mock()):
-        staging_system = StagingSystem.objects.create(*args, **kwargs)
+        staging_system = StagingSystem.objects.create(**params)
         if light_years or jumps:
             for timer in Timer.objects.all():
                 DistancesFromStaging.objects.update_or_create(
