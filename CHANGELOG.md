@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.2.4] - 2022-03-18
+
 ### Fixed
 
 - Handle distance calculations for staging system object without solar system defined
