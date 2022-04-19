@@ -9,6 +9,7 @@ from django.core.cache import cache
 from django.db import models
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
+from eveuniverse.models import EveRegion, EveSolarSystem
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from app_utils.json import JSONDateTimeDecoder
@@ -750,9 +751,13 @@ class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
 @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems", Mock())
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
 class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
+
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
         self.timer = create_timer(
             structure_name="Test",
             eve_solar_system=self.system_abune,
@@ -903,6 +908,60 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
         # do not process if it does not match
         self.timer.is_opsec = True
         self.assertFalse(self.rule.is_matching_timer(self.timer))
+
+    def test_should_match_require_regions_1(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        rule.require_regions.add(EveRegion.objects.get(name="Essence"))
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
+
+    def test_should_match_require_regions_2(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
+
+    def test_should_not_match_require_regions(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        rule.require_regions.add(EveRegion.objects.get(name="Black Rise"))
+        # when/then
+        self.assertFalse(rule.is_matching_timer(timer))
+
+    def test_should_match_exclude_regions(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        rule.exclude_regions.add(EveRegion.objects.get(name="Essence"))
+        # when/then
+        self.assertFalse(rule.is_matching_timer(timer))
+
+    def test_should_not_match_exclude_regions(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        rule.exclude_regions.add(EveRegion.objects.get(name="Black Rise"))
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)

@@ -98,13 +98,13 @@ class NotificationRuleAdminForm(forms.ModelForm):
         )
         self._validate_not_same_options_chosen(
             cleaned_data,
-            "require_region",
-            "exclude_region",
+            "require_regions",
+            "exclude_regions",
         )
         self._validate_not_same_options_chosen(
             cleaned_data,
-            "require_space_type",
-            "exclude_space_type",
+            "require_space_types",
+            "exclude_space_types",
             lambda x: NotificationRule.get_multiselect_display(
                 x, NotificationRule.SpaceType.choices
             ),
@@ -167,8 +167,8 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         "exclude_alliances",
         "require_corporations",
         "exclude_corporations",
-        "require_region",
-        "exclude_region",
+        "require_regions",
+        "exclude_regions",
     )
     fieldsets = (
         (
@@ -196,10 +196,10 @@ class NotificationRuleAdmin(admin.ModelAdmin):
                     "exclude_corporations",
                     "require_alliances",
                     "exclude_alliances",
-                    "require_region",
-                    "exclude_region",
-                    "require_space_type",
-                    "exclude_space_type",
+                    "require_regions",
+                    "exclude_regions",
+                    "require_space_types",
+                    "exclude_space_types",
                     "require_visibility",
                     "exclude_visibility",
                     "is_important",
@@ -228,15 +228,15 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             ("exclude_corporations", self._add_to_clauses_2, None),
             ("require_alliances", self._add_to_clauses_2, None),
             ("exclude_alliances", self._add_to_clauses_2, None),
-            ("require_region", self._add_to_clauses_2, None),
-            ("exclude_region", self._add_to_clauses_2, None),
+            ("require_regions", self._add_to_clauses_2, None),
+            ("exclude_regions", self._add_to_clauses_2, None),
             (
-                "require_space_type",
+                "require_space_types",
                 self._add_to_clauses_1,
                 NotificationRule.SpaceType.choices,
             ),
             (
-                "exclude_space_type",
+                "exclude_space_types",
                 self._add_to_clauses_1,
                 NotificationRule.SpaceType.choices,
             ),
@@ -295,7 +295,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             kwargs["queryset"] = EveCorporationInfo.objects.order_by(
                 Lower("corporation_name")
             )
-        elif db_field.name in {"require_region", "exclude_region"}:
+        elif db_field.name in {"require_regions", "exclude_regions"}:
             kwargs["queryset"] = EveRegion.objects.order_by(Lower("name"))
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 

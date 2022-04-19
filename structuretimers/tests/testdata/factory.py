@@ -55,6 +55,9 @@ def create_timer(light_years=None, jumps=None, enabled_notifications=False, **kw
         "eve_solar_system": EveSolarSystem.objects.get(id=30004984),
         "structure_type": EveType.objects.get(id=35825),
     }
+    if "timer_type" not in kwargs or kwargs["timer_type"] != Timer.Type.PRELIMINARY:
+        params["date"] = now() + dt.timedelta(days=3)
+
     params.update(kwargs)
     with patch(
         "structuretimers.models._task_calc_timer_distances_for_all_staging_systems",

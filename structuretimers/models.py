@@ -794,7 +794,7 @@ class NotificationRule(models.Model):
         default=Clause.ANY,
         help_text="Wether the timer must be OPSEC",
     )
-    require_region = models.ManyToManyField(
+    require_regions = models.ManyToManyField(
         EveRegion,
         blank=True,
         related_name="+",
@@ -803,20 +803,20 @@ class NotificationRule(models.Model):
             "or leave blank to match any."
         ),
     )
-    exclude_region = models.ManyToManyField(
+    exclude_regions = models.ManyToManyField(
         EveRegion,
         blank=True,
         related_name="+",
         help_text="Timer must NOT be created within one of the given regions",
     )
-    require_space_type = MultiSelectField(
+    require_space_types = MultiSelectField(
         choices=SpaceType.choices,
         blank=True,
         help_text=(
             "Space type must be one of the selected or leave blank to match any."
         ),
     )
-    exclude_space_type = MultiSelectField(
+    exclude_space_types = MultiSelectField(
         choices=SpaceType.choices,
         blank=True,
         help_text="Space Type must NOT be one of the selected",
@@ -901,6 +901,18 @@ class NotificationRule(models.Model):
 
         if is_matching and self.exclude_alliances.count() > 0:
             is_matching = timer.eve_alliance not in self.exclude_alliances.all()
+
+        if is_matching and self.require_regions.count() > 0:
+            is_matching = (
+                timer.eve_solar_system.eve_constellation.eve_region
+                in self.require_regions.all()
+            )
+
+        if is_matching and self.exclude_regions.count() > 0:
+            is_matching = (
+                timer.eve_solar_system.eve_constellation.eve_region
+                not in self.exclude_regions.all()
+            )
 
         return is_matching
 
