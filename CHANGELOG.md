@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+### Added
+
+- New timer clause for regions (#5)
+- New timer clause for space type, i.e. high sec only (#26)
+
+### Changed
+
+- Some performace improvements for matching queries
+
 ## [1.2.4] - 2022-03-18
 
 ### Fixed
