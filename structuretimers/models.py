@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
 from eveuniverse.helpers import meters_to_ly
-from eveuniverse.models import EveSolarSystem, EveType
+from eveuniverse.models import EveRegion, EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.eveonline.models import (
@@ -677,6 +677,12 @@ class NotificationRule(models.Model):
         REQUIRED = "RQ", "required"
         EXCLUDED = "EX", "excluded"
 
+    class SpaceType(models.TextChoices):
+        HIGH_SEC = "HS", _("highsec")
+        LOW_SEC = "LS", _("lowsec")
+        NULL_SEC = "NS", _("nullsec")
+        WH_SPACE = "WS", _("wh space")
+
     trigger = models.CharField(
         max_length=2,
         choices=Trigger.choices,
@@ -737,7 +743,7 @@ class NotificationRule(models.Model):
     require_corporations = models.ManyToManyField(
         EveCorporationInfo,
         blank=True,
-        related_name="notification_rule_require_corporations",
+        related_name="+",
         help_text=(
             "Timer must be created by one of the given corporations "
             "or leave blank to match any."
@@ -752,7 +758,7 @@ class NotificationRule(models.Model):
     require_alliances = models.ManyToManyField(
         EveAllianceInfo,
         blank=True,
-        related_name="notification_rule_require_alliances",
+        related_name="+",
         help_text=(
             "Timer must be created by one of the given alliances "
             "or leave blank to match any."
@@ -761,7 +767,7 @@ class NotificationRule(models.Model):
     exclude_alliances = models.ManyToManyField(
         EveAllianceInfo,
         blank=True,
-        related_name="notification_rule_exclude_alliances",
+        related_name="+",
         help_text="Timer must NOT be created by one of the given alliances",
     )
     require_visibility = MultiSelectField(
@@ -787,6 +793,33 @@ class NotificationRule(models.Model):
         choices=Clause.choices,
         default=Clause.ANY,
         help_text="Wether the timer must be OPSEC",
+    )
+    require_region = models.ManyToManyField(
+        EveRegion,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Timer must be created within one of the given regions "
+            "or leave blank to match any."
+        ),
+    )
+    exclude_region = models.ManyToManyField(
+        EveRegion,
+        blank=True,
+        related_name="+",
+        help_text="Timer must NOT be created within one of the given regions",
+    )
+    require_space_type = MultiSelectField(
+        choices=SpaceType.choices,
+        blank=True,
+        help_text=(
+            "Space type must be one of the selected or leave blank to match any."
+        ),
+    )
+    exclude_space_type = MultiSelectField(
+        choices=SpaceType.choices,
+        blank=True,
+        help_text="Space Type must NOT be one of the selected",
     )
 
     objects = NotificationRuleManager()
