@@ -909,25 +909,25 @@ class NotificationRule(models.Model):
         if is_matching and self.exclude_objectives:
             is_matching = timer.objective not in self.exclude_objectives
 
-        if is_matching and self.require_corporations.count() > 0:
+        if is_matching and self.require_corporations.exists():
             is_matching = timer.eve_corporation in self.require_corporations.all()
 
-        if is_matching and self.exclude_corporations.count() > 0:
+        if is_matching and self.exclude_corporations.exists():
             is_matching = timer.eve_corporation not in self.exclude_corporations.all()
 
-        if is_matching and self.require_alliances.count() > 0:
+        if is_matching and self.require_alliances.exists():
             is_matching = timer.eve_alliance in self.require_alliances.all()
 
-        if is_matching and self.exclude_alliances.count() > 0:
+        if is_matching and self.exclude_alliances.exists():
             is_matching = timer.eve_alliance not in self.exclude_alliances.all()
 
-        if is_matching and self.require_regions.count() > 0:
+        if is_matching and self.require_regions.exists():
             is_matching = (
                 timer.eve_solar_system.eve_constellation.eve_region
                 in self.require_regions.all()
             )
 
-        if is_matching and self.exclude_regions.count() > 0:
+        if is_matching and self.exclude_regions.exists():
             is_matching = (
                 timer.eve_solar_system.eve_constellation.eve_region
                 not in self.exclude_regions.all()

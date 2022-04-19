@@ -107,14 +107,18 @@ def create_discord_webhook(*args, **kwargs):
     return DiscordWebhook.objects.create(*args, **kwargs)
 
 
-def create_notification_rule(*args, **kwargs):
+def create_notification_rule(schedule_notification=False, *args, **kwargs):
     if "webhook" not in kwargs:
         kwargs["webhook"] = create_discord_webhook()
     if "trigger" not in kwargs:
         kwargs["trigger"] = NotificationRule.Trigger.SCHEDULED_TIME_REACHED
     if "scheduled_time" not in kwargs:
         kwargs["scheduled_time"] = 60
-    return NotificationRule.objects.create(*args, **kwargs)
+    with patch(
+        "structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED",
+        schedule_notification,
+    ):
+        return NotificationRule.objects.create(*args, **kwargs)
 
 
 def create_scheduled_notification(*args, **kwargs):
