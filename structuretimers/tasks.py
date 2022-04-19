@@ -124,7 +124,7 @@ def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
 @shared_task(acks_late=True)
 def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> None:
     """Schedules notifications for this timer based on notification rules"""
-    timer = Timer.objects.get(pk=timer_pk)
+    timer = Timer.objects.select_related_for_matching().get(pk=timer_pk)
     if not timer.date:
         raise ValueError(f"Not supported for prelimiary timers: {timer}")
     if timer.date > now():

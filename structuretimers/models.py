@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
 from eveuniverse.helpers import meters_to_ly
-from eveuniverse.models import EveSolarSystem, EveType
+from eveuniverse.models import EveRegion, EveSolarSystem, EveType
 
 from allianceauth.eveonline.evelinks import dotlan
 from allianceauth.eveonline.models import (
@@ -318,6 +318,27 @@ class Timer(models.Model):
         ALLIANCE = "AL", _("Alliance only")
         CORPORATION = "CO", _("Corporation only")
 
+    class SpaceType(models.TextChoices):
+        HIGH_SEC = "HS", _("highsec")
+        LOW_SEC = "LS", _("lowsec")
+        NULL_SEC = "NS", _("nullsec")
+        WH_SPACE = "WS", _("wh space")
+
+        @classmethod
+        def from_eve_solar_system(cls, eve_solar_sytem: EveSolarSystem):
+            """Determin the space type of a solar system and return it."""
+            if eve_solar_sytem.is_high_sec:
+                return cls.HIGH_SEC
+            if eve_solar_sytem.is_low_sec:
+                return cls.LOW_SEC
+            if eve_solar_sytem.is_null_sec:
+                return cls.NULL_SEC
+            if eve_solar_sytem.is_w_space:
+                return cls.WH_SPACE
+            raise NotImplementedError(
+                f"System with unknown space type: {eve_solar_sytem}"
+            )
+
     date = models.DateTimeField(
         db_index=True,
         null=True,
@@ -500,6 +521,10 @@ class Timer(models.Model):
             self.eve_solar_system.name,
             f" near {self.location_details}" if self.location_details else "",
         )
+
+    @property
+    def space_type(self) -> "SpaceType":
+        return self.SpaceType.from_eve_solar_system(self.eve_solar_system)
 
     def user_can_edit(self, user: user) -> bool:
         """Checks if the given user can edit this timer. Returns True or False"""
@@ -737,7 +762,7 @@ class NotificationRule(models.Model):
     require_corporations = models.ManyToManyField(
         EveCorporationInfo,
         blank=True,
-        related_name="notification_rule_require_corporations",
+        related_name="+",
         help_text=(
             "Timer must be created by one of the given corporations "
             "or leave blank to match any."
@@ -752,7 +777,7 @@ class NotificationRule(models.Model):
     require_alliances = models.ManyToManyField(
         EveAllianceInfo,
         blank=True,
-        related_name="notification_rule_require_alliances",
+        related_name="+",
         help_text=(
             "Timer must be created by one of the given alliances "
             "or leave blank to match any."
@@ -761,7 +786,7 @@ class NotificationRule(models.Model):
     exclude_alliances = models.ManyToManyField(
         EveAllianceInfo,
         blank=True,
-        related_name="notification_rule_exclude_alliances",
+        related_name="+",
         help_text="Timer must NOT be created by one of the given alliances",
     )
     require_visibility = MultiSelectField(
@@ -787,6 +812,33 @@ class NotificationRule(models.Model):
         choices=Clause.choices,
         default=Clause.ANY,
         help_text="Wether the timer must be OPSEC",
+    )
+    require_regions = models.ManyToManyField(
+        EveRegion,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Timer must be created within one of the given regions "
+            "or leave blank to match any."
+        ),
+    )
+    exclude_regions = models.ManyToManyField(
+        EveRegion,
+        blank=True,
+        related_name="+",
+        help_text="Timer must NOT be created within one of the given regions",
+    )
+    require_space_types = MultiSelectField(
+        choices=Timer.SpaceType.choices,
+        blank=True,
+        help_text=(
+            "Space type must be one of the selected or leave blank to match any."
+        ),
+    )
+    exclude_space_types = MultiSelectField(
+        choices=Timer.SpaceType.choices,
+        blank=True,
+        help_text="Space Type must NOT be one of the selected",
     )
 
     objects = NotificationRuleManager()
@@ -857,17 +909,34 @@ class NotificationRule(models.Model):
         if is_matching and self.exclude_objectives:
             is_matching = timer.objective not in self.exclude_objectives
 
-        if is_matching and self.require_corporations.count() > 0:
+        if is_matching and self.require_corporations.exists():
             is_matching = timer.eve_corporation in self.require_corporations.all()
 
-        if is_matching and self.exclude_corporations.count() > 0:
+        if is_matching and self.exclude_corporations.exists():
             is_matching = timer.eve_corporation not in self.exclude_corporations.all()
 
-        if is_matching and self.require_alliances.count() > 0:
+        if is_matching and self.require_alliances.exists():
             is_matching = timer.eve_alliance in self.require_alliances.all()
 
-        if is_matching and self.exclude_alliances.count() > 0:
+        if is_matching and self.exclude_alliances.exists():
             is_matching = timer.eve_alliance not in self.exclude_alliances.all()
+
+        if is_matching and self.require_regions.exists():
+            is_matching = (
+                timer.eve_solar_system.eve_constellation.eve_region
+                in self.require_regions.all()
+            )
+
+        if is_matching and self.exclude_regions.exists():
+            is_matching = (
+                timer.eve_solar_system.eve_constellation.eve_region
+                not in self.exclude_regions.all()
+            )
+        if is_matching and self.require_space_types:
+            is_matching = timer.space_type in self.require_space_types
+
+        if is_matching and self.exclude_space_types:
+            is_matching = timer.space_type not in self.exclude_space_types
 
         return is_matching
 

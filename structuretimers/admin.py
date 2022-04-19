@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.functions import Lower
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
+from eveuniverse.models import EveRegion
 
 from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 
@@ -95,6 +96,19 @@ class NotificationRuleAdminForm(forms.ModelForm):
             "require_alliances",
             "exclude_alliances",
         )
+        self._validate_not_same_options_chosen(
+            cleaned_data,
+            "require_regions",
+            "exclude_regions",
+        )
+        self._validate_not_same_options_chosen(
+            cleaned_data,
+            "require_space_types",
+            "exclude_space_types",
+            lambda x: NotificationRule.get_multiselect_display(
+                x, Timer.SpaceType.choices
+            ),
+        )
         if (
             cleaned_data["trigger"] == NotificationRule.Trigger.SCHEDULED_TIME_REACHED
             and cleaned_data["scheduled_time"] is None
@@ -148,6 +162,53 @@ class NotificationRuleAdmin(admin.ModelAdmin):
     list_filter = ("is_enabled", "trigger")
     ordering = ("id",)
 
+    filter_horizontal = (
+        "require_alliances",
+        "exclude_alliances",
+        "require_corporations",
+        "exclude_corporations",
+        "require_regions",
+        "exclude_regions",
+    )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "trigger",
+                    "scheduled_time",
+                    "webhook",
+                    "ping_type",
+                    "is_enabled",
+                )
+            },
+        ),
+        (
+            "Timer clauses",
+            {
+                "classes": ("extrapretty",),
+                "fields": (
+                    "require_timer_types",
+                    "exclude_timer_types",
+                    "require_objectives",
+                    "exclude_objectives",
+                    "require_corporations",
+                    "exclude_corporations",
+                    "require_alliances",
+                    "exclude_alliances",
+                    "require_regions",
+                    "exclude_regions",
+                    "require_space_types",
+                    "exclude_space_types",
+                    "require_visibility",
+                    "exclude_visibility",
+                    "is_important",
+                    "is_opsec",
+                ),
+            },
+        ),
+    )
+
     @admin.display(ordering="scheduled time")
     def _time(self, obj) -> Optional[str]:
         if obj.scheduled_time is None:
@@ -167,6 +228,18 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             ("exclude_corporations", self._add_to_clauses_2, None),
             ("require_alliances", self._add_to_clauses_2, None),
             ("exclude_alliances", self._add_to_clauses_2, None),
+            ("require_regions", self._add_to_clauses_2, None),
+            ("exclude_regions", self._add_to_clauses_2, None),
+            (
+                "require_space_types",
+                self._add_to_clauses_1,
+                Timer.SpaceType.choices,
+            ),
+            (
+                "exclude_space_types",
+                self._add_to_clauses_1,
+                Timer.SpaceType.choices,
+            ),
             ("is_important", self._add_to_clauses_3, None),
             ("is_opsec", self._add_to_clauses_3, None),
         ]:
@@ -212,48 +285,6 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         queryset.update(is_enabled=False)
         self.message_user(request, f"Disabled {queryset.count()} notification rules.")
 
-    filter_horizontal = (
-        "require_alliances",
-        "exclude_alliances",
-        "require_corporations",
-        "exclude_corporations",
-    )
-
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "trigger",
-                    "scheduled_time",
-                    "webhook",
-                    "ping_type",
-                    "is_enabled",
-                )
-            },
-        ),
-        (
-            "Timer clauses",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    "require_timer_types",
-                    "exclude_timer_types",
-                    "require_objectives",
-                    "exclude_objectives",
-                    "require_corporations",
-                    "exclude_corporations",
-                    "require_alliances",
-                    "exclude_alliances",
-                    "require_visibility",
-                    "exclude_visibility",
-                    "is_important",
-                    "is_opsec",
-                ),
-            },
-        ),
-    )
-
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """overriding this formfield to have sorted lists in the form"""
         if db_field.name in {"require_alliances", "exclude_alliances"}:
@@ -264,6 +295,8 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             kwargs["queryset"] = EveCorporationInfo.objects.order_by(
                 Lower("corporation_name")
             )
+        elif db_field.name in {"require_regions", "exclude_regions"}:
+            kwargs["queryset"] = EveRegion.objects.order_by(Lower("name"))
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 

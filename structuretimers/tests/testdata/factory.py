@@ -55,6 +55,9 @@ def create_timer(light_years=None, jumps=None, enabled_notifications=False, **kw
         "eve_solar_system": EveSolarSystem.objects.get(id=30004984),
         "structure_type": EveType.objects.get(id=35825),
     }
+    if "timer_type" not in kwargs or kwargs["timer_type"] != Timer.Type.PRELIMINARY:
+        params["date"] = now() + dt.timedelta(days=3)
+
     params.update(kwargs)
     with patch(
         "structuretimers.models._task_calc_timer_distances_for_all_staging_systems",
@@ -104,14 +107,18 @@ def create_discord_webhook(*args, **kwargs):
     return DiscordWebhook.objects.create(*args, **kwargs)
 
 
-def create_notification_rule(*args, **kwargs):
+def create_notification_rule(schedule_notification=False, *args, **kwargs):
     if "webhook" not in kwargs:
         kwargs["webhook"] = create_discord_webhook()
     if "trigger" not in kwargs:
         kwargs["trigger"] = NotificationRule.Trigger.SCHEDULED_TIME_REACHED
     if "scheduled_time" not in kwargs:
         kwargs["scheduled_time"] = 60
-    return NotificationRule.objects.create(*args, **kwargs)
+    with patch(
+        "structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED",
+        schedule_notification,
+    ):
+        return NotificationRule.objects.create(*args, **kwargs)
 
 
 def create_scheduled_notification(*args, **kwargs):
