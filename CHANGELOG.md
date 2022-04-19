@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.3.0] - 2022-04-19
+
 ### Added
 
 - New timer clause for regions (#5)
