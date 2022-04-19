@@ -103,6 +103,7 @@ class TimerListDataView(
             tab_name=self.kwargs.get("tab_name"), max_hours_passed=MAX_HOURS_PASSED
         )
         timers_qs = timers_qs.select_related(
+            "eve_solar_system",
             "eve_solar_system__eve_constellation__eve_region",
             "structure_type",
             "structure_type__eve_group",

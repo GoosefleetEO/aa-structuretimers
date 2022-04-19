@@ -30,16 +30,25 @@ NotificationRuleManager = NotificationRuleManagerBase.from_queryset(
 
 
 class TimerQuerySet(models.QuerySet):
+    def select_related_for_matching(self) -> models.QuerySet:
+        return self.select_related(
+            "eve_solar_system",
+            "eve_solar_system__eve_constellation__eve_region",
+            "eve_corporation",
+            "eve_alliance",
+        )
+
     def conforms_with_notification_rule(
         self, notification_rule: object
     ) -> models.QuerySet:
         """Return new queryset based on current queryset,
         which only contains timers that conform with the given notification rule.
         """
-        matching_timer_pks = list()
-        for timer in self:
-            if notification_rule.is_matching_timer(timer):
-                matching_timer_pks.append(timer.pk)
+        matching_timer_pks = [
+            timer.pk
+            for timer in self.select_related_for_matching()
+            if notification_rule.is_matching_timer(timer)
+        ]
         return self.filter(pk__in=matching_timer_pks)
 
     def visible_to_user(self, user: User) -> models.QuerySet:
