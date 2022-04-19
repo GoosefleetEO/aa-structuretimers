@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("eveuniverse", "0007_evetype_description"),
-        ("eveonline", "0016_character_names_are_not_unique"),
+        ("eveonline", "0015_factions"),
         ("structuretimers", "0003_add_preliminary_timers"),
     ]
 
