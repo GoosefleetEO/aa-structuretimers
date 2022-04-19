@@ -770,6 +770,16 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
             webhook=self.webhook,
         )
 
+    def test_should_match_when_no_rules_set(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule()
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
+
     def test_require_timer_types(self):
         # do not process if it does not match
         self.rule.require_timer_types = [Timer.Type.ARMOR]
@@ -909,7 +919,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
         self.timer.is_opsec = True
         self.assertFalse(self.rule.is_matching_timer(self.timer))
 
-    def test_should_match_require_regions_1(self):
+    def test_should_match_require_regions(self):
         # given
         timer = create_timer(
             enabled_notifications=False,
@@ -917,16 +927,6 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
         )
         rule = create_notification_rule()
         rule.require_regions.add(EveRegion.objects.get(name="Essence"))
-        # when/then
-        self.assertTrue(rule.is_matching_timer(timer))
-
-    def test_should_match_require_regions_2(self):
-        # given
-        timer = create_timer(
-            enabled_notifications=False,
-            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
-        )
-        rule = create_notification_rule()
         # when/then
         self.assertTrue(rule.is_matching_timer(timer))
 
@@ -962,6 +962,46 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
         rule.exclude_regions.add(EveRegion.objects.get(name="Black Rise"))
         # when/then
         self.assertTrue(rule.is_matching_timer(timer))
+
+    def test_should_match_require_space_types(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule(require_space_types=[Timer.SpaceType.LOW_SEC])
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
+
+    def test_should_not_match_require_space_types(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule(require_space_types=[Timer.SpaceType.NULL_SEC])
+        # when/then
+        self.assertFalse(rule.is_matching_timer(timer))
+
+    def test_should_match_exclude_space_types(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule(exclude_space_types=[Timer.SpaceType.NULL_SEC])
+        # when/then
+        self.assertTrue(rule.is_matching_timer(timer))
+
+    def test_should_not_match_exclude_space_types(self):
+        # given
+        timer = create_timer(
+            enabled_notifications=False,
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+        )
+        rule = create_notification_rule(exclude_space_types=[Timer.SpaceType.LOW_SEC])
+        # when/then
+        self.assertFalse(rule.is_matching_timer(timer))
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)

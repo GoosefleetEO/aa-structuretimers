@@ -106,7 +106,7 @@ class NotificationRuleAdminForm(forms.ModelForm):
             "require_space_types",
             "exclude_space_types",
             lambda x: NotificationRule.get_multiselect_display(
-                x, NotificationRule.SpaceType.choices
+                x, Timer.SpaceType.choices
             ),
         )
         if (
@@ -233,12 +233,12 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             (
                 "require_space_types",
                 self._add_to_clauses_1,
-                NotificationRule.SpaceType.choices,
+                Timer.SpaceType.choices,
             ),
             (
                 "exclude_space_types",
                 self._add_to_clauses_1,
-                NotificationRule.SpaceType.choices,
+                Timer.SpaceType.choices,
             ),
             ("is_important", self._add_to_clauses_3, None),
             ("is_opsec", self._add_to_clauses_3, None),

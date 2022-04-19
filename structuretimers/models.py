@@ -318,6 +318,27 @@ class Timer(models.Model):
         ALLIANCE = "AL", _("Alliance only")
         CORPORATION = "CO", _("Corporation only")
 
+    class SpaceType(models.TextChoices):
+        HIGH_SEC = "HS", _("highsec")
+        LOW_SEC = "LS", _("lowsec")
+        NULL_SEC = "NS", _("nullsec")
+        WH_SPACE = "WS", _("wh space")
+
+        @classmethod
+        def from_eve_solar_system(cls, eve_solar_sytem: EveSolarSystem):
+            """Determin the space type of a solar system and return it."""
+            if eve_solar_sytem.is_high_sec:
+                return cls.HIGH_SEC
+            if eve_solar_sytem.is_low_sec:
+                return cls.LOW_SEC
+            if eve_solar_sytem.is_null_sec:
+                return cls.NULL_SEC
+            if eve_solar_sytem.is_w_space:
+                return cls.WH_SPACE
+            raise NotImplementedError(
+                f"System with unknown space type: {eve_solar_sytem}"
+            )
+
     date = models.DateTimeField(
         db_index=True,
         null=True,
@@ -501,6 +522,10 @@ class Timer(models.Model):
             f" near {self.location_details}" if self.location_details else "",
         )
 
+    @property
+    def space_type(self) -> "SpaceType":
+        return self.SpaceType.from_eve_solar_system(self.eve_solar_system)
+
     def user_can_edit(self, user: user) -> bool:
         """Checks if the given user can edit this timer. Returns True or False"""
         return user.has_perm("structuretimers.manage_timer") or (
@@ -677,12 +702,6 @@ class NotificationRule(models.Model):
         REQUIRED = "RQ", "required"
         EXCLUDED = "EX", "excluded"
 
-    class SpaceType(models.TextChoices):
-        HIGH_SEC = "HS", _("highsec")
-        LOW_SEC = "LS", _("lowsec")
-        NULL_SEC = "NS", _("nullsec")
-        WH_SPACE = "WS", _("wh space")
-
     trigger = models.CharField(
         max_length=2,
         choices=Trigger.choices,
@@ -810,14 +829,14 @@ class NotificationRule(models.Model):
         help_text="Timer must NOT be created within one of the given regions",
     )
     require_space_types = MultiSelectField(
-        choices=SpaceType.choices,
+        choices=Timer.SpaceType.choices,
         blank=True,
         help_text=(
             "Space type must be one of the selected or leave blank to match any."
         ),
     )
     exclude_space_types = MultiSelectField(
-        choices=SpaceType.choices,
+        choices=Timer.SpaceType.choices,
         blank=True,
         help_text="Space Type must NOT be one of the selected",
     )
@@ -913,6 +932,11 @@ class NotificationRule(models.Model):
                 timer.eve_solar_system.eve_constellation.eve_region
                 not in self.exclude_regions.all()
             )
+        if is_matching and self.require_space_types:
+            is_matching = timer.space_type in self.require_space_types
+
+        if is_matching and self.exclude_space_types:
+            is_matching = timer.space_type not in self.exclude_space_types
 
         return is_matching
 
