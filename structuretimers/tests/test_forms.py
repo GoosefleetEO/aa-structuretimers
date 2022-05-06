@@ -49,7 +49,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_should_accept_normal_timer_with_date(self):
         # given
-        form_data = create_form_data(end_date="2022.03.05 20:07:59")
+        form_data = create_form_data(date="2022.03.05 20:07:59")
         form = TimerForm(data=form_data)
         # when / then
         self.assertTrue(form.is_valid())
@@ -97,7 +97,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
-        self.assertIsNone(form.cleaned_data["end_date"])
+        self.assertIsNone(form.cleaned_data["date"])
         self.assertIsNotNone(form.cleaned_data["days_left"])
         self.assertIsNotNone(form.cleaned_data["hours_left"])
         self.assertIsNotNone(form.cleaned_data["minutes_left"])
@@ -109,7 +109,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.NONE)
-        self.assertIsNone(form.cleaned_data["end_date"])
+        self.assertIsNone(form.cleaned_data["date"])
         self.assertIsNotNone(form.cleaned_data["days_left"])
         self.assertIsNotNone(form.cleaned_data["hours_left"])
         self.assertIsNotNone(form.cleaned_data["minutes_left"])
@@ -117,7 +117,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
     def test_should_upgrade_preliminary_timer_when_date_specified(self):
         # given
         form_data = create_form_data(
-            timer_type=Timer.Type.PRELIMINARY, end_date="2022.03.05 20:07:59"
+            timer_type=Timer.Type.PRELIMINARY, date="2022.03.05 20:07:59"
         )
         form = TimerForm(data=form_data)
         # when / then
@@ -126,7 +126,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
         self.assertIsNone(form.cleaned_data["days_left"])
         self.assertIsNone(form.cleaned_data["hours_left"])
         self.assertIsNone(form.cleaned_data["minutes_left"])
-        self.assertIsNotNone(form.cleaned_data["end_date"])
+        self.assertIsNotNone(form.cleaned_data["date"])
 
     def test_should_set_timer_as_preliminary_timer_when_no_date_specified(self):
         # given
@@ -135,7 +135,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
         # when / then
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["timer_type"], Timer.Type.PRELIMINARY)
-        self.assertIsNone(form.cleaned_data["end_date"])
+        self.assertIsNone(form.cleaned_data["date"])
         self.assertIsNone(form.cleaned_data["days_left"])
         self.assertIsNone(form.cleaned_data["hours_left"])
         self.assertIsNone(form.cleaned_data["minutes_left"])
@@ -165,7 +165,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_should_not_accept_invalid_date(self):
         # given
-        form_data = create_form_data(end_date="2022.31.05 20:07:59")
+        form_data = create_form_data(date="2022.31.05 20:07:59")
         form = TimerForm(data=form_data)
         # when / then
         self.assertFalse(form.is_valid())
