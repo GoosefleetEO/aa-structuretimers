@@ -1,8 +1,8 @@
 $(document).ready(function () {
-    var elem = document.getElementById('dataExport');
-    var select2SolarSystemsUrl = elem.getAttribute('data-select2SolarSystemsUrl');
-    var select2StructureTypesUrl = elem.getAttribute('data-select2StructureTypesUrl');
-    var myTheme = "bootstrap"
+    const elem = document.getElementById('dataExport');
+    const select2SolarSystemsUrl = elem.getAttribute('data-select2SolarSystemsUrl');
+    const select2StructureTypesUrl = elem.getAttribute('data-select2StructureTypesUrl');
+    const myTheme = "bootstrap"
 
     $('.select2-solar-systems').select2({
         ajax: {
@@ -29,5 +29,14 @@ $(document).ready(function () {
     $('.select2-render').select2({
         theme: myTheme,
         dropdownCssClass: "my_select2_dropdown"
+    });
+
+    // Clear date field when time-remaining fields are used and vice versa
+    $('.timer-time-remaining-field').focus(function () {
+        $('#timer-date-field').val('')
+    });
+
+    $('#timer-date-field').focus(function () {
+        $('.timer-time-remaining-field').val('')
     });
 });
