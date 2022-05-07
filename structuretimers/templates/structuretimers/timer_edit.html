@@ -34,6 +34,7 @@
         data-select2StructureTypesUrl="{% url 'structuretimers:select2_structure_types' %}">
     </div>
     {{ NIGHT_MODE|json_script:"night-mode-data" }}
+    {{ LANGUAGE_CODE|json_script:"language-code-data" }}
 
 {% endblock details %}
 
