@@ -21,8 +21,79 @@ from .models import Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
+DATETIME_FORMAT = "%Y-%m-%d %H:%M"
+
 
 class TimerForm(forms.ModelForm):
+    ASTERISK_HTML = '<i class="fas fa-asterisk"></i>'
+    TIME_REMAINING_WIDGET_ATTRS = {
+        "class": "timer-time-remaining-field",
+    }
+    TIME_REMAINING_HELP_TEXT = _(
+        "This field is calculated from the current time. "
+        "Alternatively, you can enter the date above in the `Date` field."
+    )
+    eve_solar_system_2 = forms.CharField(
+        required=True,
+        label=_(format_html(f"Solar System {ASTERISK_HTML}")),
+        widget=forms.Select(attrs={"class": "select2-solar-systems"}),
+    )
+    structure_type_2 = forms.CharField(
+        required=True,
+        label=_(format_html(f"Structure Type {ASTERISK_HTML}")),
+        widget=forms.Select(attrs={"class": "select2-structure-types"}),
+    )
+    objective = forms.ChoiceField(
+        initial=Timer.Objective.UNDEFINED,
+        choices=Timer.Objective.choices,
+        widget=forms.Select(attrs={"class": "select2-render"}),
+    )
+    timer_type = forms.ChoiceField(
+        choices=Timer.Type.choices,
+        widget=forms.Select(attrs={"class": "select2-render"}),
+    )
+    visibility = forms.ChoiceField(
+        choices=Timer.Visibility.choices,
+        widget=forms.Select(attrs={"class": "select2-render"}),
+    )
+    date = forms.DateTimeField(
+        required=False,
+        label=_("Date"),
+        widget=forms.DateTimeInput(
+            attrs={"id": "timer-date-field"}, format=DATETIME_FORMAT
+        ),
+        # input_formats=[DATETIME_FORMAT],
+        help_text=_(
+            "The date when the timer happens. "
+            "Alternatively, you can enter the remaining time below."
+        ),
+    )
+    days_left = forms.IntegerField(
+        required=False,
+        label=_("Days Remaining"),
+        validators=[MinValueValidator(0)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
+    )
+    hours_left = forms.IntegerField(
+        required=False,
+        label=_("Hours Remaining"),
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
+    )
+    minutes_left = forms.IntegerField(
+        required=False,
+        label=_("Minutes Remaining"),
+        validators=[MinValueValidator(0), MaxValueValidator(59)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
+    )
+    details_image_url = forms.URLField(
+        required=False,
+        help_text=_("Paste a public URL to an image into this field."),
+    )
+
     class Meta:
         model = Timer
         fields = (
@@ -63,78 +134,8 @@ class TimerForm(forms.ModelForm):
                 )
             ]
             self.fields["structure_type_2"].widget.choices = [
-                (
-                    str(my_instance.structure_type_id),
-                    my_instance.structure_type.name,
-                )
+                (str(my_instance.structure_type_id), my_instance.structure_type.name)
             ]
-
-    ASTERISK_HTML = '<i class="fas fa-asterisk"></i>'
-    TIME_REMAINING_WIDGET_ATTRS = {
-        "class": "timer-time-remaining-field",
-    }
-    TIME_REMAINING_HELP_TEXT = _(
-        "This field is calculated from the current time. "
-        "Alternatively, you can enter the date above in the `Date` field."
-    )
-    eve_solar_system_2 = forms.CharField(
-        required=True,
-        label=_(format_html(f"Solar System {ASTERISK_HTML}")),
-        widget=forms.Select(attrs={"class": "select2-solar-systems"}),
-    )
-    structure_type_2 = forms.CharField(
-        required=True,
-        label=_(format_html(f"Structure Type {ASTERISK_HTML}")),
-        widget=forms.Select(attrs={"class": "select2-structure-types"}),
-    )
-    objective = forms.ChoiceField(
-        initial=Timer.Objective.UNDEFINED,
-        choices=Timer.Objective.choices,
-        widget=forms.Select(attrs={"class": "select2-render"}),
-    )
-    timer_type = forms.ChoiceField(
-        choices=Timer.Type.choices,
-        widget=forms.Select(attrs={"class": "select2-render"}),
-    )
-    visibility = forms.ChoiceField(
-        choices=Timer.Visibility.choices,
-        widget=forms.Select(attrs={"class": "select2-render"}),
-    )
-    date = forms.DateTimeField(
-        required=False,
-        label=_("Date"),
-        widget=forms.DateTimeInput(attrs={"id": "timer-date-field"}),
-        input_formats=["%Y-%m-%d %H:%M:%S"],
-        help_text=_(
-            "The date when the timer happens. "
-            "Alternatively, you can enter the remaining time below."
-        ),
-    )
-    days_left = forms.IntegerField(
-        required=False,
-        label=_("Days Remaining"),
-        validators=[MinValueValidator(0)],
-        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
-        help_text=TIME_REMAINING_HELP_TEXT,
-    )
-    hours_left = forms.IntegerField(
-        required=False,
-        label=_("Hours Remaining"),
-        validators=[MinValueValidator(0), MaxValueValidator(23)],
-        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
-        help_text=TIME_REMAINING_HELP_TEXT,
-    )
-    minutes_left = forms.IntegerField(
-        required=False,
-        label=_("Minutes Remaining"),
-        validators=[MinValueValidator(0), MaxValueValidator(59)],
-        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
-        help_text=TIME_REMAINING_HELP_TEXT,
-    )
-    details_image_url = forms.URLField(
-        required=False,
-        help_text=_("Paste a public URL to an image into this field."),
-    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -147,10 +148,7 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["eve_solar_system_2"].widget.choices = [
-                    (
-                        str(solar_system.id),
-                        solar_system.name,
-                    )
+                    (str(solar_system.id), solar_system.name)
                 ]
 
         if cleaned_data.get("structure_type_2"):
@@ -162,10 +160,7 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["structure_type_2"].widget.choices = [
-                    (
-                        str(structure_type.id),
-                        structure_type.name,
-                    )
+                    (str(structure_type.id), structure_type.name)
                 ]
                 if (
                     cleaned_data.get("timer_type") == Timer.Type.MOONMINING
