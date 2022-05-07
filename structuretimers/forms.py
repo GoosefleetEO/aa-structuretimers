@@ -104,7 +104,7 @@ class TimerForm(forms.ModelForm):
         required=False,
         label=_("Date"),
         widget=forms.DateTimeInput(attrs={"id": "timer-date-field"}),
-        input_formats=["%Y.%m.%d %H:%M:%S"],
+        input_formats=["%Y-%m-%d %H:%M:%S"],
         help_text=_(
             "The date when the timer happens. "
             "Alternatively, you can enter the remaining time below."

@@ -31,6 +31,8 @@ $(document).ready(function () {
         dropdownCssClass: "my_select2_dropdown"
     });
 
+    $('#timer-date-field').datetimepicker({ format: 'Y-m-d H:i' });
+
     // Clear date field when time-remaining fields are used and vice versa
     $('.timer-time-remaining-field').focus(function () {
         $('#timer-date-field').val('')
