@@ -49,7 +49,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
 
     def test_should_accept_normal_timer_with_date(self):
         # given
-        form_data = create_form_data(date="2022.03.05 20:07:59")
+        form_data = create_form_data(date="2022-03-05 20:07")
         form = TimerForm(data=form_data)
         # when / then
         self.assertTrue(form.is_valid())
@@ -117,7 +117,7 @@ class TestTimerFormIsValid(LoadTestDataMixin, NoSocketsTestCase):
     def test_should_upgrade_preliminary_timer_when_date_specified(self):
         # given
         form_data = create_form_data(
-            timer_type=Timer.Type.PRELIMINARY, date="2022.03.05 20:07:59"
+            timer_type=Timer.Type.PRELIMINARY, date="2022-03-05 20:07"
         )
         form = TimerForm(data=form_data)
         # when / then
