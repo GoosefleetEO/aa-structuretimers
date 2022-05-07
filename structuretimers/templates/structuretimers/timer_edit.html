@@ -33,16 +33,20 @@
         data-select2SolarSystemsUrl="{% url 'structuretimers:select2_solar_systems' %}"
         data-select2StructureTypesUrl="{% url 'structuretimers:select2_structure_types' %}">
     </div>
+    {{ NIGHT_MODE|json_script:"night-mode-data" }}
+    {{ LANGUAGE_CODE|json_script:"language-code-data" }}
 
 {% endblock details %}
 
 {% block extra_css %}
     <link href="{% static 'structuretimers/vendor/select2-4.1.0-beta.1/select2.min.css' %}" rel="stylesheet" />
     <link href="{% static 'structuretimers/vendor/select2-bootstrap-theme-0.1.0-beta.10/select2-bootstrap.min.css' %}" rel="stylesheet" />
+    {% include "bundles/jquery-datetimepicker-css.html" %}
     <link href="{% static 'structuretimers/css/timer_edit.css' %}" rel="stylesheet" />
 {% endblock extra_css %}
 
 {% block extra_javascript %}
     <script type="application/javascript" src="{% static 'structuretimers/vendor/select2-4.1.0-beta.1/select2.min.js' %}"></script>
+    {% include "bundles/jquery-datetimepicker-js.html" %}
     <script type="text/javascript" src="{% static 'structuretimers/js/timer_edit.js' %}"></script>
 {% endblock extra_javascript %}

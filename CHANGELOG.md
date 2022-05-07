@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+### Added
+
+- Ability to specify dates directly when creating & editing timers (#15)
+
+Thanks @colcrunch for your contribution!
+
 ## [1.3.1] - 2022-04-21
 
 ### Fixed
 
-- Outdated dependecy to django-eveuniverse
+- Outdated dependency to django-eveuniverse
 
 ## [1.3.0] - 2022-04-19
 
