@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.4.0] - 2022-05-07
+
 ### Added
 
 - Ability to specify dates directly when creating & editing timers (#15)
