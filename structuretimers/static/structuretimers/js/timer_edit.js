@@ -31,7 +31,9 @@ $(document).ready(function () {
         dropdownCssClass: "my_select2_dropdown"
     });
 
-    $('#timer-date-field').datetimepicker({ format: 'Y-m-d H:i' });
+    const value = JSON.parse(document.getElementById('night-mode-data').textContent);
+    const datetimepickerTheme = value ? 'dark' : 'default'
+    $('#timer-date-field').datetimepicker({ format: 'Y-m-d H:i', theme: datetimepickerTheme });
 
     // Clear date field when time-remaining fields are used and vice versa
     $('.timer-time-remaining-field').focus(function () {

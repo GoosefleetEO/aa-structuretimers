@@ -33,6 +33,7 @@
         data-select2SolarSystemsUrl="{% url 'structuretimers:select2_solar_systems' %}"
         data-select2StructureTypesUrl="{% url 'structuretimers:select2_structure_types' %}">
     </div>
+    {{ NIGHT_MODE|json_script:"night-mode-data" }}
 
 {% endblock details %}
 
