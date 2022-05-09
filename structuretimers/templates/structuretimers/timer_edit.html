@@ -9,7 +9,7 @@
             {% if form.errors %}
                 <p class="text-danger">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong> Please correct the input errors below</strong>
+                    <strong> {% translate "Please correct the input errors below" %}</strong>
                 </p>
             {% endif %}
             <form id="add-timer-form" class="form-signin" role="form" action="" method="POST">
@@ -17,7 +17,7 @@
                 {{ form|bootstrap }}
                 <br/>
                 <p>
-                    <i class="fas fa-asterisk"></i> required fields
+                    <i class="fas fa-asterisk"></i> {% translate "required fields" %}
                 </p>
                 <button class="btn btn-primary" type="submit">
                     {% block submit_button_text %}{% endblock %}

@@ -13,29 +13,29 @@
             <a
                 href="{% url 'structuretimers:add' %}"
                 class="btn btn-success btn-tabs"
-                title="Add new timer">
-                Add Timer
+                title="{% translate 'Add new timer' %}">
+                {% translate "Add Timer" %}
             </a>
         {% endif %}
     </span>
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation"><a href="#preliminary" aria-controls="preliminary" role="tab" data-toggle="tab">Preliminary</a></li>
-        <li role="presentation"><a href="#current" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
-        <li role="presentation"><a href="#past" aria-controls="past" role="tab" data-toggle="tab">Past</a></li>
+        <li role="presentation"><a href="#preliminary" aria-controls="preliminary" role="tab" data-toggle="tab">{% translate "Preliminary" %}</a></li>
+        <li role="presentation"><a href="#current" aria-controls="current" role="tab" data-toggle="tab">{% translate "Current" %}</a></li>
+        <li role="presentation"><a href="#past" aria-controls="past" role="tab" data-toggle="tab">{% translate "Past" %}</a></li>
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                Staging: {{ selected_staging_system|default:"?" }} <span class="caret"></span>
+                {% translate "Staging:" %} {{ selected_staging_system|default:"?" }} <span class="caret"></span>
             </a>
             <ul class="dropdown-menu">
                 {% for staging_system in stageing_systems %}
                     <li><a href="{% url 'structuretimers:timer_list' %}?staging={{ staging_system.eve_solar_system.name }}">
                         {{ staging_system }} ({{ staging_system.eve_solar_system.eve_constellation.eve_region }})
-                        {% if staging_system.is_main %} [MAIN] {% endif %}
+                        {% if staging_system.is_main %} {% translate "[MAIN]" %} {% endif %}
                     </a></li>
                 {% empty %}
-                    <li class="disabled"><a href="#">No staging system configured.</a></li>
+                    <li class="disabled"><a href="#">{% translate "No staging system configured." %}</a></li>
                 {% endfor %}
             </ul>
         </li>
@@ -48,7 +48,7 @@
                 <div role="tabpanel" class="tab-pane" id="preliminary">
                     {% include 'structuretimers/partials/preliminary_list_table.html' %}
                     <p class="text-muted">
-                        This page contains potential future timers.
+                        {% translate "This page contains potential future timers." %}
                     </p>
                 </div>
 
@@ -56,7 +56,7 @@
                 <div role="tabpanel" class="tab-pane" id="current">
                     {% include 'structuretimers/partials/timer_list_table.html' with tab_name='current' %}
                     <p class="text-muted">
-                        Timers remain on this page for {{ max_hours_expired }} hours after they expired
+                        {% blocktranslate %}Timers remain on this page for {{ max_hours_expired }} hours after they expired{% endblocktranslate %}
                     </p>
                 </div>
 
@@ -66,7 +66,7 @@
                 </div>
             </div>
             <p class="text-muted">
-                *: Distance from selected staging system: {{ selected_staging_system|default:"?" }}
+                {% translate "*: Distance from selected staging system:" %} {{ selected_staging_system|default:"?" }}
                 ({{ selected_staging_system.eve_solar_system.eve_constellation.eve_region|default:"?" }})
             </p>
         </div>
@@ -80,7 +80,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
-                    <h4 class="modal-title" id="gridSystemModalLabel">Timer details</h4>
+                    <h4 class="modal-title" id="gridSystemModalLabel">{% translate "Timer details" %}</h4>
                 </div>
                 <div class="modal-body">
                     <div id="modal_div_spinner">
@@ -94,7 +94,7 @@
                     <div id="modalLoadError"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{% translate "Close" %}</button>
                 </div>
             </div>
         </div>
