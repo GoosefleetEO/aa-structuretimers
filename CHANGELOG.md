@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.4.1] - 2022-05-09
+
 ### Fixed
 
-- Highlight in navigation
-
+- Keep highlight in side bar navigation on edit page (!8)
+- Translation tags fixed/added (!9)
 
 ## [1.4.0] - 2022-05-07
 
