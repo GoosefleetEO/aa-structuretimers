@@ -1,7 +1,7 @@
 """Tests for Navigation Highlight"""
 
-from django_webtest import TestCase
 from django.urls import reverse
+from django_webtest import TestCase
 
 from .testdata.factory import create_user
 from .testdata.fixtures import LoadTestDataMixin
