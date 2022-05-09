@@ -1,7 +1,9 @@
-<label for="timerboardTimer">Timer</label>
+{% load i18n %}
+
+<label for="timerboardTimer">{% translate "Timer" %}</label>
 <p>{{ object }}</p>
 
-<label for="timerboardImgScreenshot">Image</label>
+<label for="timerboardImgScreenshot">{% translate "Image" %}</label>
 <p>
     {% if object.details_image_url %}
     <a href="{{ object.details_image_url }}" target="_blank">
@@ -12,5 +14,5 @@
     {% endif %}
 </p>
 
-<label for="timerboardNotes">Notes</label>
+<label for="timerboardNotes">{% translate "Notes" %}</label>
 <textarea id="timerboardNotes" class="form-control" rows="3" readonly>{{ object.details_notes }}</textarea>
