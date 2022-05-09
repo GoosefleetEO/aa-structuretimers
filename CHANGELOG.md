@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+### Fixed
+
+- Highlight in navigation
+
+
 ## [1.4.0] - 2022-05-07
 
 ### Added
