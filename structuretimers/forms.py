@@ -21,75 +21,26 @@ from .models import Timer
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
+DATETIME_FORMAT = "%Y-%m-%d %H:%M"
+
 
 class TimerForm(forms.ModelForm):
-    class Meta:
-        model = Timer
-        fields = (
-            "eve_solar_system_2",
-            "location_details",
-            "structure_type_2",
-            "timer_type",
-            "structure_name",
-            "owner_name",
-            "objective",
-            "days_left",
-            "hours_left",
-            "minutes_left",
-            "details_image_url",
-            "details_notes",
-            "visibility",
-            "is_opsec",
-            "is_important",
-        )
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)
-        if "instance" in kwargs and kwargs["instance"] is not None:
-            # Do conversion from db datetime to days/hours/minutes
-            # for appropriate fields
-            my_instance = kwargs["instance"]
-            current_time = now()
-            if my_instance.date:
-                td = my_instance.date - current_time
-                initial = kwargs.pop("initial", dict())
-                if "days_left" not in initial:
-                    initial.update({"days_left": td.days})
-                if "hours_left" not in initial:
-                    initial.update({"hours_left": td.seconds // 3600})
-                if "minutes_left" not in initial:
-                    initial.update({"minutes_left": td.seconds // 60 % 60})
-                kwargs.update({"initial": initial})
-            self.is_new = False
-        else:
-            my_instance = None
-            self.is_new = True
-
-        super().__init__(*args, **kwargs)
-
-        if my_instance:
-            self.fields["eve_solar_system_2"].widget.choices = [
-                (
-                    str(my_instance.eve_solar_system_id),
-                    my_instance.eve_solar_system.name,
-                )
-            ]
-            self.fields["structure_type_2"].widget.choices = [
-                (
-                    str(my_instance.structure_type_id),
-                    my_instance.structure_type.name,
-                )
-            ]
-
-    asterisk_html = '<i class="fas fa-asterisk"></i>'
+    ASTERISK_HTML = '<i class="fas fa-asterisk"></i>'
+    TIME_REMAINING_WIDGET_ATTRS = {
+        "class": "timer-time-remaining-field",
+    }
+    TIME_REMAINING_HELP_TEXT = _(
+        "This field is calculated from the current time. "
+        "Alternatively, you can enter the date above in the `Date` field."
+    )
     eve_solar_system_2 = forms.CharField(
         required=True,
-        label=_(format_html(f"Solar System {asterisk_html}")),
+        label=_(format_html(f"Solar System {ASTERISK_HTML}")),
         widget=forms.Select(attrs={"class": "select2-solar-systems"}),
     )
     structure_type_2 = forms.CharField(
         required=True,
-        label=_(format_html(f"Structure Type {asterisk_html}")),
+        label=_(format_html(f"Structure Type {ASTERISK_HTML}")),
         widget=forms.Select(attrs={"class": "select2-structure-types"}),
     )
     objective = forms.ChoiceField(
@@ -105,22 +56,86 @@ class TimerForm(forms.ModelForm):
         choices=Timer.Visibility.choices,
         widget=forms.Select(attrs={"class": "select2-render"}),
     )
+    date = forms.DateTimeField(
+        required=False,
+        label=_("Date"),
+        widget=forms.DateTimeInput(
+            attrs={"id": "timer-date-field"}, format=DATETIME_FORMAT
+        ),
+        # input_formats=[DATETIME_FORMAT],
+        help_text=_(
+            "The date when the timer happens. "
+            "Alternatively, you can enter the remaining time below."
+        ),
+    )
     days_left = forms.IntegerField(
         required=False,
         label=_("Days Remaining"),
         validators=[MinValueValidator(0)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
     )
     hours_left = forms.IntegerField(
         required=False,
         label=_("Hours Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(23)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
     )
     minutes_left = forms.IntegerField(
         required=False,
         label=_("Minutes Remaining"),
         validators=[MinValueValidator(0), MaxValueValidator(59)],
+        widget=forms.NumberInput(attrs=TIME_REMAINING_WIDGET_ATTRS),
+        help_text=TIME_REMAINING_HELP_TEXT,
     )
-    details_image_url = forms.URLField(required=False)
+    details_image_url = forms.URLField(
+        required=False,
+        help_text=_("Paste a public URL to an image into this field."),
+    )
+
+    class Meta:
+        model = Timer
+        fields = (
+            "eve_solar_system_2",
+            "location_details",
+            "structure_type_2",
+            "timer_type",
+            "structure_name",
+            "owner_name",
+            "objective",
+            "date",
+            "days_left",
+            "hours_left",
+            "minutes_left",
+            "details_image_url",
+            "details_notes",
+            "visibility",
+            "is_opsec",
+            "is_important",
+        )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        if "instance" in kwargs and kwargs["instance"] is not None:
+            my_instance = kwargs["instance"]
+            self.is_new = False
+        else:
+            my_instance = None
+            self.is_new = True
+
+        super().__init__(*args, **kwargs)
+
+        if my_instance:
+            self.fields["eve_solar_system_2"].widget.choices = [
+                (
+                    str(my_instance.eve_solar_system_id),
+                    my_instance.eve_solar_system.name,
+                )
+            ]
+            self.fields["structure_type_2"].widget.choices = [
+                (str(my_instance.structure_type_id), my_instance.structure_type.name)
+            ]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -133,10 +148,7 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["eve_solar_system_2"].widget.choices = [
-                    (
-                        str(solar_system.id),
-                        solar_system.name,
-                    )
+                    (str(solar_system.id), solar_system.name)
                 ]
 
         if cleaned_data.get("structure_type_2"):
@@ -148,10 +160,7 @@ class TimerForm(forms.ModelForm):
                 pass
             else:
                 self.fields["structure_type_2"].widget.choices = [
-                    (
-                        str(structure_type.id),
-                        structure_type.name,
-                    )
+                    (str(structure_type.id), structure_type.name)
                 ]
                 if (
                     cleaned_data.get("timer_type") == Timer.Type.MOONMINING
@@ -206,6 +215,7 @@ class TimerForm(forms.ModelForm):
         days_left = cleaned_data.get("days_left")
         hours_left = cleaned_data.get("hours_left")
         minutes_left = cleaned_data.get("minutes_left")
+        date = cleaned_data.get("date")
         if any([days_left, hours_left, minutes_left]):
             if days_left is None:
                 days_left = cleaned_data["days_left"] = 0
@@ -220,10 +230,14 @@ class TimerForm(forms.ModelForm):
             and days_left is None
             and hours_left is None
             and minutes_left is None
+            and date is None
         ):
             cleaned_data["timer_type"] = Timer.Type.PRELIMINARY.value
         if timer_type == Timer.Type.PRELIMINARY and (
-            days_left is not None or hours_left is not None or minutes_left is not None
+            days_left is not None
+            or hours_left is not None
+            or minutes_left is not None
+            or date is not None
         ):
             cleaned_data["timer_type"] = Timer.Type.NONE.value
 
@@ -262,7 +276,10 @@ class TimerForm(forms.ModelForm):
         days_left = self.cleaned_data.get("days_left")
         hours_left = self.cleaned_data.get("hours_left")
         minutes_left = self.cleaned_data.get("minutes_left")
-        if (
+        date = self.cleaned_data.get("date")
+        if date is not None:
+            timer.date = date
+        elif (
             days_left is not None
             and hours_left is not None
             and minutes_left is not None
