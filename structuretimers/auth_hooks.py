@@ -16,7 +16,7 @@ class TimersMenuItem(MenuItemHook):
             _(__title__),
             "far fa-calendar-times fa-fw",
             "structuretimers:timer_list",
-            navactive=["structuretimers:timer_list"],
+            navactive=["structuretimers:"],
         )
 
     def render(self, request):
