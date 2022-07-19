@@ -43,7 +43,7 @@ setup(
     ],
     python_requires="~=3.7",
     install_requires=[
-        "allianceauth>=2.9",
+        "allianceauth>=2.15.1",
         "django-eveuniverse>=0.16",
         "redis-simple-mq>=0.4",
         "dhooks_lite>=0.6.1",
