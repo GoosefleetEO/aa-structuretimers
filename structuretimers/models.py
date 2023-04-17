@@ -132,7 +132,7 @@ class DiscordWebhook(models.Model):
         """Adds Discord message to queue for later sending
 
         Returns updated size of queue
-        Raises ValueError if mesage is incomplete
+        Raises ValueError if message is incomplete
         """
         if not content and not embeds:
             raise ValueError("Message must have content or embeds to be valid")
@@ -157,9 +157,9 @@ class DiscordWebhook(models.Model):
         return self._main_queue.enqueue(json.dumps(message, cls=JSONDateTimeEncoder))
 
     def send_queued_messages(self) -> int:
-        """sends all messages in the queue to this webhook
+        """Send all messages in the queue to this webhook
 
-        returns number of successfull sent messages
+        Return number of successful sent messages
 
         Messages that could not be sent are put back into the queue for later retry
         """
@@ -325,18 +325,18 @@ class Timer(models.Model):
         WH_SPACE = "WS", _("wh space")
 
         @classmethod
-        def from_eve_solar_system(cls, eve_solar_sytem: EveSolarSystem):
-            """Determin the space type of a solar system and return it."""
-            if eve_solar_sytem.is_high_sec:
+        def from_eve_solar_system(cls, eve_solar_system: EveSolarSystem):
+            """Determine the space type of a solar system and return it."""
+            if eve_solar_system.is_high_sec:
                 return cls.HIGH_SEC
-            if eve_solar_sytem.is_low_sec:
+            if eve_solar_system.is_low_sec:
                 return cls.LOW_SEC
-            if eve_solar_sytem.is_null_sec:
+            if eve_solar_system.is_null_sec:
                 return cls.NULL_SEC
-            if eve_solar_sytem.is_w_space:
+            if eve_solar_system.is_w_space:
                 return cls.WH_SPACE
             raise NotImplementedError(
-                f"System with unknown space type: {eve_solar_sytem}"
+                f"System with unknown space type: {eve_solar_system}"
             )
 
     date = models.DateTimeField(
@@ -992,7 +992,7 @@ class StagingSystem(models.Model):
         null=True,
         blank=True,
         related_name="+",
-    )  # TODO: Remove Nullable if possible, because it is causeing issues
+    )  # TODO: Remove Nullable if possible, because it is causing issues
     is_main = models.BooleanField(default=False)
 
     def __str__(self) -> str:

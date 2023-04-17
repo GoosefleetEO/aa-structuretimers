@@ -55,7 +55,7 @@ Thanks @colcrunch for your contribution!
 
 ### Changed
 
-- Some performace improvements for matching queries
+- Some performance improvements for matching queries
 
 ## [1.2.4] - 2022-03-18
 
@@ -91,7 +91,7 @@ Thanks @colcrunch for your contribution!
 ### Changed
 
 - Improved logic when creating or editing timers:
-  - When no date is specified, timers are automatically created as prelimiary.
+  - When no date is specified, timers are automatically created as preliminary.
   - When a partial date is entered, timers are create as normal timer and missing values are assumed to be zero. e.g. if you enter 5 for hours, then minutes and days are set to 0.
   - When you add a date to a preliminary date, it is upgrade to a normal (unspecified) timer.
 - Removed support for Python 3.6 / Django 3.1
@@ -125,7 +125,7 @@ Thanks @colcrunch for your contribution!
 ### Added
 
 - Shows distance in ly and jumps from staging systems for timers
-- Admins can define multple staging system and users can switch between them
+- Admins can define multiple staging system and users can switch between them
 - Users can copy existing timers to make it easier to create subsequent timers for the same structure (#20)
 - Turned off setting the avatar for Discord webhooks (#14)
 
@@ -172,7 +172,7 @@ Thanks @colcrunch for your contribution!
 
 ### Changed
 
-- Integration with codecov
+- Integration with Codecov
 - Pre-commit
 
 ### Fixed

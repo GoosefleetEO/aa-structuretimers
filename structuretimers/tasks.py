@@ -23,7 +23,7 @@ from .models import (
 )
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
-TASK_PRIO_HIGH = 4
+TASK_PRIORITY_HIGH = 4
 
 
 @shared_task(base=QueueOnce, acks_late=True)
@@ -94,7 +94,7 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
                 content=notification_rule.prepend_ping_text(content),
             )
             send_messages_for_webhook.apply_async(
-                args=[webhook.pk], priority=TASK_PRIO_HIGH
+                args=[webhook.pk], priority=TASK_PRIORITY_HIGH
             )
         else:
             logger.warning(
@@ -117,7 +117,7 @@ def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
             content=notification_rule.prepend_ping_text(content),
         )
         send_messages_for_webhook.apply_async(
-            args=[notification_rule.webhook.pk], priority=TASK_PRIO_HIGH
+            args=[notification_rule.webhook.pk], priority=TASK_PRIORITY_HIGH
         )
 
 
@@ -126,7 +126,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
     """Schedules notifications for this timer based on notification rules"""
     timer = Timer.objects.select_related_for_matching().get(pk=timer_pk)
     if not timer.date:
-        raise ValueError(f"Not supported for prelimiary timers: {timer}")
+        raise ValueError(f"Not supported for preliminary timers: {timer}")
     if timer.date > now():
         # trigger: newly created
         if is_new:
@@ -146,7 +146,7 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
                             "timer_pk": timer.pk,
                             "notification_rule_pk": rule.pk,
                         },
-                        priority=TASK_PRIO_HIGH,
+                        priority=TASK_PRIORITY_HIGH,
                     )
 
         # trigger: timer elapses soon
@@ -208,7 +208,7 @@ def _schedule_notification_for_timer(
     timer: Timer, notification_rule: NotificationRule
 ) -> ScheduledNotification:
     if timer.timer_type == Timer.Type.PRELIMINARY:
-        raise ValueError(f"Can not schedule prelimiary timers: {timer}")
+        raise ValueError(f"Can not schedule preliminary timers: {timer}")
     logger.info(
         "Scheduling fresh notification for timer #%d, rule #%d",
         timer.pk,
@@ -223,7 +223,7 @@ def _schedule_notification_for_timer(
     result = send_scheduled_notification.apply_async(
         kwargs={"scheduled_notification_pk": scheduled_notification.pk},
         eta=timer.date - timedelta(minutes=notification_rule.scheduled_time),
-        priority=TASK_PRIO_HIGH,
+        priority=TASK_PRIORITY_HIGH,
     )
     scheduled_notification.celery_task_id = result.task_id
     scheduled_notification.save()
@@ -311,7 +311,7 @@ def calc_timer_distances_for_all_staging_systems(
                 "staging_system_pk": staging_system_pk,
                 "force_update": force_update,
             },
-            priority=TASK_PRIO_HIGH,
+            priority=TASK_PRIORITY_HIGH,
         )
 
 
