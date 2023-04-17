@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.5.0] - tbd
 
+### Added
+
+- Localization
+
 ### Changes
 
 - Minimum Python version increased to Python 3.8
