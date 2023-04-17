@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-18 00:54+0200\n"
+"POT-Creation-Date: 2023-04-18 01:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -252,6 +252,10 @@ msgstr ""
 
 #: templates/structuretimers/timer_confirm_delete.html:16
 msgid "Are you sure you want to delete timer this timer?"
+msgstr ""
+
+#: templates/structuretimers/timer_confirm_delete.html:21
+msgid "Delete"
 msgstr ""
 
 #: templates/structuretimers/timer_create_form.html:5
