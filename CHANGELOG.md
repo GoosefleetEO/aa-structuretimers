@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.5.0] - tbd
+
+### Changes
+
+- Dropped support for Python 3.7
+- Added support for Python 3.10
+
 ## [1.4.2] - 2022-07-19
 
 ### Changed
