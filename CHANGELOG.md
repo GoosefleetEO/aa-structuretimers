@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changes
 
-- Dropped support for Python 3.7
+- Minimum Python version increased to Python 3.8
 - Added support for Python 3.10
+- Switch to AA 3 and drop support for AA 2
 
 ## [1.4.2] - 2022-07-19
 

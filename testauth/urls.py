@@ -1,9 +1,10 @@
-from django.conf.urls import include, url
+from django.conf.urls import include
+from django.urls import re_path
 
 from allianceauth import urls
 
 urlpatterns = [
-    url(r"", include(urls)),
+    re_path(r"", include(urls)),
 ]
 
 handler500 = "allianceauth.views.Generic500Redirect"
