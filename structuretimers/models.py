@@ -655,7 +655,6 @@ class Timer(models.Model):
 
 
 class NotificationRule(models.Model):
-
     # Trigger choices
     class Trigger(models.TextChoices):
         NEW_TIMER_CREATED = "TC", _("New timer created")
