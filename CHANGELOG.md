@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
+## [1.5.1] - 2023-04-18
+
+### Fixed
+
+- Missing migration
+
 ## [1.5.0] - 2023-04-18
 
 ### Added
@@ -20,7 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Switch to AA 3 and drop support for AA 2
 - Move build process to PEP 621 / pyproject.toml / hatch
 
-### Fixes
+### Fixed
 
 - Do not send outdated notifications (#28)
 
