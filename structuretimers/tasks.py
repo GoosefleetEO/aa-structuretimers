@@ -28,7 +28,7 @@ TASK_PRIORITY_HIGH = 4
 
 @shared_task(base=QueueOnce, acks_late=True)
 def send_messages_for_webhook(webhook_pk: int) -> None:
-    """sends all currently queued messages for given webhook to Discord"""
+    """Send all currently queued messages for given webhook to Discord."""
     webhook = DiscordWebhook.objects.get(pk=webhook_pk)
     if not webhook.is_enabled:
         logger.info("Tracker %s: DiscordWebhook disabled - skipping sending", webhook)
@@ -40,7 +40,7 @@ def send_messages_for_webhook(webhook_pk: int) -> None:
 
 @shared_task(base=QueueOnce, bind=True, acks_late=True)
 def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
-    """Sends a scheduled notification for a timer based on a notification rule"""
+    """Send a scheduled notification for a timer based on a notification rule."""
     with transaction.atomic():
         try:
             scheduled_notification = (
@@ -68,17 +68,31 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
         )
         scheduled_notification.delete()
 
-    timer = scheduled_notification.timer
-    notification_rule = scheduled_notification.notification_rule
     if scheduled_notification.celery_task_id != self.request.id:
         logger.info(
             "Discarded outdated scheduled notification: %r", scheduled_notification
         )
         return
 
+    notification_rule = scheduled_notification.notification_rule
     if not notification_rule.is_enabled:
         logger.info(
             "Discarded scheduled notification based on disabled rule: %r",
+            scheduled_notification,
+        )
+        return
+
+    webhook = notification_rule.webhook
+    if not webhook.is_enabled:
+        logger.warning(
+            "Webhook not enabled for %r. Discarding.", scheduled_notification
+        )
+        return
+
+    timer = scheduled_notification.timer
+    if timer.date < now() or scheduled_notification.timer_date < now():  # fix issue #28
+        logger.warning(
+            "Discarding scheduled notification %r for outdated timer.",
             scheduled_notification,
         )
         return
@@ -88,13 +102,6 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
         timer,
         notification_rule,
     )
-    webhook = notification_rule.webhook
-    if not webhook.is_enabled:
-        logger.warning(
-            "Webhook not enabled for %r. Discarding.", scheduled_notification
-        )
-        return
-
     minutes = round((timer.date - now()).total_seconds() / 60)
     mod_text = "**important** " if timer.is_important else ""
     content = (
@@ -112,6 +119,7 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
 
 @shared_task
 def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
+    """Send notification about new timer."""
     timer = Timer.objects.get(pk=timer_pk)
     notification_rule = NotificationRule.objects.select_related("webhook").get(
         pk=notification_rule_pk
@@ -132,7 +140,7 @@ def notify_about_new_timer(timer_pk: int, notification_rule_pk: int) -> None:
 
 @shared_task(acks_late=True)
 def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> None:
-    """Schedules notifications for this timer based on notification rules"""
+    """Schedule notifications for this timer based on notification rules."""
     timer = Timer.objects.select_related_for_matching().get(pk=timer_pk)
     if not timer.date:
         raise ValueError(f"Not supported for preliminary timers: {timer}")
@@ -177,7 +185,8 @@ def schedule_notifications_for_timer(timer_pk: int, is_new: bool = False) -> Non
 
 @shared_task(acks_late=True)
 def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
-    """Schedules notifications for all timers confirming with this rule.
+    """Schedule notifications for all timers confirming with this rule.
+
     Will recreate all existing and still pending notifications
     """
     notification_rule = NotificationRule.objects.get(pk=notification_rule_pk)
@@ -206,6 +215,7 @@ def schedule_notifications_for_rule(notification_rule_pk: int) -> None:
 def _schedule_notification_for_timer(
     timer: Timer, notification_rule: NotificationRule
 ) -> ScheduledNotification:
+    """Schedule notification for a timer."""
     if timer.timer_type == Timer.Type.PRELIMINARY:
         raise ValueError(f"Can not schedule preliminary timers: {timer}")
     logger.info(
@@ -233,6 +243,7 @@ def _schedule_notification_for_timer(
 def _revoke_notification_for_timer(
     scheduled_notification: ScheduledNotification,
 ) -> None:
+    """Revoke notification for a timer."""
     logger.info(
         "Removing stale notification for timer #%d, rule #%d",
         scheduled_notification.timer.pk,
@@ -243,8 +254,8 @@ def _revoke_notification_for_timer(
 
 @shared_task
 def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
-    """send a test message to given webhook.
-    Optional inform user about result if user ok is given
+    """Send a test message to given webhook.
+    Optionally inform user about result if user ok is given
     """
     webhook = DiscordWebhook.objects.get(pk=webhook_pk)
     user = User.objects.get(pk=user_pk) if user_pk else None

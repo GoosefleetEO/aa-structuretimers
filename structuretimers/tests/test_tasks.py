@@ -354,6 +354,55 @@ class TestSendScheduledNotification(TransactionTestCase):
         # then
         self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
 
+    def test_should_discard_when_timer_is_outdated(
+        self, mock_send_messages_for_webhook
+    ):
+        # given
+        self.timer.date = now() - dt.timedelta(hours=1)
+        self.timer.save()
+        scheduled_notification = create_scheduled_notification(
+            timer=self.timer,
+            notification_rule=self.rule,
+            celery_task_id="my-id-123",
+            timer_date=now() + dt.timedelta(hours=1),
+            notification_date=now() + dt.timedelta(minutes=30),
+        )
+        mock_task = Mock(spec=Task)
+        mock_task.request.id = "my-id-123"
+        send_scheduled_notification_inner = (
+            send_scheduled_notification.__wrapped__.__func__
+        )
+        # when
+        send_scheduled_notification_inner(
+            mock_task, scheduled_notification_pk=scheduled_notification.pk
+        )
+        # then
+        self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
+
+    def test_should_discard_when_timer_date_is_outdated(
+        self, mock_send_messages_for_webhook
+    ):
+        # given
+        self.timer.save()
+        scheduled_notification = create_scheduled_notification(
+            timer=self.timer,
+            notification_rule=self.rule,
+            celery_task_id="my-id-123",
+            timer_date=now() - dt.timedelta(hours=1),
+            notification_date=now() + dt.timedelta(minutes=30),
+        )
+        mock_task = Mock(spec=Task)
+        mock_task.request.id = "my-id-123"
+        send_scheduled_notification_inner = (
+            send_scheduled_notification.__wrapped__.__func__
+        )
+        # when
+        send_scheduled_notification_inner(
+            mock_task, scheduled_notification_pk=scheduled_notification.pk
+        )
+        # then
+        self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
+
 
 @patch(MODULE_PATH + ".send_messages_for_webhook", spec=True)
 class TestSendNotificationForTimer(TestCaseBase):

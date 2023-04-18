@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for Python 3.10
 - Switch to AA 3 and drop support for AA 2
 
+### Fixes
+
+- Do not send outdated notifications (#28)
+
 ## [1.4.2] - 2022-07-19
 
 ### Changed
