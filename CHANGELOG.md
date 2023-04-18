@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Minimum Python version increased to Python 3.8
 - Added support for Python 3.10
 - Switch to AA 3 and drop support for AA 2
+- Move build process to PEP 621 / pyproject.toml / hatch
 
 ### Fixes
 
