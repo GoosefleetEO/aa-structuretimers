@@ -519,7 +519,7 @@ class TestSelect2Views(LoadTestDataMixin, TestCase):
         data = json_response_to_python(response)
         self.assertEqual(data, {"results": [{"id": 35832, "text": "Astrahus"}]})
 
-    def test_should_return_empty_struture_types_list(self):
+    def test_should_return_empty_structure_types_list(self):
         # given
         self.client.force_login(self.user_1)
         # when

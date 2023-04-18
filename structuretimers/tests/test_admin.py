@@ -5,8 +5,12 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django_webtest import WebTest
 
-from ..models import DiscordWebhook, NotificationRule, StagingSystem, Timer
-from .testdata.factory import create_staging_system
+from ..models import NotificationRule, StagingSystem, Timer
+from .testdata.factory import (
+    create_discord_webhook,
+    create_notification_rule,
+    create_staging_system,
+)
 from .testdata.fixtures import LoadTestDataMixin
 
 
@@ -15,33 +19,31 @@ class TestNotificationRuleChangeList(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
         cls.user = User.objects.create_superuser(
             "Bruce Wayne", "bruce@example.com", "password"
         )
 
     @patch("structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        NotificationRule.objects.create(
+        create_notification_rule(
             trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
-        NotificationRule.objects.create(
+        create_notification_rule(
             trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             require_timer_types=[Timer.Type.ARMOR],
             webhook=self.webhook,
         )
-        rule = NotificationRule.objects.create(
+        rule = create_notification_rule(
             trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             webhook=self.webhook,
         )
         rule.require_corporations.add(self.corporation_1)
-        NotificationRule.objects.create(
+        create_notification_rule(
             trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=NotificationRule.MINUTES_10,
             is_important=NotificationRule.Clause.EXCLUDED,
@@ -64,9 +66,7 @@ class TestNotificationRuleValidations(LoadTestDataMixin, WebTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
         cls.user = User.objects.create_superuser(
             "Bruce Wayne", "bruce@example.com", "password"
         )
