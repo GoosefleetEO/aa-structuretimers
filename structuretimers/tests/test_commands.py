@@ -10,7 +10,8 @@ from allianceauth.timerboard.models import Timer as AuthTimer
 from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
-from ..models import Timer
+from structuretimers.models import Timer
+
 from .testdata.factory import create_user
 from .testdata.fixtures import LoadTestDataMixin
 

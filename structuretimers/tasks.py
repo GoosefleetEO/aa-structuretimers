@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 
 from celery import shared_task
 
@@ -90,7 +91,11 @@ def send_scheduled_notification(self, scheduled_notification_pk: int) -> None:
         return
 
     timer = scheduled_notification.timer
-    if timer.date < now() or scheduled_notification.timer_date < now():  # fix issue #28
+    if (
+        not timer.date
+        or timer.date < now()
+        or scheduled_notification.timer_date < now()
+    ):  # fix issue #28
         logger.warning(
             "Discarding scheduled notification %r for outdated timer.",
             scheduled_notification,
@@ -218,6 +223,12 @@ def _schedule_notification_for_timer(
     """Schedule notification for a timer."""
     if timer.timer_type == Timer.Type.PRELIMINARY:
         raise ValueError(f"Can not schedule preliminary timers: {timer}")
+    if not timer.date:
+        raise ValueError(f"Timer has no date: {timer}")
+    if not notification_rule.scheduled_time:
+        raise ValueError(
+            f"Notification rule has no scheduled date: {notification_rule}"
+        )
     logger.info(
         "Scheduling fresh notification for timer #%d, rule #%d",
         timer.pk,
@@ -253,7 +264,9 @@ def _revoke_notification_for_timer(
 
 
 @shared_task
-def send_test_message_to_webhook(webhook_pk: int, user_pk: int = None) -> None:
+def send_test_message_to_webhook(
+    webhook_pk: int, user_pk: Optional[int] = None
+) -> None:
     """Send a test message to given webhook.
     Optionally inform user about result if user ok is given
     """

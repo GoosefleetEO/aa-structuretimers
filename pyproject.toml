@@ -29,7 +29,7 @@ classifiers = [
 dependencies = [
     "allianceauth-app-utils>=1.17.1",
     "allianceauth>=3",
-    "dhooks_lite>=0.6.1",
+    "dhooks_lite>=1.0.0",
     "django-eveuniverse>=0.16",
     "django-multiselectfield",
     "redis-simple-mq>=0.4",

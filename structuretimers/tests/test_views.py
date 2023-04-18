@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
@@ -12,7 +13,8 @@ from app_utils.testing import (
     json_response_to_python,
 )
 
-from ..models import Timer
+from structuretimers.models import Timer
+
 from .testdata.factory import create_staging_system, create_timer, create_user
 from .testdata.fixtures import LoadTestDataMixin
 from .utils import add_permission_to_user_by_name
@@ -149,7 +151,9 @@ class TestListViewWithSelectedStagingSystem(TestViewBase):
 
 
 class TestListData(TestViewBase):
-    def _get_timer_list_data(self, tab_name: str = "current", user: User = None):
+    def _get_timer_list_data(
+        self, tab_name: str = "current", user: Optional[User] = None
+    ):
         if not user:
             user = self.user_1
         self.client.force_login(user)
@@ -158,7 +162,7 @@ class TestListData(TestViewBase):
         )
 
     def _get_timer_list_data_ids(
-        self, tab_name: str = "current", user: User = None
+        self, tab_name: str = "current", user: Optional[User] = None
     ) -> set:
         response = self._get_timer_list_data(tab_name, user)
         self.assertEqual(response.status_code, 200)

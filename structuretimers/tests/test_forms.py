@@ -5,8 +5,9 @@ from requests.exceptions import HTTPError
 
 from app_utils.testing import NoSocketsTestCase
 
-from ..forms import TimerForm
-from ..models import Timer
+from structuretimers.forms import TimerForm
+from structuretimers.models import Timer
+
 from .testdata import test_image_filename
 from .testdata.factory import create_user
 from .testdata.fixtures import LoadTestDataMixin

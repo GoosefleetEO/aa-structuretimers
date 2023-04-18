@@ -5,7 +5,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django_webtest import WebTest
 
-from ..models import NotificationRule, StagingSystem, Timer
+from structuretimers.models import NotificationRule, StagingSystem, Timer
+
 from .testdata.factory import (
     create_discord_webhook,
     create_notification_rule,

@@ -6,8 +6,9 @@ from django.urls import reverse
 from django.utils.timezone import now
 from django_webtest import WebTest
 
-from ..models import ScheduledNotification, Timer
-from ..tasks import send_test_message_to_webhook
+from structuretimers.models import ScheduledNotification, Timer
+from structuretimers.tasks import send_test_message_to_webhook
+
 from .testdata.factory import (
     create_discord_webhook,
     create_notification_rule,
