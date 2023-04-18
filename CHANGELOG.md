@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unpublished
 
-## [1.5.0] - tbd
+## [1.5.0] - 2023-04-18
 
 ### Added
 
-- Localization
+- Localization in templates and code to enable translations in a future release
 
 ### Changes
 
