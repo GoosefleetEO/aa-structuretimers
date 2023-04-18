@@ -15,16 +15,17 @@ from allianceauth.eveonline.models import EveAllianceInfo, EveCorporationInfo
 from app_utils.json import JSONDateTimeDecoder
 from app_utils.testing import NoSocketsTestCase
 
-from .. import __title__
-from ..models import (
-    DiscordWebhook,
+from structuretimers import __title__
+from structuretimers.models import (
     NotificationRule,
     ScheduledNotification,
     StagingSystem,
     Timer,
     _task_calc_staging_system,
 )
+
 from .testdata.factory import (
+    create_discord_webhook,
     create_distances_from_staging,
     create_notification_rule,
     create_scheduled_notification,
@@ -118,9 +119,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
 
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
     def test_schedule_notifications_for_new_timers(self, mock_schedule_notifications):
@@ -217,9 +216,7 @@ class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
 
     @patch(MODULE_PATH + "._task_calc_timer_distances_for_all_staging_systems")
     def test_should_calc_distances_when_created(self, mock_calc_distances):
@@ -409,9 +406,7 @@ class TestTimerSendNotification(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
 
     @patch(MODULE_PATH + ".STRUCTURETIMER_NOTIFICATION_SET_AVATAR", True)
     def test_should_send_minimal_notification(self, mock_send_message):
@@ -511,7 +506,7 @@ class TestTimerQuerySet(LoadTestDataMixin, NoSocketsTestCase):
             objective=Timer.Objective.FRIENDLY,
         )
         self.timer_qs = Timer.objects.all()
-        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
+        self.webhook = create_discord_webhook()
 
     def test_conforms_with_notification_rule_1(self):
         """
@@ -566,9 +561,7 @@ class TestTimerQuerySet(LoadTestDataMixin, NoSocketsTestCase):
 
 class TestDiscordWebhook(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        self.webhook = create_discord_webhook(name="Dummy")
 
     def test_str(self):
         self.assertEqual(str(self.webhook), "Dummy")
@@ -619,14 +612,12 @@ class TestDiscordWebhook(LoadTestDataMixin, TestCase):
 @patch(MODULE_PATH + ".DiscordWebhook.send_message_to_webhook", spec=True)
 class TestDiscordWebhookSendQueuedMessages(TestCase):
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        self.webhook = create_discord_webhook()
         self.webhook.clear_queue()
 
     def test_one_message(self, mock_send_message_to_webhook):
         """
-        when one mesage in queue
+        when one message in queue
         then send it and returns 1
         """
         mock_send_message_to_webhook.return_value = True
@@ -686,9 +677,7 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 @patch(MODULE_PATH + ".logger", spec=True)
 class TestDiscordWebhookSendMessageToWebhook(NoSocketsTestCase):
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        self.webhook = create_discord_webhook()
 
     def test_send_normal(self, mock_logger, mock_execute):
         """
@@ -984,7 +973,7 @@ class TestNotificationRuleIsMatchingTimer(LoadTestDataMixin, NoSocketsTestCase):
 class TestNotificationRuleQuerySet(LoadTestDataMixin, NoSocketsTestCase):
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(name="Dummy", url="my-url")
+        self.webhook = create_discord_webhook()
         self.rule_1 = create_notification_rule(
             trigger=NotificationRule.Trigger.SCHEDULED_TIME_REACHED,
             scheduled_time=10,
@@ -1067,7 +1056,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(name="dummy", url="dummy-url")
+        cls.webhook = create_discord_webhook(name="dummy", url="dummy-url")
 
     @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", True)
     def test_scheduled_normal(self, mock_schedule_notifications):
@@ -1131,7 +1120,7 @@ class TestNotificationRuleSave(LoadTestDataMixin, NoSocketsTestCase):
             eve_solar_system=self.system_abune,
             structure_type=self.type_astrahus,
         )
-        obj = ScheduledNotification.objects.create(
+        obj = create_scheduled_notification(
             timer=timer,
             notification_rule=rule,
             timer_date=timer.date,
