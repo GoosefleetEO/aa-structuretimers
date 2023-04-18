@@ -1,6 +1,6 @@
 import json
 from time import sleep
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import dhooks_lite
 from multiselectfield import MultiSelectField
@@ -123,16 +123,16 @@ class DiscordWebhook(models.Model):
 
     def send_message(
         self,
-        content: str = None,
-        embeds: List[dhooks_lite.Embed] = None,
-        tts: bool = None,
-        username: str = None,
-        avatar_url: str = None,
+        content: Optional[str] = None,
+        embeds: Optional[List[dhooks_lite.Embed]] = None,
+        tts: Optional[bool] = None,
+        username: Optional[str] = None,
+        avatar_url: Optional[str] = None,
     ) -> int:
         """Adds Discord message to queue for later sending
 
         Returns updated size of queue
-        Raises ValueError if mesage is incomplete
+        Raises ValueError if message is incomplete
         """
         if not content and not embeds:
             raise ValueError("Message must have content or embeds to be valid")
@@ -157,9 +157,9 @@ class DiscordWebhook(models.Model):
         return self._main_queue.enqueue(json.dumps(message, cls=JSONDateTimeEncoder))
 
     def send_queued_messages(self) -> int:
-        """sends all messages in the queue to this webhook
+        """Send all messages in the queue to this webhook
 
-        returns number of successfull sent messages
+        Return number of successful sent messages
 
         Messages that could not be sent are put back into the queue for later retry
         """
@@ -213,7 +213,7 @@ class DiscordWebhook(models.Model):
         if message.get("embeds"):
             embeds = [
                 dhooks_lite.Embed.from_dict(embed_dict)
-                for embed_dict in message.get("embeds")
+                for embed_dict in message.get("embeds", [])
             ]
         else:
             embeds = None
@@ -319,24 +319,27 @@ class Timer(models.Model):
         CORPORATION = "CO", _("Corporation only")
 
     class SpaceType(models.TextChoices):
+        UNDEFINED = "UN", _("undefined")
         HIGH_SEC = "HS", _("highsec")
         LOW_SEC = "LS", _("lowsec")
         NULL_SEC = "NS", _("nullsec")
         WH_SPACE = "WS", _("wh space")
 
         @classmethod
-        def from_eve_solar_system(cls, eve_solar_sytem: EveSolarSystem):
-            """Determin the space type of a solar system and return it."""
-            if eve_solar_sytem.is_high_sec:
+        def from_eve_solar_system(cls, eve_solar_system: Optional[EveSolarSystem]):
+            """Determine the space type of a solar system and return it."""
+            if not eve_solar_system:
+                return cls.UNDEFINED
+            if eve_solar_system.is_high_sec:
                 return cls.HIGH_SEC
-            if eve_solar_sytem.is_low_sec:
+            if eve_solar_system.is_low_sec:
                 return cls.LOW_SEC
-            if eve_solar_sytem.is_null_sec:
+            if eve_solar_system.is_null_sec:
                 return cls.NULL_SEC
-            if eve_solar_sytem.is_w_space:
+            if eve_solar_system.is_w_space:
                 return cls.WH_SPACE
             raise NotImplementedError(
-                f"System with unknown space type: {eve_solar_sytem}"
+                f"System with unknown space type: {eve_solar_system}"
             )
 
     date = models.DateTimeField(
@@ -518,7 +521,7 @@ class Timer(models.Model):
         return "{}{} in {}{}".format(
             self.structure_type.name,
             f' "{self.structure_name}"' if self.structure_name else "",
-            self.eve_solar_system.name,
+            self.eve_solar_system.name if self.eve_solar_system else "",
             f" near {self.location_details}" if self.location_details else "",
         )
 
@@ -526,7 +529,7 @@ class Timer(models.Model):
     def space_type(self) -> "SpaceType":
         return self.SpaceType.from_eve_solar_system(self.eve_solar_system)
 
-    def user_can_edit(self, user: user) -> bool:
+    def user_can_edit(self, user: User) -> bool:
         """Checks if the given user can edit this timer. Returns True or False"""
         return user.has_perm("structuretimers.manage_timer") or (
             self.user == user and user.has_perm("structuretimers.create_timer")
@@ -601,10 +604,12 @@ class Timer(models.Model):
             label_type = "default"
         return label_type
 
-    def send_notification(self, webhook: DiscordWebhook, content: str = None) -> None:
+    def send_notification(
+        self, webhook: DiscordWebhook, content: Optional[str] = None
+    ) -> None:
         """Sends notification related to this timer to given webhook."""
         structure_type_name = self.structure_type.name
-        solar_system_name = self.eve_solar_system.name
+        solar_system_name = self.eve_solar_system.name if self.eve_solar_system else ""
         title = f"{structure_type_name} in {solar_system_name}"
         if self.structure_name:
             structure_name_text = f'**{structure_type_name}** "{self.structure_name}"'
@@ -612,17 +617,22 @@ class Timer(models.Model):
             article = "an" if structure_type_name[0:1].lower() in "aeiou" else "a"
             structure_name_text = f"{article} **{structure_type_name}**"
 
-        region_name = self.eve_solar_system.eve_constellation.eve_region.name
+        region_name = (
+            self.eve_solar_system.eve_constellation.eve_region.name
+            if self.eve_solar_system
+            else ""
+        )
         solar_system_link = webhook.create_discord_link(
             name=solar_system_name, url=dotlan.solar_system_url(solar_system_name)
         )
         solar_system_text = f"{solar_system_link} ({region_name})"
         near_text = f" near {self.location_details}" if self.location_details else ""
         owned_text = f" owned by **{self.owner_name}**" if self.owner_name else ""
+        elapse_at = self.date.strftime(DATETIME_FORMAT) if self.date else "?"
         description = (
             f"The **{self.get_timer_type_display()}** timer for "
             f"{structure_name_text} in {solar_system_text}{near_text}{owned_text} "
-            f"will elapse at **{self.date.strftime(DATETIME_FORMAT)}**. "
+            f"will elapse at **{elapse_at}**. "
             f"Our stance is: **{self.get_objective_display()}**."
         )
         structure_icon_url = self.structure_type.icon_url(size=128)
@@ -655,7 +665,6 @@ class Timer(models.Model):
 
 
 class NotificationRule(models.Model):
-
     # Trigger choices
     class Trigger(models.TextChoices):
         NEW_TIMER_CREATED = "TC", _("New timer created")
@@ -921,13 +930,13 @@ class NotificationRule(models.Model):
         if is_matching and self.exclude_alliances.exists():
             is_matching = timer.eve_alliance not in self.exclude_alliances.all()
 
-        if is_matching and self.require_regions.exists():
+        if is_matching and timer.eve_solar_system and self.require_regions.exists():
             is_matching = (
                 timer.eve_solar_system.eve_constellation.eve_region
                 in self.require_regions.all()
             )
 
-        if is_matching and self.exclude_regions.exists():
+        if is_matching and timer.eve_solar_system and self.exclude_regions.exists():
             is_matching = (
                 timer.eve_solar_system.eve_constellation.eve_region
                 not in self.exclude_regions.all()
@@ -993,7 +1002,7 @@ class StagingSystem(models.Model):
         null=True,
         blank=True,
         related_name="+",
-    )  # TODO: Remove Nullable if possible, because it is causeing issues
+    )  # TODO: Remove Nullable if possible, because it is causing issues
     is_main = models.BooleanField(default=False)
 
     def __str__(self) -> str:

@@ -6,12 +6,17 @@ help:
 
 makemessages:
 	cd $(package) && \
-	django-admin makemessages -l en --ignore 'build/*' && \
-	django-admin makemessages -l de --ignore 'build/*' && \
-	django-admin makemessages -l es --ignore 'build/*' && \
-	django-admin makemessages -l ko --ignore 'build/*' && \
-	django-admin makemessages -l ru --ignore 'build/*' && \
-	django-admin makemessages -l zh_Hans --ignore 'build/*'
+	django-admin makemessages \
+		-l de \
+		-l es \
+		-l fr_FR \
+		-l it_IT \
+		-l ja \
+		-l ko_KR \
+		-l ru \
+		-l zh_Hans \
+		--keep-pot \
+		--ignore 'build/*'
 
 tx_push:
 	tx push --source
@@ -31,20 +36,11 @@ compilemessages:
 coverage:
 	coverage run ../myauth/manage.py test $(package).tests --keepdb --failfast && coverage html && coverage report -m
 
-test:
-	# runs a full test incl. re-creating of the test DB
-	python ../myauth/manage.py test $(package) --failfast --debug-mode -v 2
-
 pylint:
 	pylint --load-plugins pylint_django $(package)
 
 check_complexity:
 	flake8 $(package) --max-complexity=10
-
-nuke_testdb:
-	# This will delete the current test database
-	# very userful after large changes to the models
-	sudo mysql -u root -p -e "drop database test_aa_dev_4;"
 
 flake8:
 	flake8 $(package) --count

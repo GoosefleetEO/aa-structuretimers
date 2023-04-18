@@ -215,7 +215,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
             return None
         return obj.get_scheduled_time_display()
 
-    def _timer_clauses(self, obj) -> list:
+    def _timer_clauses(self, obj) -> str:
         clauses = list()
         for field, func, choices in [
             ("require_timer_types", self._add_to_clauses_1, Timer.Type.choices),
@@ -245,7 +245,7 @@ class NotificationRuleAdmin(admin.ModelAdmin):
         ]:
             func(clauses, obj, field, choices)
 
-        return mark_safe("<br>".join(clauses)) if clauses else None
+        return mark_safe("<br>".join(clauses)) if clauses else ""
 
     def _add_to_clauses_1(self, clauses, obj, field, choices):
         if getattr(obj, field):

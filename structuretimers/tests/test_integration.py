@@ -6,11 +6,15 @@ from django.urls import reverse
 from django.utils.timezone import now
 from django_webtest import WebTest
 
-from allianceauth.tests.auth_utils import AuthUtils
+from structuretimers.models import ScheduledNotification, Timer
+from structuretimers.tasks import send_test_message_to_webhook
 
-from ..models import DiscordWebhook, ScheduledNotification, Timer
-from ..tasks import send_test_message_to_webhook
-from .testdata.factory import create_notification_rule, create_timer, create_user
+from .testdata.factory import (
+    create_discord_webhook,
+    create_notification_rule,
+    create_timer,
+    create_user,
+)
 from .testdata.fixtures import LoadTestDataMixin
 from .utils import add_permission_to_user_by_name
 
@@ -345,7 +349,7 @@ class TestUI(LoadTestDataMixin, WebTest):
 @patch(MODELS_PATH+ ".dhooks_lite.Webhook.execute")
 class TestSendNotifications(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
+        self.webhook = create_discord_webhook(
             name="Dummy", url="http://www.example.com"
         )
         self.rule = NotificationRule.objects.create(minutes=NotificationRule.MINUTES_0)
@@ -369,10 +373,8 @@ class TestSendNotifications(LoadTestDataMixin, TestCase):
 @patch(MODELS_PATH + ".dhooks_lite.Webhook.execute", spec=True)
 class TestTestMessageToWebhook(LoadTestDataMixin, TestCase):
     def setUp(self) -> None:
-        self.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
-        self.user = AuthUtils.create_user("John Doe")
+        self.webhook = create_discord_webhook()
+        self.user = create_user(self.character_1)
 
     def test_without_user(self, mock_execute, mock_notify):
         send_test_message_to_webhook.delay(webhook_pk=self.webhook.pk)
@@ -393,9 +395,7 @@ class TestTimerSave(LoadTestDataMixin, TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.webhook = DiscordWebhook.objects.create(
-            name="Dummy", url="http://www.example.com"
-        )
+        cls.webhook = create_discord_webhook()
 
     def test_schedule_notifications_for_new_timers_2(self):
         # when

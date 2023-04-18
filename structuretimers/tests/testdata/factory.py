@@ -95,7 +95,7 @@ def create_staging_system(light_years=None, jumps=None, **kwargs):
         return staging_system
 
 
-def create_discord_webhook(*args, **kwargs):
+def create_discord_webhook(**kwargs):
     if "name" not in kwargs:
         while True:
             name = f"dummy{random_string(8)}"
@@ -104,10 +104,10 @@ def create_discord_webhook(*args, **kwargs):
         kwargs["name"] = name
     if "url" not in kwargs:
         kwargs["url"] = f"https://www.example.com/{kwargs['name']}"
-    return DiscordWebhook.objects.create(*args, **kwargs)
+    return DiscordWebhook.objects.create(**kwargs)
 
 
-def create_notification_rule(schedule_notification=False, *args, **kwargs):
+def create_notification_rule(schedule_notification=False, **kwargs):
     if "webhook" not in kwargs:
         kwargs["webhook"] = create_discord_webhook()
     if "trigger" not in kwargs:
@@ -118,14 +118,14 @@ def create_notification_rule(schedule_notification=False, *args, **kwargs):
         "structuretimers.models.STRUCTURETIMERS_NOTIFICATIONS_ENABLED",
         schedule_notification,
     ):
-        return NotificationRule.objects.create(*args, **kwargs)
+        return NotificationRule.objects.create(**kwargs)
 
 
-def create_scheduled_notification(*args, **kwargs):
+def create_scheduled_notification(**kwargs):
     if "timer_date" not in kwargs:
         kwargs["timer_date"] = now() + dt.timedelta(hours=1)
     if "notification_date" not in kwargs:
         kwargs["notification_date"] = now() + dt.timedelta(minutes=45)
     if "celery_task_id" not in kwargs:
         kwargs["celery_task_id"] = random_string(8)
-    return ScheduledNotification.objects.create(*args, **kwargs)
+    return ScheduledNotification.objects.create(**kwargs)
