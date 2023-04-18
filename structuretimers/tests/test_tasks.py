@@ -7,15 +7,23 @@ from django.test import TestCase, TransactionTestCase
 from django.utils.timezone import now
 from eveuniverse.models import EveSolarSystem, EveType
 
-from ..models import DiscordWebhook, NotificationRule, ScheduledNotification, Timer
-from ..tasks import (
+from structuretimers.models import (
+    DiscordWebhook,
+    NotificationRule,
+    ScheduledNotification,
+    Timer,
+)
+from structuretimers.tasks import (
+    calc_timer_distances_for_all_staging_systems,
+    housekeeping,
     notify_about_new_timer,
     schedule_notifications_for_rule,
     schedule_notifications_for_timer,
     send_messages_for_webhook,
     send_scheduled_notification,
 )
-from .testdata.factory import create_timer
+
+from .testdata.factory import create_staging_system, create_timer
 from .testdata.fixtures import LoadTestDataMixin
 from .testdata.load_eveuniverse import load_eveuniverse
 
@@ -292,6 +300,20 @@ class TestSendScheduledNotification(TransactionTestCase):
         )
         self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
 
+    def test_should_ignore_when_notification_was_deleted(
+        self, mock_send_messages_for_webhook
+    ):
+        # given
+        mock_task = Mock(spec=Task)
+        mock_task.request.id = "my-id-123"
+        send_scheduled_notification_inner = (
+            send_scheduled_notification.__wrapped__.__func__
+        )
+        # when
+        send_scheduled_notification_inner(mock_task, scheduled_notification_pk=666)
+        # then
+        self.assertFalse(mock_send_messages_for_webhook.apply_async.called)
+
 
 @patch(MODULE_PATH + ".send_messages_for_webhook", spec=True)
 class TestSendNotificationForTimer(TestCaseBase):
@@ -324,3 +346,36 @@ class TestSendNotificationForTimer(TestCaseBase):
         self.assertTrue(mock_send_messages_for_webhook.apply_async.called)
         _, kwargs = mock_send_messages_for_webhook.apply_async.call_args
         self.assertListEqual(kwargs["args"], [self.webhook.pk])
+
+
+@patch(MODULE_PATH + ".Timer.objects.delete_obsolete", spec=True)
+class TestHousekeeping(TestCase):
+    def test_should_run_housekeeping(self, mock_delete_obsolete):
+        # given
+        mock_delete_obsolete.return_value = 1
+        # when
+        housekeeping()
+        # then
+        self.assertTrue(mock_delete_obsolete.called)
+
+
+@patch(MODULE_PATH + ".calc_timer_distances_for_staging_system", spec=True)
+class TestTimerDistancesForAllStagingSystems(TestCase):
+    def test_should_run_housekeeping(
+        self, mock_calc_timer_distances_for_staging_system
+    ):
+        # given
+        load_eveuniverse()
+        timer = create_timer(
+            structure_name="Test_1",
+            eve_solar_system=EveSolarSystem.objects.get(name="Abune"),
+            structure_type=EveType.objects.get(name="Astrahus"),
+            date=now() + timedelta(minutes=30),
+        )
+        create_staging_system(light_years=10)
+        # when
+        calc_timer_distances_for_all_staging_systems(timer.pk)
+        # then
+        self.assertEqual(
+            mock_calc_timer_distances_for_staging_system.apply_async.call_count, 1
+        )
