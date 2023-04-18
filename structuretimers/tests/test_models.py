@@ -34,6 +34,7 @@ from .testdata.factory import (
     create_user,
 )
 from .testdata.fixtures import LoadTestDataMixin
+from .testdata.load_eveuniverse import load_eveuniverse
 from .utils import add_permission_to_user_by_name
 
 MODULE_PATH = "structuretimers.models"
@@ -191,7 +192,7 @@ class TestTimerSaveXScheduleNotifications(LoadTestDataMixin, NoSocketsTestCase):
         self.assertFalse(mock_schedule_notifications.called)
 
     @patch(MODULE_PATH + "._task_schedule_notifications_for_timer")
-    def test_remove_scheduled_notifications_when_timer_changed_to_prelimary(
+    def test_remove_scheduled_notifications_when_timer_changed_to_preliminary(
         self, mock_schedule_notifications
     ):
         # given
@@ -260,6 +261,45 @@ class TestTimerSaveXCalcDistances(LoadTestDataMixin, NoSocketsTestCase):
         timer.save()
         # then
         self.assertFalse(mock_calc_distances.called)
+
+
+class TestTimerSpaceType(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        load_eveuniverse()
+
+    def test_can_detect_high_sec(self):
+        # when
+        result = Timer.SpaceType.from_eve_solar_system(
+            EveSolarSystem.objects.get(name="Jita")
+        )
+        # then
+        self.assertEqual(result, Timer.SpaceType.HIGH_SEC)
+
+    def test_can_detect_low_sec(self):
+        # when
+        result = Timer.SpaceType.from_eve_solar_system(
+            EveSolarSystem.objects.get(name="Abune")
+        )
+        # then
+        self.assertEqual(result, Timer.SpaceType.LOW_SEC)
+
+    def test_can_detect_null_sec(self):
+        # when
+        result = Timer.SpaceType.from_eve_solar_system(
+            EveSolarSystem.objects.get(name="HED-GP")
+        )
+        # then
+        self.assertEqual(result, Timer.SpaceType.NULL_SEC)
+
+    def test_can_detect_w_space(self):
+        # when
+        result = Timer.SpaceType.from_eve_solar_system(
+            EveSolarSystem.objects.get(name="J151645")
+        )
+        # then
+        self.assertEqual(result, Timer.SpaceType.WH_SPACE)
 
 
 @patch(MODULE_PATH + ".STRUCTURETIMERS_NOTIFICATIONS_ENABLED", False)
@@ -631,7 +671,7 @@ class TestDiscordWebhookSendQueuedMessages(TestCase):
 
     def test_three_message(self, mock_send_message_to_webhook):
         """
-        when three mesages in queue
+        when three messages in queue
         then sends them and returns 3
         """
         mock_send_message_to_webhook.return_value = True

@@ -8,6 +8,22 @@
     ],
     "EveConstellation": [
         {
+            "eve_region_id": 10000002,
+            "id": 20000020,
+            "name": "Kimotoro",
+            "position_x": -1.3499640046818544e+17,
+            "position_y": 6.499945263229326e+16,
+            "position_z": 1.0332561731752134e+17
+        },
+        {
+            "eve_region_id": 10000014,
+            "id": 20000169,
+            "name": "UX3-N2",
+            "position_x": -8.144235531686658e+16,
+            "position_y": 8631923480121213.0,
+            "position_z": -2.142002604277861e+17
+        },
+        {
             "eve_region_id": 10000064,
             "id": 20000729,
             "name": "Jeon",
@@ -22,6 +38,14 @@
             "position_x": -2.2268706803473363e+17,
             "position_y": 1.0836835134649451e+17,
             "position_z": 1.3602959608230848e+17
+        },
+        {
+            "eve_region_id": 11000014,
+            "id": 21000141,
+            "name": "C-C00141",
+            "position_x": 7.893287292990094e+18,
+            "position_y": 1.816682854515408e+16,
+            "position_z": -9.290998634713e+18
         }
     ],
     "EveGroup": [
@@ -46,6 +70,16 @@
     ],
     "EveRegion": [
         {
+            "description": "\"The greater the State becomes, the greater humanity under it flourishes.\"",
+            "id": 10000002,
+            "name": "The Forge"
+        },
+        {
+            "description": "Catch has long been a strategically important region. During the initial expansion into the rim territories, it linked the Khanid Kingdom, Sansha's Nation and the Angel Cartel to one another, and through its connections to Providence was given considerable status as the \"Southern Gateway\" by the Amarr Empire. Unlike regions such as Pure Blind, however, its importance did not fade with the dawn of the capsuleer era, as its branching links east and west ensured continued relevance. As a consequence it has earned itself a bloody reputation - some say the very stars reverberate with the dying breaths of the countless lost souls.",
+            "id": 10000014,
+            "name": "Catch"
+        },
+        {
             "description": "\"The Federation is not a defined region of space, of planets, of mountains, rivers, or woods. It is a vision.\"",
             "id": 10000064,
             "name": "Essence"
@@ -54,10 +88,38 @@
             "description": "For centuries, this volume of space remained inexplicably impenetrable to investigation. It possesses no apparent mass or dimension, but the abrupt disappearance of every expedition into the zone made it an effective bulwark against flanking attacks during the first Gallente-Caldari war, and the subsequent uneasy peace.<br><br>Several decades ago, a coalition of like-minded Caldari megacorps discovered ways to traverse Black Rise safely, and began a secret programme of colonization. The start of the Empyrean War forced them to show their hand, and the region soon became a key front in the conflict between Caldari and Gallente forces.<br><br>Today the region remains somewhat underdeveloped, but rich in raw materials. The poorly-understood phenomena that still manifest can make life awkward, but fluid router networks and jump travel permit unrestricted travel and communications. Of the many early expeditions, though, no trace has yet been found.",
             "id": 10000069,
             "name": "Black Rise"
+        },
+        {
+            "description": "",
+            "id": 11000014,
+            "name": "C-R00014"
         }
     ],
     "EveSolarSystem": [
         {
+            "enabled_sections": 0,
+            "eve_constellation_id": 20000020,
+            "eve_star_id": null,
+            "id": 30000142,
+            "name": "Jita",
+            "position_x": -1.29064861735e+17,
+            "position_y": 6.075530691e+16,
+            "position_z": 1.1746922706e+17,
+            "security_status": 0.9459131360054016
+        },
+        {
+            "enabled_sections": 0,
+            "eve_constellation_id": 20000169,
+            "eve_star_id": null,
+            "id": 30001161,
+            "name": "HED-GP",
+            "position_x": -9.54136975600012e+16,
+            "position_y": 1.9654254337720636e+16,
+            "position_z": -2.0691536685399747e+17,
+            "security_status": -0.14632222056388855
+        },
+        {
+            "enabled_sections": 0,
             "eve_constellation_id": 20000729,
             "eve_star_id": null,
             "id": 30004984,
@@ -68,6 +130,7 @@
             "security_status": 0.28563404083251953
         },
         {
+            "enabled_sections": 0,
             "eve_constellation_id": 20000785,
             "eve_star_id": null,
             "id": 30045339,
@@ -76,11 +139,24 @@
             "position_y": 1.0468838569953179e+17,
             "position_z": 1.2027941769265027e+17,
             "security_status": 0.3277980387210846
+        },
+        {
+            "enabled_sections": 0,
+            "eve_constellation_id": 21000141,
+            "eve_star_id": null,
+            "id": 31001303,
+            "name": "J151645",
+            "position_x": 7.889821783918055e+18,
+            "position_y": 8073449579948044.0,
+            "position_z": -9.287839501992464e+18,
+            "security_status": -0.9900000095367432
         }
     ],
     "EveType": [
         {
             "capacity": 0.0,
+            "description": "Named after Tyma Raitaru, who pioneered the development of modern day missile technology, the Raitaru Engineering Complex is a medium-sized structure from the Upwell Consortium and is specialized in manufacturing and research operations.\r\n\r\nThe Raitaru is the entry-level Engineering Complex in the Upwell Consortium\u2019s new line of structures, and is able to use Upwell's Standup Service modules, allowing flexibility and customization of its functions. This dedicated industrial structure also provides access to Upwell\u2019s M-Set line of rigs designed to improve productivity and optimization of various aspects of manufacturing and research.\r\n\r\nThe Raitaru provides tethering technology and has docking capabilities for subcapital ships and freighters.",
+            "enabled_sections": 0,
             "eve_graphic_id": null,
             "eve_group_id": 1404,
             "eve_market_group_id": null,
@@ -96,6 +172,8 @@
         },
         {
             "capacity": 0.0,
+            "description": "As the entry-level product in the Upwell Consortium's Citadel range of space stations, the Astrahus has been designed as an economical option for medium-scale operations in space, such as serving as a base of operations for a small- to medium-sized corporation, or as an outpost for larger corporations or even small alliances.\r\n\r\nThe Astrahus has been built with new spaceship tethering technology as standard, and will happily accommodate ships under capital size, and even freighter-class hulls, in its internal docking bays. The Astrahus can be configured using Upwell's Standup brand service and structure modules so as to serve the specific needs of the structure operator. Further adjustment of the hardware of the Astrahus can be achieved by installed Standup M-Set rigs to optimize the specific role of the citadel.",
+            "enabled_sections": 0,
             "eve_graphic_id": null,
             "eve_group_id": 1657,
             "eve_market_group_id": null,
@@ -111,6 +189,8 @@
         },
         {
             "capacity": 0.0,
+            "description": "\u201cSeen thousands of auto miners come and go. Like a bucket quarry in space. Easy to get used to. New tech's more like slicing out a volcano and bringing the whole thing up. Don\u2019t think I\u2019ll ever get used to it.\u201d <i>\u2013 Ramon Fulcan, veteran moon-mining engineer</i>\r\n\r\nThe Athanor Refinery is a medium-sized structure from the Upwell Consortium and specialized for moon-mining and reaction-based industrial operations. The Athanor is the standard refinery in the Upwell Consortium\u2019s line of industrial structures, and is able to use Upwell's Standup Service modules, allowing flexibility and customization of its functions. \r\n\r\nThis dedicated extraction and refining structure also provides access to Upwell\u2019s M-Set line of rigs designed to improve productivity and optimization of various aspects of chemical reaction and moon-mining operations. The Athanor has docking facilities for subcapital ships and freighters.\r\n\r\nThe Moon Drill Service Module can only be installed if the Refinery is deployed on the eligible moon mining position.",
+            "enabled_sections": 0,
             "eve_graphic_id": null,
             "eve_group_id": 1406,
             "eve_market_group_id": null,
